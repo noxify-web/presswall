@@ -1,13 +1,13 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "your-client-id"
+client_id = "0e8af12e8cb5e0963b8c041595224e80"
 name = "relay"
 application_url = "https://placeholder.ngrok-free.app"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "your-dev-store.myshopify.com"
+dev_store_url = "noxify-dvgwvtrt.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]
