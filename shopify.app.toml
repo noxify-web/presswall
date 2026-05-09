@@ -2,7 +2,7 @@
 
 client_id = "0e8af12e8cb5e0963b8c041595224e80"
 name = "relay"
-application_url = "https://placeholder.ngrok-free.app"
+application_url = "http://localhost:3000"
 embedded = true
 
 [build]
@@ -19,7 +19,7 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://placeholder.ngrok-free.app/api/auth/callback"
+  "http://localhost:3000/api/auth/callback"
 ]
 
 [webhooks]
