@@ -1,19 +1,58 @@
-import { Button } from "@/components/ui/button";
+import { AdminDashboard } from "@/components/presswall/admin-dashboard";
+import { BrandLogo } from "@/components/presswall/brand-logo";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { authenticatePage } from "@/lib/authenticate-page";
+import { ensurePublisherCatalogSeeded } from "@/lib/presswall-service";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function AppEmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex min-w-0 max-w-md flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-muted-foreground text-xs">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
+    <div className="flex min-h-svh items-center justify-center p-6">
+      <Empty className="max-w-md border">
+        <EmptyHeader>
+          <EmptyMedia>
+            <BrandLogo size={56} />
+          </EmptyMedia>
+          <EmptyTitle>{title}</EmptyTitle>
+          <EmptyDescription>{description}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     </div>
   );
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const shopParam = typeof params.shop === "string" ? params.shop : undefined;
+
+  if (!shopParam) {
+    return (
+      <AppEmptyState
+        description="Install and open Presswall from your Shopify admin to configure your press logos."
+        title="Open from Shopify admin"
+      />
+    );
+  }
+
+  await authenticatePage(searchParams);
+  await ensurePublisherCatalogSeeded();
+
+  return <AdminDashboard />;
 }

@@ -1,11 +1,14 @@
 import { defineConfig } from "drizzle-kit";
-import { DB_PATH } from "./src/db/constants";
+import { getTursoConfig } from "./src/db/constants";
+
+const { url, authToken } = getTursoConfig();
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
-  dialect: "sqlite",
+  dialect: "turso",
   dbCredentials: {
-    url: DB_PATH,
+    url,
+    authToken,
   },
 });

@@ -1,9 +1,20 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { DB_PATH } from "./constants";
-import { sessions } from "./schema";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+import { getTursoConfig } from "./constants";
+import { publishers, sessions, shopConfigs, shopPublishers } from "./schema";
 
-const sqlite = new Database(DB_PATH);
-sqlite.run("PRAGMA journal_mode = WAL");
+const { url, authToken } = getTursoConfig();
 
-export const db = drizzle(sqlite, { schema: { sessions } });
+const client = createClient({
+  url,
+  authToken,
+});
+
+export const db = drizzle(client, {
+  schema: {
+    sessions,
+    publishers,
+    shopConfigs,
+    shopPublishers,
+  },
+});

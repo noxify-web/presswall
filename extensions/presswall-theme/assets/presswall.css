@@ -1,0 +1,88 @@
+.presswall-root {
+  width: 100%;
+}
+
+.presswall-loading {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.presswall-heading {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+}
+
+.presswall-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.presswall-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .presswall-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.presswall-grid-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presswall-logo {
+  display: inline-flex;
+  max-width: 140px;
+}
+
+.presswall-logo svg,
+.presswall-logo-img {
+  display: block;
+  width: auto;
+  height: 100%;
+}
+
+.presswall-marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.presswall-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: presswall-scroll linear infinite;
+}
+
+.presswall-marquee-item {
+  flex: 0 0 auto;
+}
+
+@keyframes presswall-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.presswall-align-left {
+  justify-content: flex-start;
+}
+
+.presswall-align-center {
+  justify-content: center;
+}
+
+.presswall-align-right {
+  justify-content: flex-end;
+}

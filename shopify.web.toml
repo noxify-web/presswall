@@ -1,0 +1,6 @@
+roles = ["frontend"]
+port = 3000
+
+[commands]
+dev = "bun run dev"
+build = "bun run build"

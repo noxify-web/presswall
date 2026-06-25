@@ -1,29 +1,33 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "0e8af12e8cb5e0963b8c041595224e80"
-name = "relay"
+client_id = "b45929a097e4af2198f5fea412a7a1ed"
+name = "Presswall"
 application_url = "http://localhost:3000"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 dev_store_url = "noxify-dvgwvtrt.myshopify.com"
-include_config_on_deploy = true
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,read_products"
-
-# Ensure that "use_legacy_install_flow" is set to false or is omitted to use Shopify managed installation.
-use_legacy_install_flow = false
+scopes = "write_app_proxy"
 
 [auth]
 redirect_urls = [
   "http://localhost:3000/api/auth/callback"
 ]
 
+[app_proxy]
+url = "/api/proxy"
+subpath = "presswall"
+prefix = "apps"
+
 [webhooks]
 api_version = "2025-01"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/api/webhooks"
 
 [pos]
 embedded = false

@@ -1,60 +1,67 @@
-# Relay — Shopify + Next.js starter
+# Presswall
 
-A minimal Next.js app with shadcn/ui, Shopify CLI config, and Drizzle ORM pre-wired for when you need a database.
+Shopify app for **"As seen on"** press and media logo strips on your storefront.
 
-Auth routes and Shopify SDK integration are not implemented yet — add those when you start building app features.
+Built on the [shopify-nextjs-template](https://github.com/niiithish/shopify-nextjs-template) with **shadcn/ui** for the admin experience.
+
+## Features
+
+- Curated publisher library (90+ outlets) with quick search and category filters
+- Logo guidance recommending transparent PNG/SVG assets for custom outlets
+- Custom outlet support (name + optional SVG logo)
+- Fully customizable heading text (show, hide, or rewrite)
+- Style controls: mono, muted, or full-color logos
+- Layouts: horizontal bar, grid, or scrolling marquee
+- Live light/dark preview in admin
+- Theme app extension block for the Online Store
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (used for package management and the SQLite driver via `bun:sqlite`)
+- [Bun](https://bun.sh)
 - [Shopify CLI](https://shopify.dev/docs/apps/tools/cli)
 
 ## Getting started
 
 ```bash
 bun install
-cp .env.example .env.local   # fill in your Shopify credentials
-bun run dev
-```
-
-Run with Shopify CLI:
-
-```bash
+cp .env.example .env.local   # add Shopify API credentials
+bun run db:push
 shopify app dev
 ```
 
-## Database
+## Database (Turso)
 
-Drizzle is set up with a `Session` table stub (useful for Shopify session storage later, or anything else you need).
-
-```bash
-bun run db:push      # apply schema to data/dev.db
-bun run db:studio    # open Drizzle Studio
-```
-
-The SQLite file lives at `data/dev.db` (override with `DATABASE_URL` in `.env.local`).
-
-> **Note:** The DB client uses `bun:sqlite`. If you deploy on Node instead of Bun, swap the driver in `src/db/index.ts` when you start using the database.
-
-## Linting & formatting
-
-This project uses [Ultracite](https://www.ultracite.ai) with [Biome](https://biomejs.dev).
+Set Turso credentials in `.env.local`:
 
 ```bash
-bun run lint      # check for issues
-bun run format    # auto-fix and format
+TURSO_DATABASE_URL=libsql://your-database-name-org.turso.io
+TURSO_AUTH_TOKEN=your-token
 ```
 
-Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) for format-on-save (`.vscode/settings.json` is already configured).
-
-## Adding components
+Create a database with the [Turso CLI](https://docs.turso.tech/cli), then push the schema:
 
 ```bash
-bunx shadcn@latest add button
+bun run db:push
+bun run db:studio
 ```
 
-Components are placed in the `components` directory.
+Without Turso env vars, the app falls back to a local `file:data/dev.db` SQLite file for development.
 
-```tsx
-import { Button } from "@/components/ui/button";
+## Theme block
+
+After saving in the app admin:
+
+1. Online Store → Customize
+2. Add block → Apps → **Presswall**
+3. Place on homepage, product page, or any section
+
+## Legal note
+
+Merchants are responsible for only displaying outlets they have been featured in. Presswall does not verify claims; usage is covered by your app terms.
+
+## Linting
+
+```bash
+bun run lint
+bun run format
 ```
