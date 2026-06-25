@@ -36,9 +36,9 @@ pnpm-debug.log*
 next-env.d.ts
 .env.local
 # database (shared SQLite file)
-prisma/dev.db
-prisma/dev.db-wal
-prisma/dev.db-shm
+data/dev.db
+data/dev.db-wal
+data/dev.db-shm
 
 # drizzle
 /drizzle/meta

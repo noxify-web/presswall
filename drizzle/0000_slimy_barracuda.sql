@@ -6,7 +6,7 @@ CREATE TABLE `Session` (
 	`scope` text,
 	`expires` text,
 	`accessToken` text NOT NULL,
-	`userId` integer,
+	`userId` text,
 	`firstName` text,
 	`lastName` text,
 	`email` text,

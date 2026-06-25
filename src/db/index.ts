@@ -1,8 +1,9 @@
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
-import * as schema from "./schema";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { DB_PATH } from "./constants";
+import { sessions } from "./schema";
 
-const sqlite = new Database("prisma/dev.db");
+const sqlite = new Database(DB_PATH);
 sqlite.run("PRAGMA journal_mode = WAL");
 
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(sqlite, { schema: { sessions } });
