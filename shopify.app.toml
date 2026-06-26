@@ -10,7 +10,7 @@ automatically_update_urls_on_dev = true
 dev_store_url = "noxify-dvgwvtrt.myshopify.com"
 
 [access_scopes]
-scopes = "write_app_proxy"
+scopes = "write_app_proxy,read_themes"
 
 [auth]
 redirect_urls = [

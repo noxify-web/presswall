@@ -204,8 +204,9 @@ export function PresswallOverview({
       <Alert>
         <AlertTitle>Add to your theme</AlertTitle>
         <AlertDescription>
-          After saving, open Online Store &rarr; Customize &rarr; Add block
-          &rarr; Apps &rarr; Presswall.
+          Use the activation banner above to enable the Presswall app embed, or
+          add the section block from Online Store &rarr; Customize &rarr; Apps
+          &rarr; Presswall.
         </AlertDescription>
       </Alert>
     </div>

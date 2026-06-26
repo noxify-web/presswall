@@ -1,0 +1,22 @@
+<div
+  class="presswall-root"
+  data-presswall-root
+  data-proxy-url="{{ shop.url }}/apps/presswall/config"
+>
+  <div class="presswall-loading">Loading press logos...</div>
+</div>
+
+{% schema %}
+{
+  "name": "Storefront embed",
+  "target": "body",
+  "stylesheet": "presswall.css",
+  "javascript": "presswall.js",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Configure outlets and styling in the Presswall app admin, then enable this embed."
+    }
+  ]
+}
+{% endschema %}

@@ -4,6 +4,7 @@ import { IconDeviceFloppy } from "@tabler/icons-react";
 import { useState } from "react";
 import { PresswallOverview } from "@/components/presswall/presswall-overview";
 import { SetupWizard } from "@/components/presswall/setup-wizard";
+import { ThemeActivationBanner } from "@/components/presswall/theme-activation-banner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { usePresswallEditor } from "@/hooks/use-presswall-editor";
@@ -21,6 +22,8 @@ export function AdminDashboard() {
   return (
     <div className="flex min-h-svh flex-col">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-6">
+        <ThemeActivationBanner />
+
         {editor.unavailableCount > 0 ? (
           <Alert variant="destructive">
             <AlertTitle>Some outlets are no longer available</AlertTitle>
