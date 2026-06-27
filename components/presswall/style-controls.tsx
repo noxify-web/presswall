@@ -6,25 +6,11 @@ import {
   IconAlignLeft,
   IconAlignRight,
 } from "@tabler/icons-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { PresswallConfig } from "@/lib/presswall-types";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +31,26 @@ const ALIGNMENT_OPTIONS: {
   { value: "right", icon: IconAlignRight, label: "Right" },
 ];
 
+const COLOR_MODES: {
+  value: PresswallConfig["colorMode"];
+  label: string;
+  hint: string;
+}[] = [
+  { value: "mono", label: "B&W", hint: "Black & white" },
+  { value: "muted", label: "Muted", hint: "Grayscale" },
+  { value: "color", label: "Color", hint: "Full color" },
+];
+
+const LAYOUTS: {
+  value: PresswallConfig["layout"];
+  label: string;
+  hint: string;
+}[] = [
+  { value: "bar", label: "Bar", hint: "Horizontal row" },
+  { value: "grid", label: "Grid", hint: "Multi-row grid" },
+  { value: "marquee", label: "Marquee", hint: "Auto-scroll" },
+];
+
 interface StyleControlsProps {
   config: PresswallConfig;
   onUpdate: <K extends keyof PresswallConfig>(
@@ -53,16 +59,56 @@ interface StyleControlsProps {
   ) => void;
 }
 
+interface ColorFieldProps {
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  supportsTransparent?: boolean;
+  value: string;
+}
+
+function ColorField({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  supportsTransparent,
+}: ColorFieldProps) {
+  const isTransparent = supportsTransparent && value === "transparent";
+  const colorValue = isTransparent ? "#ffffff" : value;
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        aria-label="Color picker"
+        className="size-9 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={disabled || isTransparent}
+        onChange={(event) => onChange(event.target.value)}
+        type="color"
+        value={colorValue}
+      />
+      <Input
+        className="flex-1 font-mono text-sm"
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        value={value}
+      />
+    </div>
+  );
+}
+
 export function StyleControls({ config, onUpdate }: StyleControlsProps) {
   return (
-    <Tabs defaultValue="content">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="content">Content</TabsTrigger>
-        <TabsTrigger value="style">Style</TabsTrigger>
-        <TabsTrigger value="layout">Layout</TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-8">
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold text-lg">Content</h2>
+          <p className="text-muted-foreground text-sm">
+            Customize the heading above your logos.
+          </p>
+        </div>
 
-      <TabsContent className="mt-4 flex flex-col gap-4" value="content">
         <div className="flex items-center justify-between rounded-lg border p-3">
           <div>
             <Label htmlFor="show-heading">Show heading</Label>
@@ -87,41 +133,36 @@ export function StyleControls({ config, onUpdate }: StyleControlsProps) {
             value={config.headingText}
           />
         </div>
-      </TabsContent>
+      </section>
 
-      <TabsContent className="mt-4 flex flex-col gap-4" value="style">
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold text-lg">Logo style</h2>
+          <p className="text-muted-foreground text-sm">
+            Control how your press logos look.
+          </p>
+        </div>
+
         <div className="grid gap-2">
-          <div className="flex items-center gap-2">
-            <Label>Color mode</Label>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button size="icon-sm" variant="ghost">
-                    ?
-                  </Button>
-                }
-              />
-              <TooltipContent>
-                Mono and muted modes work best with transparent logos. Full
-                color shows original brand marks.
-              </TooltipContent>
-            </Tooltip>
+          <Label>Color mode</Label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {COLOR_MODES.map((mode) => (
+              <Button
+                className={cn(
+                  "flex-col gap-0.5 py-2",
+                  config.colorMode === mode.value && "border-ring bg-muted"
+                )}
+                key={mode.value}
+                onClick={() => onUpdate("colorMode", mode.value)}
+                variant="outline"
+              >
+                <span className="font-medium text-sm">{mode.label}</span>
+                <span className="text-[0.625rem] text-muted-foreground">
+                  {mode.hint}
+                </span>
+              </Button>
+            ))}
           </div>
-          <Select
-            onValueChange={(value) =>
-              onUpdate("colorMode", value as PresswallConfig["colorMode"])
-            }
-            value={config.colorMode}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mono">Black &amp; white</SelectItem>
-              <SelectItem value="muted">Muted grayscale</SelectItem>
-              <SelectItem value="color">Full color</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {config.colorMode === "muted" ? (
@@ -152,47 +193,54 @@ export function StyleControls({ config, onUpdate }: StyleControlsProps) {
           />
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="text-color">Text color</Label>
-            <Input
-              id="text-color"
-              onChange={(event) => onUpdate("textColor", event.target.value)}
+            <ColorField
+              onChange={(value) => onUpdate("textColor", value)}
               value={config.textColor}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="background-color">Background</Label>
-            <Input
-              id="background-color"
-              onChange={(event) =>
-                onUpdate("backgroundColor", event.target.value)
-              }
+            <ColorField
+              onChange={(value) => onUpdate("backgroundColor", value)}
               placeholder="transparent"
+              supportsTransparent
               value={config.backgroundColor}
             />
           </div>
         </div>
-      </TabsContent>
+      </section>
 
-      <TabsContent className="mt-4 flex flex-col gap-4" value="layout">
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold text-lg">Layout</h2>
+          <p className="text-muted-foreground text-sm">
+            Control how logos are arranged and spaced.
+          </p>
+        </div>
+
         <div className="grid gap-2">
           <Label>Layout type</Label>
-          <Select
-            onValueChange={(value) =>
-              onUpdate("layout", value as PresswallConfig["layout"])
-            }
-            value={config.layout}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="bar">Horizontal bar</SelectItem>
-              <SelectItem value="grid">Grid</SelectItem>
-              <SelectItem value="marquee">Scrolling marquee</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-3 gap-1.5">
+            {LAYOUTS.map((layout) => (
+              <Button
+                className={cn(
+                  "flex-col gap-0.5 py-2",
+                  config.layout === layout.value && "border-ring bg-muted"
+                )}
+                key={layout.value}
+                onClick={() => onUpdate("layout", layout.value)}
+                variant="outline"
+              >
+                <span className="font-medium text-sm">{layout.label}</span>
+                <span className="text-[0.625rem] text-muted-foreground">
+                  {layout.hint}
+                </span>
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-2">
@@ -200,7 +248,6 @@ export function StyleControls({ config, onUpdate }: StyleControlsProps) {
           <div className="grid grid-cols-3 gap-1.5">
             {ALIGNMENT_OPTIONS.map((option) => {
               const AlignIcon = option.icon;
-
               return (
                 <Button
                   className={cn(
@@ -272,7 +319,7 @@ export function StyleControls({ config, onUpdate }: StyleControlsProps) {
 
         {config.layout === "marquee" ? (
           <div className="grid gap-2">
-            <Label>Marquee speed ({config.marqueeSpeed}s)</Label>
+            <Label>Scroll speed ({config.marqueeSpeed}s)</Label>
             <Slider
               max={80}
               min={10}
@@ -284,15 +331,7 @@ export function StyleControls({ config, onUpdate }: StyleControlsProps) {
             />
           </div>
         ) : null}
-
-        <Alert>
-          <AlertTitle>Add to your theme</AlertTitle>
-          <AlertDescription>
-            After saving, open Online Store &rarr; Customize &rarr; Add block
-            &rarr; Apps &rarr; Presswall.
-          </AlertDescription>
-        </Alert>
-      </TabsContent>
-    </Tabs>
+      </section>
+    </div>
   );
 }

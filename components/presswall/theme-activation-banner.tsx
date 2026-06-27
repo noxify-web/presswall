@@ -49,6 +49,26 @@ export function ThemeActivationBanner({
     loadStatus().catch(() => undefined);
   }, [loadStatus]);
 
+  useEffect(() => {
+    const refreshStatus = () => {
+      loadStatus().catch(() => undefined);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshStatus();
+      }
+    };
+
+    window.addEventListener("focus", refreshStatus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refreshStatus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadStatus]);
+
   const dismiss = () => {
     sessionStorage.setItem(DISMISS_KEY, "1");
     setIsDismissed(true);
@@ -91,7 +111,11 @@ export function ThemeActivationBanner({
 
         <Button
           onClick={() => {
-            window.open(status.activateEmbedUrl, "_top");
+            window.open(
+              status.activateEmbedUrl,
+              "_blank",
+              "noopener,noreferrer"
+            );
           }}
         >
           Activate now

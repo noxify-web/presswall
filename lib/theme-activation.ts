@@ -1,6 +1,7 @@
-const EXTENSION_UID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+const DEFAULT_EXTENSION_UID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 const EMBED_BLOCK_HANDLE = "presswall-embed";
 const SECTION_BLOCK_HANDLE = "presswall";
+const APP_SLUG = "presswall";
 
 const TEMPLATE_FILES = [
   "templates/index.json",
@@ -60,31 +61,50 @@ function parseJsonContent<T>(content: string): T | null {
   }
 }
 
-function isOurExtensionBlock(type: string | undefined): boolean {
-  if (!type) {
-    return false;
-  }
-
-  return type.includes(EXTENSION_UID);
+function normalizeShopDomain(shop: string): string {
+  return shop.includes(".myshopify.com") ? shop : `${shop}.myshopify.com`;
 }
 
-function isEmbedBlock(type: string | undefined): boolean {
-  if (!type) {
+function isPresswallAppBlockType(
+  type: string | undefined,
+  apiKey: string
+): boolean {
+  if (!type?.startsWith("shopify://apps/")) {
     return false;
   }
 
+  const appSegment =
+    type.slice("shopify://apps/".length).split("/")[0]?.toLowerCase() ?? "";
+  const extensionUid =
+    process.env.SHOPIFY_PRESSWALL_THEME_ID ?? DEFAULT_EXTENSION_UID;
+
   return (
-    isOurExtensionBlock(type) && type.includes(`/blocks/${EMBED_BLOCK_HANDLE}/`)
+    appSegment === apiKey.toLowerCase() ||
+    appSegment.includes(APP_SLUG) ||
+    type.includes(extensionUid) ||
+    type.includes(`/blocks/${EMBED_BLOCK_HANDLE}/`) ||
+    type.includes(`/blocks/${SECTION_BLOCK_HANDLE}/`)
   );
 }
 
-function isSectionBlock(type: string | undefined): boolean {
+function isEmbedBlock(type: string | undefined, apiKey: string): boolean {
   if (!type) {
     return false;
   }
 
   return (
-    isOurExtensionBlock(type) &&
+    isPresswallAppBlockType(type, apiKey) &&
+    type.includes(`/blocks/${EMBED_BLOCK_HANDLE}/`)
+  );
+}
+
+function isSectionBlock(type: string | undefined, apiKey: string): boolean {
+  if (!type) {
+    return false;
+  }
+
+  return (
+    isPresswallAppBlockType(type, apiKey) &&
     type.includes(`/blocks/${SECTION_BLOCK_HANDLE}/`)
   );
 }
@@ -116,7 +136,7 @@ function findBlocksInValue(
   return false;
 }
 
-function parseEmbedStatus(content: string): boolean {
+function parseEmbedStatus(content: string, apiKey: string): boolean {
   const settings = parseJsonContent<{
     current?: { blocks?: Record<string, ThemeBlockEntry> };
   }>(content);
@@ -127,26 +147,24 @@ function parseEmbedStatus(content: string): boolean {
   }
 
   return Object.values(blocks).some(
-    (block) => isEmbedBlock(block.type) && block.disabled !== true
+    (block) => isEmbedBlock(block.type, apiKey) && block.disabled !== true
   );
 }
 
-function parseSectionBlockStatus(content: string): boolean {
+function parseSectionBlockStatus(content: string, apiKey: string): boolean {
   const template = parseJsonContent<unknown>(content);
   if (!template) {
     return false;
   }
 
-  return findBlocksInValue(template, isSectionBlock);
+  return findBlocksInValue(template, (type) => isSectionBlock(type, apiKey));
 }
 
 export function buildThemeActivationUrls(
   shop: string,
   apiKey: string
 ): Pick<ThemeActivationStatus, "activateEmbedUrl" | "activateSectionUrl"> {
-  const shopDomain = shop.includes(".myshopify.com")
-    ? shop
-    : `${shop}.myshopify.com`;
+  const shopDomain = normalizeShopDomain(shop);
   const editorBase = `https://${shopDomain}/admin/themes/current/editor`;
 
   return {
@@ -191,8 +209,10 @@ export async function getThemeActivationStatus(
     themeName: null,
   };
 
+  const shopDomain = normalizeShopDomain(shop);
+
   const response = await fetch(
-    `https://${shop}/admin/api/2025-01/graphql.json`,
+    `https://${shopDomain}/admin/api/2025-01/graphql.json`,
     {
       method: "POST",
       headers: {
@@ -229,7 +249,7 @@ export async function getThemeActivationStatus(
     }
 
     if (file.filename === SETTINGS_DATA_FILE) {
-      appEmbedEnabled = parseEmbedStatus(content);
+      appEmbedEnabled = parseEmbedStatus(content, apiKey);
       continue;
     }
 
@@ -237,7 +257,7 @@ export async function getThemeActivationStatus(
       continue;
     }
 
-    appBlockEnabled = parseSectionBlockStatus(content);
+    appBlockEnabled = parseSectionBlockStatus(content, apiKey);
   }
 
   return {

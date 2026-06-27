@@ -149,15 +149,13 @@ export function PresswallPreview({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <IconEye className="text-muted-foreground" stroke={2} />
           <div>
             <p className="font-medium text-sm">Live preview</p>
-            <p className="text-muted-foreground text-xs">
-              How your presswall will look on the storefront
-            </p>
+            <p className="text-muted-foreground text-xs">Updates as you edit</p>
           </div>
         </div>
         <div className="flex gap-1">
@@ -180,7 +178,7 @@ export function PresswallPreview({
 
       <div
         className={cn(
-          "min-h-32 rounded-lg border",
+          "min-h-40 rounded-lg border",
           isDark ? "border-white/10" : "border-black/10"
         )}
         style={containerStyle}
