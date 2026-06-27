@@ -27,7 +27,6 @@ import { cn } from "@/lib/utils";
 interface PublisherLibraryProps {
   catalog: PublisherCatalogItem[];
   category: string;
-  listClassName?: string;
   onCategoryChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onToggle: (publisher: PublisherCatalogItem) => void;
@@ -43,7 +42,6 @@ export function PublisherLibrary({
   onSearchChange,
   category,
   onCategoryChange,
-  listClassName = "h-80",
 }: PublisherLibraryProps) {
   const filteredCatalog = useMemo(
     () =>
@@ -60,8 +58,19 @@ export function PublisherLibrary({
     [catalog, category, search]
   );
 
+  const selectedCount = selectedIds.size;
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs">
+          {catalog.length} outlets available
+        </p>
+        {selectedCount > 0 ? (
+          <Badge variant="secondary">{selectedCount} selected</Badge>
+        ) : null}
+      </div>
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <IconSearch
@@ -92,7 +101,7 @@ export function PublisherLibrary({
         </Select>
       </div>
 
-      <div className={cn("overflow-y-auto rounded-lg border", listClassName)}>
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border">
         {filteredCatalog.length === 0 ? (
           <Empty className="border-0">
             <EmptyHeader>

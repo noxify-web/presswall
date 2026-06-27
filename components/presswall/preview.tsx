@@ -1,6 +1,6 @@
 "use client";
 
-import { IconEye } from "@tabler/icons-react";
+import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useState } from "react";
 import { PublisherLogo } from "@/components/presswall/publisher-logo";
 import { Button } from "@/components/ui/button";
@@ -149,52 +149,60 @@ export function PresswallPreview({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <IconEye className="text-muted-foreground" stroke={2} />
-          <div>
-            <p className="font-medium text-sm">Live preview</p>
-            <p className="text-muted-foreground text-xs">
-              How your presswall will look on the storefront
-            </p>
+    <div className="flex h-full flex-col">
+      {/* Preview canvas area */}
+      <div className="relative flex flex-1 items-center justify-center rounded-xl border bg-muted/20 p-6">
+        {/* Simulated browser frame */}
+        <div className="w-full max-w-2xl overflow-hidden rounded-lg border shadow-sm">
+          {/* Browser chrome bar */}
+          <div className="flex items-center gap-1.5 border-b bg-muted/50 px-3 py-2">
+            <div className="size-2 rounded-full bg-muted-foreground/20" />
+            <div className="size-2 rounded-full bg-muted-foreground/20" />
+            <div className="size-2 rounded-full bg-muted-foreground/20" />
+            <div className="mx-auto h-4 w-32 rounded-sm bg-muted-foreground/10" />
+          </div>
+
+          {/* Storefront preview content */}
+          <div
+            className="min-h-28 transition-colors duration-200"
+            style={containerStyle}
+          >
+            {config.showHeading && config.headingText ? (
+              <p
+                className="mb-4 font-medium text-[11px] uppercase tracking-[0.28em]"
+                style={{ color: config.textColor }}
+              >
+                {config.headingText}
+              </p>
+            ) : null}
+
+            <LayoutContent
+              config={config}
+              items={items}
+              renderLogo={renderLogo}
+            />
           </div>
         </div>
-        <div className="flex gap-1">
+
+        {/* Floating theme toggle */}
+        <div className="absolute right-3 bottom-3 flex items-center gap-0.5 rounded-full border bg-background/90 p-0.5 shadow-sm backdrop-blur">
           <Button
+            className="h-7 w-7 rounded-full"
             onClick={() => setTheme("light")}
-            size="sm"
+            size="icon-sm"
             variant={theme === "light" ? "secondary" : "ghost"}
           >
-            Light
+            <IconSun className="size-3.5" stroke={2} />
           </Button>
           <Button
+            className="h-7 w-7 rounded-full"
             onClick={() => setTheme("dark")}
-            size="sm"
+            size="icon-sm"
             variant={theme === "dark" ? "secondary" : "ghost"}
           >
-            Dark
+            <IconMoon className="size-3.5" stroke={2} />
           </Button>
         </div>
-      </div>
-
-      <div
-        className={cn(
-          "min-h-32 rounded-lg border",
-          isDark ? "border-white/10" : "border-black/10"
-        )}
-        style={containerStyle}
-      >
-        {config.showHeading && config.headingText ? (
-          <p
-            className="mb-4 font-medium text-[11px] uppercase tracking-[0.28em]"
-            style={{ color: config.textColor }}
-          >
-            {config.headingText}
-          </p>
-        ) : null}
-
-        <LayoutContent config={config} items={items} renderLogo={renderLogo} />
       </div>
     </div>
   );
