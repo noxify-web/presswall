@@ -16,12 +16,20 @@ import type {
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
 
+function buildSnapshot(
+  config: PresswallConfig,
+  selected: SelectedPublisher[]
+): string {
+  return JSON.stringify({ config, selections: buildSelections(selected) });
+}
+
 export interface PresswallEditor {
   addCustomPublisher: (name: string, svg: string) => void;
   catalog: PublisherCatalogItem[];
   catalogById: Map<string, PublisherCatalogItem>;
   category: string;
   config: PresswallConfig;
+  isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
   movePublisher: (index: number, direction: -1 | 1) => void;
@@ -51,6 +59,7 @@ export function usePresswallEditor(): PresswallEditor {
   const [category, setCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -69,9 +78,11 @@ export function usePresswallEditor(): PresswallEditor {
       const publishersData = await publishersRes.json();
       const presswallData = await presswallRes.json();
 
+      const loadedSelected = selectedFromApi(presswallData.selections);
       setCatalog(publishersData.publishers);
       setConfig(presswallData.config);
-      setSelected(selectedFromApi(presswallData.selections));
+      setSelected(loadedSelected);
+      setSavedSnapshot(buildSnapshot(presswallData.config, loadedSelected));
     } catch {
       toast.error("Failed to load Presswall settings");
     } finally {
@@ -101,6 +112,13 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   const selections = useMemo(() => buildSelections(selected), [selected]);
+
+  const isDirty = useMemo(() => {
+    if (savedSnapshot === null) {
+      return false;
+    }
+    return buildSnapshot(config, selected) !== savedSnapshot;
+  }, [config, savedSnapshot, selected]);
 
   const unavailableCount = useMemo(
     () => countUnavailableSelections(selected, catalogById),
@@ -159,6 +177,7 @@ export function usePresswallEditor(): PresswallEditor {
       });
 
       if (response.ok) {
+        setSavedSnapshot(buildSnapshot(config, selected));
         toast.success("Presswall saved");
         return;
       }
@@ -169,7 +188,7 @@ export function usePresswallEditor(): PresswallEditor {
     } finally {
       setIsSaving(false);
     }
-  }, [config, selections]);
+  }, [config, selected, selections]);
 
   const updateConfig = useCallback(
     <K extends keyof PresswallConfig>(key: K, value: PresswallConfig[K]) => {
@@ -183,6 +202,7 @@ export function usePresswallEditor(): PresswallEditor {
     catalogById,
     category,
     config,
+    isDirty,
     isLoading,
     isSaving,
     search,

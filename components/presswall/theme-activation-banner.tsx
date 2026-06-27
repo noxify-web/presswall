@@ -1,6 +1,11 @@
 "use client";
 
-import { IconAlertTriangle, IconX } from "@tabler/icons-react";
+import {
+  IconExternalLink,
+  IconLayoutGrid,
+  IconPlug,
+  IconX,
+} from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { adminFetch } from "@/lib/admin-fetch";
@@ -11,10 +16,12 @@ const DISMISS_KEY = "presswall-theme-activation-dismissed";
 
 interface ThemeActivationBannerProps {
   className?: string;
+  isDirty?: boolean;
 }
 
 export function ThemeActivationBanner({
   className,
+  isDirty = false,
 }: ThemeActivationBannerProps) {
   const [status, setStatus] = useState<ThemeActivationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,22 +66,19 @@ export function ThemeActivationBanner({
   }
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl border border-amber-200/80 bg-card shadow-sm",
-        className
-      )}
-    >
-      <div className="flex items-start justify-between gap-3 bg-amber-400 px-4 py-3 text-amber-950">
-        <div className="flex items-center gap-2">
-          <IconAlertTriangle className="size-5 shrink-0" stroke={2} />
-          <p className="font-semibold text-sm">
-            Activate Presswall on your store
+    <div className={cn("rounded-lg border bg-muted/30 p-3 sm:p-4", className)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <p className="font-medium text-sm">Add to your Shopify theme</p>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {isDirty
+              ? "Save your changes first, then choose how Presswall appears on your store."
+              : "Choose an app embed for site-wide display, or a section block for a specific page."}
           </p>
         </div>
         <button
-          aria-label="Dismiss activation reminder"
-          className="rounded-md p-1 text-amber-950/80 transition-colors hover:bg-amber-500/30 hover:text-amber-950"
+          aria-label="Dismiss"
+          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           onClick={dismiss}
           type="button"
         >
@@ -82,19 +86,38 @@ export function ThemeActivationBanner({
         </button>
       </div>
 
-      <div className="space-y-4 px-4 py-4">
-        <p className="text-sm leading-relaxed">
-          Enable the Presswall app embed so your &ldquo;as seen on&rdquo; logos
-          appear on your storefront. After enabling, save your theme changes in
-          the editor.
-        </p>
-
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Button
+          className="flex-1 justify-start"
+          disabled={isDirty}
           onClick={() => {
             window.open(status.activateEmbedUrl, "_top");
           }}
+          size="sm"
+          variant="default"
         >
-          Activate now
+          <IconPlug stroke={2} />
+          Enable app embed
+          <IconExternalLink
+            className="ml-auto size-3.5 opacity-60"
+            stroke={2}
+          />
+        </Button>
+        <Button
+          className="flex-1 justify-start"
+          disabled={isDirty}
+          onClick={() => {
+            window.open(status.activateSectionUrl, "_top");
+          }}
+          size="sm"
+          variant="outline"
+        >
+          <IconLayoutGrid stroke={2} />
+          Add section block
+          <IconExternalLink
+            className="ml-auto size-3.5 opacity-60"
+            stroke={2}
+          />
         </Button>
       </div>
     </div>

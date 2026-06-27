@@ -1,6 +1,6 @@
 "use client";
 
-import { IconEye } from "@tabler/icons-react";
+import { IconEye, IconMoon, IconSun } from "@tabler/icons-react";
 import { useState } from "react";
 import { PublisherLogo } from "@/components/presswall/publisher-logo";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,9 @@ import { cn } from "@/lib/utils";
 
 interface PreviewProps {
   catalog: PublisherCatalogItem[];
+  compact?: boolean;
   config: PresswallConfig;
+  isLoading?: boolean;
   selections: ShopPublisherSelection[];
 }
 
@@ -50,11 +52,11 @@ function LayoutContent({
 }) {
   if (items.length === 0) {
     return (
-      <Empty className="border-0 p-4">
+      <Empty className="border-0 p-6">
         <EmptyHeader>
-          <EmptyTitle>No outlets selected</EmptyTitle>
+          <EmptyTitle>No outlets yet</EmptyTitle>
           <EmptyDescription>
-            Pick outlets from the library to preview your presswall.
+            Select outlets to see your presswall here.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -100,7 +102,7 @@ function LayoutContent({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-y-4",
+        "flex flex-wrap items-center gap-y-3",
         alignmentClass[config.alignment]
       )}
       style={{ gap: `${config.gap}px` }}
@@ -114,6 +116,8 @@ export function PresswallPreview({
   config,
   catalog,
   selections,
+  compact = false,
+  isLoading = false,
 }: PreviewProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const items = resolveStorefrontPublishers(config, catalog, selections);
@@ -149,45 +153,51 @@ export function PresswallPreview({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div
+      className={cn(
+        "flex flex-col gap-2",
+        compact && "rounded-lg border bg-card p-3"
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <IconEye className="text-muted-foreground" stroke={2} />
-          <div>
-            <p className="font-medium text-sm">Live preview</p>
-            <p className="text-muted-foreground text-xs">
-              How your presswall will look on the storefront
-            </p>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <IconEye className="size-3.5 text-muted-foreground" stroke={2} />
+          <span className="font-medium text-sm">Preview</span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex rounded-md border p-0.5">
           <Button
+            aria-label="Light preview"
+            className="h-6 px-2"
             onClick={() => setTheme("light")}
             size="sm"
             variant={theme === "light" ? "secondary" : "ghost"}
           >
-            Light
+            <IconSun className="size-3.5" stroke={2} />
           </Button>
           <Button
+            aria-label="Dark preview"
+            className="h-6 px-2"
             onClick={() => setTheme("dark")}
             size="sm"
             variant={theme === "dark" ? "secondary" : "ghost"}
           >
-            Dark
+            <IconMoon className="size-3.5" stroke={2} />
           </Button>
         </div>
       </div>
 
       <div
         className={cn(
-          "min-h-32 rounded-lg border",
-          isDark ? "border-white/10" : "border-black/10"
+          "rounded-lg border transition-opacity",
+          compact ? "min-h-36" : "min-h-32",
+          isDark ? "border-white/10" : "border-black/10",
+          isLoading && "animate-pulse opacity-60"
         )}
         style={containerStyle}
       >
         {config.showHeading && config.headingText ? (
           <p
-            className="mb-4 font-medium text-[11px] uppercase tracking-[0.28em]"
+            className="mb-3 font-medium text-[10px] uppercase tracking-[0.24em] opacity-80"
             style={{ color: config.textColor }}
           >
             {config.headingText}
