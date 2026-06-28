@@ -48,6 +48,7 @@ export const shopConfigs = sqliteTable("shop_configs", {
   paddingX: integer("padding_x").notNull().default(16),
   marqueeSpeed: integer("marquee_speed").notNull().default(30),
   grayscaleOpacity: integer("grayscale_opacity").notNull().default(70),
+  onboardingCompletedAt: text("onboarding_completed_at"),
   updatedAt: text("updated_at").notNull(),
 });
 

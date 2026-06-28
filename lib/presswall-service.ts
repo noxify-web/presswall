@@ -123,14 +123,31 @@ export async function getPublisherCatalog(): Promise<PublisherCatalogItem[]> {
     }));
 }
 
-export async function getShopConfig(shop: string): Promise<PresswallConfig> {
+export async function getShopConfigRow(shop: string) {
   const rows = await db
     .select()
     .from(shopConfigs)
     .where(eq(shopConfigs.shop, shop))
     .limit(1);
 
-  return mapConfigRow(rows[0]);
+  return rows[0];
+}
+
+export async function getShopConfig(shop: string): Promise<PresswallConfig> {
+  return mapConfigRow(await getShopConfigRow(shop));
+}
+
+export async function needsOnboarding(shop: string): Promise<boolean> {
+  const [configRow, selections] = await Promise.all([
+    getShopConfigRow(shop),
+    getShopPublisherSelections(shop),
+  ]);
+
+  if (configRow?.onboardingCompletedAt) {
+    return false;
+  }
+
+  return selections.length === 0;
 }
 
 export async function getShopPublisherSelections(
@@ -154,16 +171,25 @@ export async function getShopPublisherSelections(
 export async function saveShopPresswall(
   shop: string,
   config: PresswallConfig,
-  selections: ShopPublisherSelection[]
+  selections: ShopPublisherSelection[],
+  options?: { completeOnboarding?: boolean }
 ): Promise<void> {
   const now = new Date().toISOString();
-  const configRow = buildConfigRow(shop, config, now);
+  const configRow = {
+    ...buildConfigRow(shop, config, now),
+    ...(options?.completeOnboarding ? { onboardingCompletedAt: now } : {}),
+  };
   const sanitizedSelections = sanitizeSelections(selections);
 
   await db.transaction(async (tx) => {
     await tx.insert(shopConfigs).values(configRow).onConflictDoUpdate({
       target: shopConfigs.shop,
-      set: configRow,
+      set: {
+        ...configRow,
+        ...(options?.completeOnboarding
+          ? { onboardingCompletedAt: now }
+          : {}),
+      },
     });
 
     await tx.delete(shopPublishers).where(eq(shopPublishers.shop, shop));

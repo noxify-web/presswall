@@ -1,0 +1,1 @@
+ALTER TABLE `shop_configs` ADD `onboarding_completed_at` text;

@@ -9,6 +9,11 @@ import {
   countUnavailableSelections,
   selectedFromApi,
 } from "@/lib/presswall-selections";
+import {
+  applyPresswallTemplate,
+  DEFAULT_PRESSWALL_TEMPLATE_ID,
+  type PresswallTemplateId,
+} from "@/lib/presswall-templates";
 import type {
   PresswallConfig,
   PublisherCatalogItem,
@@ -18,21 +23,27 @@ import type {
 
 export interface PresswallEditor {
   addCustomPublisher: (name: string, svg: string) => void;
+  applyTemplate: (templateId: PresswallTemplateId) => void;
   catalog: PublisherCatalogItem[];
   catalogById: Map<string, PublisherCatalogItem>;
   category: string;
+  completeOnboarding: () => Promise<boolean>;
   config: PresswallConfig;
   isLoading: boolean;
   isSaving: boolean;
   movePublisher: (index: number, direction: -1 | 1) => void;
+  needsOnboarding: boolean;
   removePublisher: (key: string) => void;
   save: () => Promise<void>;
   search: string;
   selected: SelectedPublisher[];
   selectedIds: Set<string>;
+  selectedTemplateId: PresswallTemplateId;
   selections: ShopPublisherSelection[];
   setCategory: (value: string) => void;
+  setNeedsOnboarding: (value: boolean) => void;
   setSearch: (value: string) => void;
+  setSelectedTemplateId: (value: PresswallTemplateId) => void;
   togglePublisher: (publisher: PublisherCatalogItem) => void;
   unavailableCount: number;
   updateConfig: <K extends keyof PresswallConfig>(
@@ -51,6 +62,9 @@ export function usePresswallEditor(): PresswallEditor {
   const [category, setCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] =
+    useState<PresswallTemplateId>(DEFAULT_PRESSWALL_TEMPLATE_ID);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -72,6 +86,7 @@ export function usePresswallEditor(): PresswallEditor {
       setCatalog(publishersData.publishers);
       setConfig(presswallData.config);
       setSelected(selectedFromApi(presswallData.selections));
+      setNeedsOnboarding(Boolean(presswallData.needsOnboarding));
     } catch {
       toast.error("Failed to load Presswall settings");
     } finally {
@@ -146,30 +161,56 @@ export function usePresswallEditor(): PresswallEditor {
     ]);
   }, []);
 
-  const save = useCallback(async () => {
-    setIsSaving(true);
+  const savePresswall = useCallback(
+    async (options?: { completeOnboarding?: boolean }) => {
+      setIsSaving(true);
 
-    try {
-      const response = await adminFetch("/api/presswall", {
-        method: "PUT",
-        body: JSON.stringify({
-          config,
-          selections,
-        }),
-      });
+      try {
+        const response = await adminFetch("/api/presswall", {
+          method: "PUT",
+          body: JSON.stringify({
+            config,
+            selections,
+            completeOnboarding: options?.completeOnboarding,
+          }),
+        });
 
-      if (response.ok) {
-        toast.success("Presswall saved");
-        return;
+        if (!response.ok) {
+          toast.error("Could not save Presswall settings");
+          return false;
+        }
+
+        if (options?.completeOnboarding) {
+          setNeedsOnboarding(false);
+        }
+
+        return true;
+      } catch {
+        toast.error("Could not save Presswall settings");
+        return false;
+      } finally {
+        setIsSaving(false);
       }
+    },
+    [config, selections]
+  );
 
-      toast.error("Could not save Presswall settings");
-    } catch {
-      toast.error("Could not save Presswall settings");
-    } finally {
-      setIsSaving(false);
+  const save = useCallback(async () => {
+    const saved = await savePresswall();
+    if (saved) {
+      toast.success("Presswall saved");
     }
-  }, [config, selections]);
+  }, [savePresswall]);
+
+  const completeOnboarding = useCallback(
+    () => savePresswall({ completeOnboarding: true }),
+    [savePresswall]
+  );
+
+  const applyTemplate = useCallback((templateId: PresswallTemplateId) => {
+    setSelectedTemplateId(templateId);
+    setConfig((current) => applyPresswallTemplate(templateId, current));
+  }, []);
 
   const updateConfig = useCallback(
     <K extends keyof PresswallConfig>(key: K, value: PresswallConfig[K]) => {
@@ -182,20 +223,26 @@ export function usePresswallEditor(): PresswallEditor {
     catalog,
     catalogById,
     category,
+    completeOnboarding,
     config,
     isLoading,
     isSaving,
+    needsOnboarding,
     search,
     selected,
     selectedIds,
+    selectedTemplateId,
     selections,
     unavailableCount,
     addCustomPublisher,
+    applyTemplate,
     movePublisher,
     removePublisher,
     save,
     setCategory,
+    setNeedsOnboarding,
     setSearch,
+    setSelectedTemplateId,
     togglePublisher,
     updateConfig,
   };

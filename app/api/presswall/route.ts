@@ -5,6 +5,7 @@ import { getSessionForRequest } from "@/lib/auth-helpers";
 import {
   getShopConfig,
   getShopPublisherSelections,
+  needsOnboarding,
   saveShopPresswall,
 } from "@/lib/presswall-service";
 import {
@@ -15,6 +16,7 @@ import {
 const saveSchema = z.object({
   config: presswallConfigSchema,
   selections: z.array(shopPublisherSelectionSchema),
+  completeOnboarding: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -23,12 +25,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [config, selections] = await Promise.all([
+  const [config, selections, showOnboarding] = await Promise.all([
     getShopConfig(session.shop),
     getShopPublisherSelections(session.shop),
+    needsOnboarding(session.shop),
   ]);
 
-  return NextResponse.json({ config, selections });
+  return NextResponse.json({
+    config,
+    selections,
+    needsOnboarding: showOnboarding,
+  });
 }
 
 export async function PUT(request: NextRequest) {
@@ -50,8 +57,14 @@ export async function PUT(request: NextRequest) {
   await saveShopPresswall(
     session.shop,
     parsed.data.config,
-    parsed.data.selections
+    parsed.data.selections,
+    {
+      completeOnboarding: parsed.data.completeOnboarding,
+    }
   );
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    needsOnboarding: parsed.data.completeOnboarding ? false : undefined,
+  });
 }
