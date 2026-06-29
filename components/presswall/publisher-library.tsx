@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 interface PublisherLibraryProps {
   catalog: PublisherCatalogItem[];
   category: string;
+  className?: string;
   listClassName?: string;
   onCategoryChange: (value: string) => void;
   onSearchChange: (value: string) => void;
@@ -43,6 +44,7 @@ export function PublisherLibrary({
   onSearchChange,
   category,
   onCategoryChange,
+  className,
   listClassName = "h-80",
 }: PublisherLibraryProps) {
   const filteredCatalog = useMemo(
@@ -61,8 +63,8 @@ export function PublisherLibrary({
   );
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 sm:flex-row">
+    <div className={cn("flex min-h-0 flex-col gap-3", className)}>
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <IconSearch
             className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
