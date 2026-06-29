@@ -94,12 +94,15 @@ async function resolveAuthenticatedAdmin(
   }
 }
 
-export async function authenticateAdmin(searchParams: URLSearchParams) {
+export async function authenticateAdmin(
+  searchParams: URLSearchParams,
+  reloadPath = "/"
+) {
   try {
     return await resolveAuthenticatedAdmin(searchParams);
   } catch (error) {
     if (error instanceof AdminAuthenticationError) {
-      redirect(buildBounceRedirectUrl("/", searchParams));
+      redirect(buildBounceRedirectUrl(reloadPath, searchParams));
     }
 
     throw error;

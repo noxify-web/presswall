@@ -1,7 +1,7 @@
 import type { PresswallConfig } from "@/lib/presswall-types";
 
 const LOGO_GAP_PER_LOGO_HEIGHT = 1.125;
-const HEADING_SPACING_PER_FONT_SIZE = 5 / 3;
+const HEADING_SPACING_PER_FONT_SIZE = 10 / 3;
 
 const LAYOUT_GAP_MULTIPLIER: Record<PresswallConfig["layout"], number> = {
   bar: 1,
@@ -30,7 +30,7 @@ export function deriveLogoGap(
 export function deriveHeadingSpacing(headingFontSize: number): number {
   const raw = headingFontSize * HEADING_SPACING_PER_FONT_SIZE;
 
-  return clampSpacing(raw, 8, 48);
+  return clampSpacing(raw, 8, 80);
 }
 
 export function withDerivedSpacing(config: PresswallConfig): PresswallConfig {
@@ -46,7 +46,19 @@ export function applyDerivedSpacingPatch(
   key: keyof PresswallConfig
 ): Partial<PresswallConfig> {
   if (key === "logoHeight" || key === "layout") {
-    return { gap: deriveLogoGap(config.logoHeight, config.layout) };
+    const patch: Partial<PresswallConfig> = {
+      gap: deriveLogoGap(config.logoHeight, config.layout),
+    };
+
+    if (key === "layout" && config.layout === "bar") {
+      patch.logoSpacing = "space-between";
+    }
+
+    if (key === "layout" && config.layout === "marquee") {
+      patch.logoSpacing = "gap";
+    }
+
+    return patch;
   }
 
   if (key === "headingFontSize") {

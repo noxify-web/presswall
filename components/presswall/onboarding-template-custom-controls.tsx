@@ -39,6 +39,14 @@ const COLOR_MODE_OPTIONS: {
   { value: "color", label: "Full color" },
 ];
 
+const LOGO_SPACING_OPTIONS: {
+  label: string;
+  value: PresswallConfig["logoSpacing"];
+}[] = [
+  { value: "space-between", label: "Spread evenly" },
+  { value: "gap", label: "Fixed gap" },
+];
+
 type CustomTabId = "text" | "layout" | "look" | "spacing";
 
 interface OnboardingTemplateCustomControlsProps {
@@ -324,20 +332,64 @@ export function OnboardingTemplateCustomControls({
             <SliderField
               label="Logo height"
               max={80}
-              min={16}
+              min={10}
               onChange={(value) => onUpdate("logoHeight", value)}
               step={2}
               value={config.logoHeight}
             />
-            <SliderField
-              hint="Updates when logo height or layout changes. Fine-tune here if needed."
-              label="Gap between logos"
-              max={64}
-              min={8}
-              onChange={(value) => onUpdate("gap", value)}
-              step={2}
-              value={config.gap}
-            />
+            {config.layout === "bar" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="logo-spacing">Logo spacing</Label>
+                <Select
+                  onValueChange={(value) =>
+                    onUpdate(
+                      "logoSpacing",
+                      value as PresswallConfig["logoSpacing"]
+                    )
+                  }
+                  value={config.logoSpacing}
+                >
+                  <SelectTrigger id="logo-spacing">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOGO_SPACING_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+            {config.layout === "marquee" ||
+            config.layout === "grid" ||
+            (config.layout === "bar" && config.logoSpacing === "gap") ? (
+              <SliderField
+                hint={
+                  config.layout === "marquee"
+                    ? "Space between logos in the scrolling strip."
+                    : "Updates when logo height or layout changes. Fine-tune here if needed."
+                }
+                label="Gap between logos"
+                max={64}
+                min={8}
+                onChange={(value) => onUpdate("gap", value)}
+                step={2}
+                value={config.gap}
+              />
+            ) : null}
+            {config.layout === "bar" || config.layout === "grid" ? (
+              <SliderField
+                hint="Max width of the heading and logo row."
+                label="Strip width"
+                max={1200}
+                min={360}
+                onChange={(value) => onUpdate("contentMaxWidth", value)}
+                step={20}
+                value={config.contentMaxWidth}
+              />
+            ) : null}
           </ControlSection>
 
           <ControlSection title="Strip padding">

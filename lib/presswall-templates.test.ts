@@ -6,14 +6,32 @@ import {
   getPresswallDesignLabel,
   getResolvedPresswallTemplateConfig,
   resolveOnboardingDesignConfig,
+  resolveTemplateLogoSpacing,
 } from "@/lib/presswall-templates";
 import type { PresswallConfig } from "@/lib/presswall-types";
+
+describe("resolveTemplateLogoSpacing", () => {
+  test("defaults bar layouts to spread evenly", () => {
+    expect(resolveTemplateLogoSpacing("bar")).toBe("space-between");
+    expect(resolveTemplateLogoSpacing("bar", "gap")).toBe("gap");
+  });
+
+  test("keeps fixed gap for marquee and grid layouts", () => {
+    expect(resolveTemplateLogoSpacing("marquee")).toBe("gap");
+    expect(resolveTemplateLogoSpacing("grid")).toBe("gap");
+    expect(resolveTemplateLogoSpacing("marquee", "space-between")).toBe("gap");
+  });
+});
 
 describe("applyPresswallTemplate", () => {
   test("resets omitted keys instead of carrying them from a prior config", () => {
     const softCard = getResolvedPresswallTemplateConfig("soft-card");
 
-    expect(softCard.grayscaleOpacity).toBe(65);
+    expect(softCard.grayscaleOpacity).toBe(
+      DEFAULT_PRESSWALL_CONFIG.grayscaleOpacity
+    );
+    expect(softCard.logoHeight).toBe(28);
+    expect(softCard.colorMode).toBe("mono");
 
     const classic = applyPresswallTemplate("classic");
 
@@ -26,9 +44,23 @@ describe("applyPresswallTemplate", () => {
   test("preserves explicit marquee spacing overrides", () => {
     const marquee = getResolvedPresswallTemplateConfig("marquee");
 
-    expect(marquee.logoHeight).toBe(20);
+    expect(marquee.logoHeight).toBe(28);
     expect(marquee.gap).toBe(50);
+    expect(marquee.logoSpacing).toBe("gap");
     expect(findMatchingPresswallTemplateId(marquee)).toBe("marquee");
+  });
+
+  test("bar templates spread logos evenly by default", () => {
+    const classic = getResolvedPresswallTemplateConfig("classic");
+    const dark = getResolvedPresswallTemplateConfig("dark");
+    const softCard = getResolvedPresswallTemplateConfig("soft-card");
+
+    expect(classic.logoSpacing).toBe("space-between");
+    expect(findMatchingPresswallTemplateId(classic)).toBe("classic");
+    expect(dark.logoHeight).toBe(classic.logoHeight);
+    expect(softCard.logoHeight).toBe(classic.logoHeight);
+    expect(softCard.headingText).toBe(classic.headingText);
+    expect(softCard.paddingY).toBe(classic.paddingY);
   });
 
   test("matches after switching templates from a customized current state", () => {

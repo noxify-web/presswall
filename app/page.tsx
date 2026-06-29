@@ -10,6 +10,7 @@ import {
 import { authenticatePage } from "@/lib/authenticate-page";
 import { hasEmbeddedEntryParams } from "@/lib/embedded-entry";
 import { ensurePublisherCatalogSeeded } from "@/lib/presswall-service";
+import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +51,21 @@ export default async function Page({ searchParams }: PageProps) {
     );
   }
 
-  await authenticatePage(searchParams);
+  const { session } = await authenticatePage(searchParams);
   await ensurePublisherCatalogSeeded();
+
+  if (session.accessToken) {
+    syncStorefrontMetafield(session.shop, session.accessToken).then(
+      (result) => {
+        if (!result.ok) {
+          console.error(
+            "Presswall storefront metafield sync failed",
+            result.error
+          );
+        }
+      }
+    );
+  }
 
   return <AdminDashboard />;
 }

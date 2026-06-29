@@ -117,16 +117,18 @@ export function stripStaleIdTokenFromUrl() {
   window.history.replaceState({}, "", nextUrl);
 }
 
-function redirectToSessionBounce() {
+export function redirectToSessionBounce(reloadPath?: string) {
   const params = new URLSearchParams(window.location.search);
   params.delete("id_token");
 
-  const reloadPath = params.toString()
-    ? `${window.location.pathname}?${params.toString()}`
-    : window.location.pathname;
+  const resolvedReloadPath =
+    reloadPath ??
+    (params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname);
 
   const bounceParams = new URLSearchParams(params);
-  bounceParams.set("shopify-reload", reloadPath);
+  bounceParams.set("shopify-reload", resolvedReloadPath);
 
   window.location.assign(`/session-token-bounce?${bounceParams.toString()}`);
 }

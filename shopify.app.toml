@@ -2,11 +2,11 @@
 
 client_id = "b45929a097e4af2198f5fea412a7a1ed"
 name = "Presswall"
-application_url = "http://localhost:3000"
+application_url = "https://reissue-irritable-slider.ngrok-free.dev"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 dev_store_url = "noxify-dvgwvtrt.myshopify.com"
 
 [access_scopes]
@@ -14,8 +14,14 @@ scopes = "write_app_proxy,read_themes"
 
 [auth]
 redirect_urls = [
-  "http://localhost:3000/api/auth/callback"
+  "https://reissue-irritable-slider.ngrok-free.dev/api/auth/callback"
 ]
+
+[shop.metafields.app.storefront_config]
+type = "json"
+name = "Storefront config"
+access.admin = "merchant_read_write"
+access.storefront = "public_read"
 
 [app_proxy]
 url = "/api/proxy"

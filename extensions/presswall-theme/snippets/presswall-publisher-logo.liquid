@@ -1,0 +1,27 @@
+{%- comment -%}
+  Renders a publisher logo from theme extension assets (bundled outlets)
+  or inline SVG for custom merchant uploads.
+{%- endcomment -%}
+{%- assign logo_height = height | default: 28 -%}
+{%- assign is_custom_publisher = false -%}
+{%- if publisher.id contains 'custom' -%}
+  {%- assign is_custom_publisher = true -%}
+{%- endif -%}
+{%- if publisher.logoSvg != blank -%}
+  <img
+    alt=""
+    class="presswall-logo-img"
+    loading="lazy"
+    src="data:image/svg+xml,{{ publisher.logoSvg | url_encode }}"
+  >
+{%- elsif is_custom_publisher == false and publisher.id != blank -%}
+  {%- assign bundled_logo = publisher.id | append: '.png' -%}
+  <img
+    alt=""
+    class="presswall-logo-img"
+    loading="lazy"
+    src="{{ bundled_logo | asset_url }}"
+  >
+{%- else -%}
+  <span>{{ publisher.name | escape }}</span>
+{%- endif -%}

@@ -12,45 +12,42 @@ export interface PresswallTemplate {
   name: string;
 }
 
+const CLASSIC_BAR_TEMPLATE_BASE = {
+  headingText: "As seen on",
+  showHeading: true,
+  colorMode: "mono",
+  layout: "bar",
+  headingAlignment: "center",
+  logoAlignment: "center",
+  borderRadius: 0,
+  paddingY: 40,
+  paddingX: 24,
+  contentMaxWidth: 840,
+  logoHeight: 28,
+  headingFontSize: 12,
+  logoSpacing: "space-between",
+} as const satisfies Partial<PresswallConfig>;
+
 export const PRESSWALL_TEMPLATES: PresswallTemplate[] = [
   {
     id: "classic",
     name: "Classic",
     description: "Centered heading with a clean horizontal logo bar.",
     config: {
-      headingText: "As seen on",
-      showHeading: true,
-      colorMode: "mono",
-      layout: "bar",
-      headingAlignment: "center",
-      logoAlignment: "center",
+      ...CLASSIC_BAR_TEMPLATE_BASE,
       backgroundColor: "transparent",
       textColor: "#111111",
-      borderRadius: 0,
-      paddingY: 20,
-      paddingX: 24,
-      logoHeight: 32,
-      headingFontSize: 16,
     },
   },
   {
     id: "dark",
     name: "Dark band",
-    description: "Bold dark strip that pops on light storefront pages.",
+    description:
+      "Classic layout on a bold dark strip for light storefront pages.",
     config: {
-      headingText: "As seen on",
-      showHeading: true,
-      colorMode: "mono",
-      layout: "bar",
-      headingAlignment: "center",
-      logoAlignment: "center",
+      ...CLASSIC_BAR_TEMPLATE_BASE,
       backgroundColor: "#0a0a0a",
       textColor: "#fafafa",
-      borderRadius: 0,
-      paddingY: 20,
-      paddingX: 24,
-      logoHeight: 32,
-      headingFontSize: 16,
     },
   },
   {
@@ -66,34 +63,24 @@ export const PRESSWALL_TEMPLATES: PresswallTemplate[] = [
       logoAlignment: "left",
       backgroundColor: "transparent",
       textColor: "#111111",
-      headingFontSize: 14,
+      headingFontSize: 12,
       borderRadius: 0,
-      paddingY: 16,
+      paddingY: 32,
       paddingX: 16,
-      logoHeight: 20,
+      logoHeight: 28,
       gap: 50,
+      logoSpacing: "gap",
       marqueeSpeed: 30,
     },
   },
   {
     id: "soft-card",
     name: "Soft card",
-    description: "Rounded card on a light background with muted logos.",
+    description: "Classic layout on a soft light-gray band.",
     config: {
-      headingText: "Featured in",
-      showHeading: true,
-      colorMode: "muted",
-      layout: "bar",
-      headingAlignment: "center",
-      logoAlignment: "center",
+      ...CLASSIC_BAR_TEMPLATE_BASE,
       backgroundColor: "#f4f4f5",
-      textColor: "#18181b",
-      borderRadius: 12,
-      paddingY: 24,
-      paddingX: 24,
-      logoHeight: 30,
-      headingFontSize: 16,
-      grayscaleOpacity: 65,
+      textColor: "#111111",
     },
   },
 ];
@@ -113,6 +100,21 @@ export function getTemplatePreviewTheme(
   templateId: PresswallTemplateId
 ): "light" | "dark" {
   return templateId === "dark" ? "dark" : "light";
+}
+
+export function resolveTemplateLogoSpacing(
+  layout: PresswallConfig["layout"],
+  explicit?: PresswallConfig["logoSpacing"]
+): PresswallConfig["logoSpacing"] {
+  if (layout === "marquee") {
+    return "gap";
+  }
+
+  if (layout === "bar") {
+    return explicit === "gap" ? "gap" : "space-between";
+  }
+
+  return "gap";
 }
 
 export function getPresswallTemplate(
@@ -142,6 +144,10 @@ export function applyPresswallTemplate(
     ...(explicitHeadingSpacing === undefined
       ? {}
       : { headingSpacing: explicitHeadingSpacing }),
+    logoSpacing: resolveTemplateLogoSpacing(
+      resolved.layout,
+      template.config.logoSpacing
+    ),
   };
 }
 

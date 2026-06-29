@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buildAdminPath } from "@/lib/admin-path";
+import { navigateAdminPath } from "@/lib/admin-navigation";
 import type { MerchantOverviewData } from "@/lib/merchant-overview-data";
 import type { PresswallViewport } from "@/lib/presswall-layout-style";
 
@@ -258,7 +258,7 @@ export function MerchantOverview({ data }: MerchantOverviewProps) {
                 <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />
                 <Button
                   onClick={() => {
-                    window.location.assign(buildAdminPath("/editor"));
+                    navigateAdminPath("/editor").catch(() => undefined);
                   }}
                   size="sm"
                   type="button"

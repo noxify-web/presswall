@@ -12,6 +12,7 @@ import {
   presswallConfigSchema,
   shopPublisherSelectionSchema,
 } from "@/lib/presswall-types";
+import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 const saveSchema = z.object({
   config: presswallConfigSchema,
@@ -30,6 +31,17 @@ export async function GET(request: NextRequest) {
     getShopPublisherSelections(session.shop),
     needsOnboarding(session.shop),
   ]);
+
+  const accessToken = session.accessToken;
+  if (!accessToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  syncStorefrontMetafield(session.shop, accessToken).then((result) => {
+    if (!result.ok) {
+      console.error("Presswall storefront metafield sync failed", result.error);
+    }
+  });
 
   return NextResponse.json({
     config,
@@ -62,6 +74,20 @@ export async function PUT(request: NextRequest) {
       completeOnboarding: parsed.data.completeOnboarding,
     }
   );
+
+  const accessToken = session.accessToken;
+  if (!accessToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const syncResult = await syncStorefrontMetafield(session.shop, accessToken);
+
+  if (!syncResult.ok) {
+    console.error(
+      "Presswall storefront metafield sync failed",
+      syncResult.error
+    );
+  }
 
   return NextResponse.json({
     ok: true,

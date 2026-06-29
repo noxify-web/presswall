@@ -1,7 +1,8 @@
 import { authenticateAdmin } from "@/lib/authenticate-admin";
 
 export async function authenticatePage(
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  searchParams: Promise<Record<string, string | string[] | undefined>>,
+  reloadPath = "/"
 ) {
   const params = await searchParams;
   const query = new URLSearchParams();
@@ -12,10 +13,11 @@ export async function authenticatePage(
     }
   }
 
-  const { shop } = await authenticateAdmin(query);
+  const { shop, session } = await authenticateAdmin(query, reloadPath);
 
   return {
     shop,
+    session,
     shopifyApiKey: process.env.SHOPIFY_API_KEY ?? "",
   };
 }

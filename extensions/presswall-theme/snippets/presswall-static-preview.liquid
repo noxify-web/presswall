@@ -1,0 +1,34 @@
+<div
+  class="presswall-shell presswall-static-preview"
+  data-presswall-static-preview
+  style="--presswall-padding-y:20px;--presswall-padding-x:24px;--presswall-content-max-width:840px;--presswall-logo-height:28px;--presswall-gap:32px;--presswall-heading-size:12px;--presswall-heading-spacing:40px"
+>
+    <div class="presswall-content">
+    <p
+      class="presswall-heading presswall-heading-align-center"
+      style="color:#111111"
+    >
+      As seen on
+    </p>
+    <div
+      class="presswall-bar presswall-spacing-space-between presswall-align-center"
+      style="--lpr-d:4;--lpr-m:2"
+    >
+      {%- assign preview_logos = 'preview-forbes.png,preview-techcrunch.png,preview-wired.png,preview-bloomberg.png'
+        | split: ','
+      -%}
+      {%- for logo in preview_logos -%}
+        <div class="presswall-logo" style="height:28px;filter:grayscale(100%)">
+          <img
+            alt=""
+            class="presswall-logo-img"
+            height="28"
+            loading="lazy"
+            src="{{ logo | strip | asset_url }}"
+            width="120"
+          >
+        </div>
+      {%- endfor -%}
+    </div>
+    </div>
+</div>

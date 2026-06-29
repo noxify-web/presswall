@@ -38,7 +38,8 @@
   },
   "name": "presswall",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3001",
+    "dev:shopify": "shopify app dev --tunnel-url=https://reissue-irritable-slider.ngrok-free.dev:3000",
     "build": "next build",
     "start": "next start",
     "lint": "ultracite check",

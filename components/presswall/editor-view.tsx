@@ -13,14 +13,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { usePresswallEditor } from "@/hooks/use-presswall-editor";
-import { buildAdminPath } from "@/lib/admin-path";
+import { navigateAdminPath } from "@/lib/admin-navigation";
 
 export function EditorView() {
   const editor = usePresswallEditor();
 
   useEffect(() => {
     if (!editor.isLoading && editor.needsOnboarding) {
-      window.location.assign(buildAdminPath("/"));
+      navigateAdminPath("/").catch(() => undefined);
     }
   }, [editor.isLoading, editor.needsOnboarding]);
 

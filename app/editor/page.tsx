@@ -51,7 +51,7 @@ export default async function EditorPage({ searchParams }: PageProps) {
     );
   }
 
-  await authenticatePage(searchParams);
+  await authenticatePage(searchParams, "/editor");
   await ensurePublisherCatalogSeeded();
 
   return <EditorView />;

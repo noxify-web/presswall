@@ -10,28 +10,79 @@ const INLINE_RGB_COLOR_PATTERN =
   /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
 
 (function presswallInit() {
+  if (
+    typeof globalThis.Shopify !== "undefined" &&
+    globalThis.Shopify.visualPreviewMode
+  ) {
+    return;
+  }
+
   const roots = document.querySelectorAll("[data-presswall-root]");
   if (!roots.length) {
     return;
   }
 
   for (const root of roots) {
-    const proxyUrl = root.dataset.proxyUrl;
-    if (!proxyUrl) {
-      return;
+    if (root.querySelector("[data-presswall-live]")) {
+      continue;
     }
 
-    fetch(proxyUrl)
+    const proxyUrl = root.dataset.proxyUrl;
+    if (!proxyUrl) {
+      continue;
+    }
+
+    const isDesignMode = root.hasAttribute("data-presswall-design-mode");
+    const hasStaticPreview = Boolean(
+      root.querySelector("[data-presswall-static-preview]")
+    );
+    const inlineConfig = root.querySelector("[data-presswall-config]");
+
+    if (inlineConfig?.textContent) {
+      try {
+        const payload = JSON.parse(inlineConfig.textContent);
+        const rendered = renderPresswall(payload);
+        if (rendered) {
+          root.innerHTML = rendered;
+          continue;
+        }
+      } catch {
+        // Fall back to app proxy fetch below.
+      }
+    }
+
+    fetch(proxyUrl, { credentials: "same-origin", cache: "no-store" })
       .then((response) => {
         if (!response.ok) {
           throw new Error("Load failed");
         }
+
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("Invalid response");
+        }
+
         return response.json();
       })
       .then((payload) => {
-        root.innerHTML = renderPresswall(payload);
+        const rendered = renderPresswall(payload);
+        if (!rendered) {
+          if (isDesignMode && hasStaticPreview) {
+            return;
+          }
+
+          root.innerHTML =
+            '<div class="presswall-loading">Add outlets in Presswall.</div>';
+          return;
+        }
+
+        root.innerHTML = rendered;
       })
       .catch(() => {
+        if (isDesignMode && hasStaticPreview) {
+          return;
+        }
+
         root.innerHTML =
           '<div class="presswall-loading">Not configured yet.</div>';
       });
@@ -39,7 +90,7 @@ const INLINE_RGB_COLOR_PATTERN =
 
   function renderPresswall(config) {
     if (!config.publishers || config.publishers.length === 0) {
-      return '<div class="presswall-loading">Add outlets in Presswall.</div>';
+      return "";
     }
 
     const backgroundColor = sanitizeCssColor(
@@ -50,9 +101,10 @@ const INLINE_RGB_COLOR_PATTERN =
     const borderRadius = sanitizeCssSize(config.borderRadius, 0);
     const paddingY = sanitizeCssSize(config.paddingY, 16);
     const paddingX = sanitizeCssSize(config.paddingX, 16);
-    const gap = sanitizeCssSize(config.gap, 36);
-    const headingFontSize = sanitizeCssSize(config.headingFontSize, 16);
-    const headingSpacing = sanitizeCssSize(config.headingSpacing, 26);
+    const contentMaxWidth = sanitizeCssSize(config.contentMaxWidth, 840);
+    const gap = sanitizeCssSize(config.gap, 12);
+    const headingFontSize = sanitizeCssSize(config.headingFontSize, 12);
+    const headingSpacing = sanitizeCssSize(config.headingSpacing, 40);
     const logosPerRowDesktop = clampInt(
       config.logosPerRowDesktop ?? config.logosPerRow,
       4,
@@ -72,7 +124,10 @@ const INLINE_RGB_COLOR_PATTERN =
       `background:${backgroundColor}`,
       `color:${textColor}`,
       `border-radius:${borderRadius}px`,
-      `padding:${paddingY}px ${paddingX}px`,
+      `--presswall-padding-y:${paddingY}px`,
+      `--presswall-padding-x:${paddingX}px`,
+      `--presswall-logo-height:${sanitizeCssSize(config.logoHeight, 28)}px`,
+      `--presswall-content-max-width:${contentMaxWidth}px`,
       `--presswall-gap:${gap}px`,
       `--presswall-heading-size:${headingFontSize}px`,
       `--presswall-heading-spacing:${headingSpacing}px`,
@@ -101,15 +156,20 @@ const INLINE_RGB_COLOR_PATTERN =
     }
 
     if (config.layout === "grid") {
-      return `<div class="presswall-shell" style="${style}">${heading}<div class="presswall-grid presswall-align-${logoAlignment}" style="--lpr-d:${logosPerRowDesktop};--lpr-m:${logosPerRowMobile}">${config.publishers
+      return `<div class="presswall-shell" style="${style}"><div class="presswall-content">${heading}<div class="presswall-grid presswall-align-${logoAlignment}" style="--lpr-d:${logosPerRowDesktop};--lpr-m:${logosPerRowMobile}">${config.publishers
         .map(
           (publisher) =>
             `<div class="pw-gi">${renderLogo(publisher, config, logoStyle)}</div>`
         )
-        .join("")}</div></div>`;
+        .join("")}</div></div></div>`;
     }
 
-    return `<div class="presswall-shell" style="${style}">${heading}<div class="presswall-bar presswall-align-${logoAlignment}" style="--lpr-d:${logosPerRowDesktop};--lpr-m:${logosPerRowMobile}">${logos}</div></div>`;
+    const logoSpacing =
+      config.layout === "bar" && config.logoSpacing !== "gap"
+        ? "space-between"
+        : "gap";
+
+    return `<div class="presswall-shell" style="${style}"><div class="presswall-content">${heading}<div class="presswall-bar presswall-spacing-${logoSpacing} presswall-align-${logoAlignment}" style="--lpr-d:${logosPerRowDesktop};--lpr-m:${logosPerRowMobile}">${logos}</div></div></div>`;
   }
 
   function renderMarquee(c, s, bg, tx, hf, sp, logos) {
@@ -123,7 +183,7 @@ const INLINE_RGB_COLOR_PATTERN =
   }
 
   function renderLogo(publisher, config, logoStyle) {
-    const height = sanitizeCssSize(config.logoHeight, 32);
+    const height = sanitizeCssSize(config.logoHeight, 28);
     let content;
     if (publisher.logoImageUrl) {
       content = `<img alt="" class="presswall-logo-img" src="${escapeHtml(publisher.logoImageUrl)}" />`;

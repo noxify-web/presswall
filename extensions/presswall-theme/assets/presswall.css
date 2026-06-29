@@ -1,9 +1,63 @@
 .presswall-root {
+  box-sizing: border-box;
   width: 100%;
+  overflow-x: clip;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
   color: inherit;
+}
+
+.presswall-root {
+  position: relative;
+  right: 50%;
+  left: 50%;
+  box-sizing: border-box;
+  flex: 1 1 100%;
+  align-self: stretch;
+  width: 100vw;
+  max-width: 100vw;
+  margin-right: -50vw;
+  margin-left: -50vw;
+}
+
+.shopify-app-block.presswall-block {
+  position: relative;
+  right: 50%;
+  left: 50%;
+  box-sizing: border-box;
+  flex: 1 1 100%;
+  align-self: stretch;
+  width: 100vw;
+  max-width: 100vw;
+  margin-right: -50vw;
+  margin-left: -50vw;
+}
+
+.shopify-app-block.presswall-block .presswall-root {
+  position: static;
+  right: auto;
+  left: auto;
+  flex: unset;
+  align-self: auto;
+  width: 100%;
+  max-width: 100%;
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.shopify-section:has(.presswall-root),
+.shopify-section:has(.shopify-app-block.presswall-block) {
+  max-width: none;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.shopify-section:has(.presswall-root) > .page-width,
+.shopify-section:has(.shopify-app-block.presswall-block) > .page-width {
+  max-width: none;
+  padding-right: 0;
+  padding-left: 0;
 }
 
 .presswall-loading {
@@ -13,10 +67,43 @@
   text-align: center;
 }
 
+.presswall-static-preview {
+  width: 100%;
+}
+
 .presswall-shell {
   --presswall-gap: 36px;
   --presswall-heading-size: 16px;
   --presswall-heading-spacing: 26px;
+  --presswall-padding-y: 16px;
+  --presswall-padding-x: 16px;
+  --presswall-padding-x-desktop-boost: 20px;
+  --presswall-logo-height: 28px;
+  --presswall-logo-max-width: calc(var(--presswall-logo-height) * 3);
+  --presswall-content-max-width: 840px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--presswall-padding-y) var(--presswall-padding-x);
+}
+
+.presswall-content {
+  width: 100%;
+  max-width: var(--presswall-content-max-width);
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .presswall-shell {
+    padding-right: calc(
+      var(--presswall-padding-x) +
+      var(--presswall-padding-x-desktop-boost)
+    );
+    padding-left: calc(
+      var(--presswall-padding-x) +
+      var(--presswall-padding-x-desktop-boost)
+    );
+  }
 }
 
 .presswall-heading {
@@ -40,7 +127,31 @@
   text-align: right;
 }
 
-.presswall-bar,
+.presswall-bar {
+  display: flex;
+  flex-flow: row wrap;
+  gap: var(--presswall-gap);
+  align-items: center;
+  width: 100%;
+}
+
+.presswall-bar.presswall-align-left {
+  justify-content: flex-start;
+}
+
+.presswall-bar.presswall-align-center {
+  justify-content: center;
+}
+
+.presswall-bar.presswall-align-right {
+  justify-content: flex-end;
+}
+
+.presswall-bar.presswall-spacing-space-between {
+  gap: 0;
+  justify-content: space-between;
+}
+
 .presswall-grid {
   display: grid;
   grid-template-columns: repeat(var(--lpr-m, 2), minmax(0, 1fr));
@@ -50,23 +161,19 @@
 }
 
 @media (min-width: 640px) {
-  .presswall-bar,
   .presswall-grid {
     grid-template-columns: repeat(var(--lpr-d, 4), minmax(0, 1fr));
   }
 }
 
-.presswall-bar.presswall-align-left,
 .presswall-grid.presswall-align-left {
   justify-items: start;
 }
 
-.presswall-bar.presswall-align-center,
 .presswall-grid.presswall-align-center {
   justify-items: center;
 }
 
-.presswall-bar.presswall-align-right,
 .presswall-grid.presswall-align-right {
   justify-items: end;
 }
@@ -83,28 +190,19 @@
   align-items: center;
   justify-content: center;
   width: auto;
-  max-width: 12.5rem;
+  height: var(--presswall-logo-height);
+  max-height: var(--presswall-logo-height);
 }
 
 .presswall-logo svg,
 .presswall-logo-img {
   display: block;
   width: auto;
-  max-width: 12.5rem;
-  height: 100%;
+  max-width: var(--presswall-logo-max-width);
+  height: auto;
+  max-height: var(--presswall-logo-height);
   object-fit: contain;
   object-position: center;
-}
-
-.presswall-bar .presswall-logo,
-.presswall-grid .presswall-logo {
-  width: auto;
-  max-width: none;
-}
-
-.presswall-bar .presswall-logo-img,
-.presswall-grid .presswall-logo-img {
-  max-width: none;
 }
 
 .pw-mq-row {
@@ -189,16 +287,4 @@
   to {
     transform: translateX(calc(-100% / var(--pw-mq-n, 2)));
   }
-}
-
-.presswall-align-left {
-  justify-content: flex-start;
-}
-
-.presswall-align-center {
-  justify-content: center;
-}
-
-.presswall-align-right {
-  justify-content: flex-end;
 }

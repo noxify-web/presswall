@@ -66,6 +66,11 @@ function mapConfigRow(
     logosPerRowMobile:
       row.logosPerRowMobile ?? DEFAULT_PRESSWALL_CONFIG.logosPerRowMobile,
     gap: row.gap,
+    logoSpacing:
+      row.logoSpacing ??
+      (row.layout === "bar"
+        ? "space-between"
+        : DEFAULT_PRESSWALL_CONFIG.logoSpacing),
     headingAlignment: row.headingAlignment,
     logoAlignment: row.logoAlignment ?? row.headingAlignment,
     backgroundColor: row.backgroundColor,
@@ -73,6 +78,8 @@ function mapConfigRow(
     borderRadius: row.borderRadius,
     paddingY: row.paddingY,
     paddingX: row.paddingX,
+    contentMaxWidth:
+      row.contentMaxWidth ?? DEFAULT_PRESSWALL_CONFIG.contentMaxWidth,
     marqueeSpeed: row.marqueeSpeed,
     grayscaleOpacity: row.grayscaleOpacity,
   });
@@ -93,6 +100,7 @@ function buildConfigRow(shop: string, config: PresswallConfig, now: string) {
     logosPerRowDesktop: config.logosPerRowDesktop,
     logosPerRowMobile: config.logosPerRowMobile,
     gap: config.gap,
+    logoSpacing: config.logoSpacing,
     headingAlignment: config.headingAlignment,
     logoAlignment: config.logoAlignment,
     backgroundColor: config.backgroundColor,
@@ -100,6 +108,7 @@ function buildConfigRow(shop: string, config: PresswallConfig, now: string) {
     borderRadius: config.borderRadius,
     paddingY: config.paddingY,
     paddingX: config.paddingX,
+    contentMaxWidth: config.contentMaxWidth,
     marqueeSpeed: config.marqueeSpeed,
     grayscaleOpacity: config.grayscaleOpacity,
     updatedAt: now,

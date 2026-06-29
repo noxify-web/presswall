@@ -325,3 +325,11 @@
   border: 0 !important;
   clip: rect(0, 0, 0, 0) !important;
 }
+
+.toaster[data-sonner-toaster] {
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}

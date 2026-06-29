@@ -20,6 +20,18 @@ const MIGRATIONS = [
     updated_at text NOT NULL
   )`,
   "CREATE INDEX IF NOT EXISTS shop_custom_templates_shop_idx ON shop_custom_templates (shop)",
+  "ALTER TABLE shop_configs ADD COLUMN logo_spacing text DEFAULT 'space-between' NOT NULL",
+  "UPDATE shop_configs SET logo_spacing = 'space-between' WHERE layout = 'bar'",
+  `UPDATE shop_configs
+    SET logo_height = 11,
+        heading_font_size = 12,
+        heading_spacing = 40,
+        gap = 12
+    WHERE logo_height >= 16`,
+  "UPDATE shop_configs SET logo_height = logo_height * 2, gap = 24 WHERE logo_height <= 11",
+  "ALTER TABLE shop_configs ADD COLUMN content_max_width integer DEFAULT 840 NOT NULL",
+  "UPDATE shop_configs SET content_max_width = 840 WHERE content_max_width = 640",
+  "UPDATE shop_configs SET logo_height = 28, gap = 32 WHERE logo_height = 22",
 ];
 
 function isIgnorableMigrationError(error: unknown): boolean {

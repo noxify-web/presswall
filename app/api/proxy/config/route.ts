@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(payload, {
     headers: {
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": "*",
     },
   });

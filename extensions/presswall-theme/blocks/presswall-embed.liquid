@@ -3,7 +3,7 @@
   data-presswall-root
   data-proxy-url="{{ shop.url }}/apps/presswall/config"
 >
-  <div class="presswall-loading">Loading press logos...</div>
+  {% render 'presswall-live' %}
 </div>
 
 {% schema %}
@@ -11,7 +11,6 @@
   "name": "Storefront embed",
   "target": "body",
   "stylesheet": "presswall.css",
-  "javascript": "presswall.js",
   "settings": [
     {
       "type": "paragraph",

@@ -8,6 +8,10 @@ import {
 } from "@/lib/presswall-layout-style";
 import { getLogoImageStyle } from "@/lib/presswall-logo-style";
 import { getPreviewColors } from "@/lib/presswall-preview-colors";
+import {
+  formatContentMaxWidth,
+  getEffectiveShellPaddingX,
+} from "@/lib/presswall-shell-padding";
 import { scaleSpacingForPreview } from "@/lib/presswall-spacing";
 import type {
   PresswallConfig,
@@ -70,7 +74,7 @@ export function OnboardingPreview({
         isTemplateThumbnail ? TEMPLATE_THUMBNAIL_PADDING_CAP : 12
       );
   const paddingX = isLivePreview
-    ? config.paddingX
+    ? getEffectiveShellPaddingX(config.paddingX, viewport)
     : Math.min(
         config.paddingX,
         isTemplateThumbnail ? TEMPLATE_THUMBNAIL_PADDING_CAP : 12
@@ -78,7 +82,7 @@ export function OnboardingPreview({
 
   let logoMaxWidth = 56;
   if (isLivePreview) {
-    logoMaxWidth = 200;
+    logoMaxWidth = Math.round(config.logoHeight * 3);
   } else if (isTemplateThumbnail) {
     logoMaxWidth = TEMPLATE_THUMBNAIL_LOGO_MAX_WIDTH;
   }
@@ -103,20 +107,31 @@ export function OnboardingPreview({
         padding: `${paddingY}px ${paddingX}px`,
       }}
     >
-      <PresswallStrip
-        backgroundColor={previewColors.backgroundColor}
-        config={{ ...config, gap }}
-        emptyState={onboardingEmptyState}
-        headingOptions={{
-          compact: !isLivePreview,
-          compactFontSizeCap: isTemplateThumbnail ? 6 : 8,
-        }}
-        items={items}
-        logosPerRow={logosPerRow}
-        renderLogo={renderLogo}
-        staticLayoutItemLimit={staticLimit}
-        textColor={previewColors.textColor}
-      />
+      <div
+        className={cn(
+          isLivePreview && config.layout !== "marquee" && "mx-auto w-full"
+        )}
+        style={
+          isLivePreview && config.layout !== "marquee"
+            ? { maxWidth: formatContentMaxWidth(config.contentMaxWidth) }
+            : undefined
+        }
+      >
+        <PresswallStrip
+          backgroundColor={previewColors.backgroundColor}
+          config={{ ...config, gap }}
+          emptyState={onboardingEmptyState}
+          headingOptions={{
+            compact: !isLivePreview,
+            compactFontSizeCap: isTemplateThumbnail ? 6 : 8,
+          }}
+          items={items}
+          logosPerRow={logosPerRow}
+          renderLogo={renderLogo}
+          staticLayoutItemLimit={staticLimit}
+          textColor={previewColors.textColor}
+        />
+      </div>
     </div>
   );
 }

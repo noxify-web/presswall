@@ -181,7 +181,7 @@ export function buildThemeActivationUrls(
 
   return {
     activateEmbedUrl: `${editorBase}?context=apps&activateAppId=${apiKey}/${EMBED_BLOCK_HANDLE}`,
-    activateSectionUrl: `${editorBase}?template=product&addAppBlockId=${apiKey}/${SECTION_BLOCK_HANDLE}&target=newAppsSection`,
+    activateSectionUrl: `${editorBase}?template=index&addAppBlockId=${apiKey}/${SECTION_BLOCK_HANDLE}&target=newAppsSection`,
   };
 }
 

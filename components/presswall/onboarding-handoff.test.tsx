@@ -19,6 +19,16 @@ const CATALOG_FIXTURE: PublisherCatalogItem[] = [
 
 const STEP_TWO_LABEL = /Step 2 of 3 — Design your press strip/;
 
+mock.module("@/components/presswall/onboarding-preview-canvas", () => ({
+  OnboardingPreviewCanvas: () => (
+    <div data-testid="read-only-preview">Preview</div>
+  ),
+}));
+
+mock.module("@/components/presswall/onboarding-preview", () => ({
+  OnboardingPreview: () => <div data-testid="template-preview">Preview</div>,
+}));
+
 let savedSelections: ShopPublisherSelection[] | undefined;
 
 function setupHandoffMocks() {
@@ -72,6 +82,7 @@ function setupHandoffMocks() {
     captureIdTokenFromUrl: () => undefined,
     stripStaleIdTokenFromUrl: () => undefined,
     getSessionToken: () => Promise.resolve("test-token"),
+    redirectToSessionBounce: () => undefined,
   }));
 }
 

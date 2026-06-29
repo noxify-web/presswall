@@ -16,6 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      duration={3000}
       icons={{
         success: <IconCircleCheck className="size-4" stroke={2} />,
         info: <IconInfoCircle className="size-4" stroke={2} />,
@@ -23,6 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <IconCircleX className="size-4" stroke={2} />,
         loading: <IconLoader2 className="size-4 animate-spin" stroke={2} />,
       }}
+      position="bottom-center"
       style={
         {
           "--normal-bg": "var(--popover)",
@@ -33,6 +35,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       theme={theme as ToasterProps["theme"]}
       toastOptions={{
+        duration: 3000,
         classNames: {
           toast: "cn-toast",
         },

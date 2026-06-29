@@ -10,6 +10,8 @@ import {
   getHeadingStyle,
 } from "@/lib/presswall-heading-style";
 import {
+  getLogosBarClassName,
+  getLogosBarStyle,
   getLogosRowGridClassName,
   getLogosRowGridStyle,
 } from "@/lib/presswall-layout-style";
@@ -32,6 +34,7 @@ export type PresswallStripConfig = Pick<
   | "layout"
   | "logoAlignment"
   | "gap"
+  | "logoSpacing"
   | "marqueeSpeed"
 >;
 
@@ -80,6 +83,33 @@ function StaticHeading({
     >
       {config.headingText}
     </p>
+  );
+}
+
+function LogoBar({
+  gap,
+  items,
+  logoAlignment,
+  logoSpacing,
+  renderLogo,
+}: {
+  gap: number;
+  items: StorefrontPublisher[];
+  logoAlignment: PresswallStripConfig["logoAlignment"];
+  logoSpacing: PresswallStripConfig["logoSpacing"];
+  renderLogo: (item: StorefrontPublisher) => React.ReactNode;
+}) {
+  return (
+    <div
+      className={getLogosBarClassName(logoAlignment, logoSpacing)}
+      style={getLogosBarStyle(gap, logoSpacing)}
+    >
+      {items.map((item) => (
+        <div className="flex min-w-0 items-center" key={item.id}>
+          {renderLogo(item)}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -166,13 +196,23 @@ export const PresswallStrip = memo(function PresswallStrip({
         headingOptions={headingOptions}
         textColor={textColor}
       />
-      <LogoGrid
-        gap={config.gap}
-        items={displayItems}
-        logoAlignment={config.logoAlignment}
-        logosPerRow={logosPerRow}
-        renderLogo={renderLogo}
-      />
+      {config.layout === "grid" ? (
+        <LogoGrid
+          gap={config.gap}
+          items={displayItems}
+          logoAlignment={config.logoAlignment}
+          logosPerRow={logosPerRow}
+          renderLogo={renderLogo}
+        />
+      ) : (
+        <LogoBar
+          gap={config.gap}
+          items={displayItems}
+          logoAlignment={config.logoAlignment}
+          logoSpacing={config.logoSpacing}
+          renderLogo={renderLogo}
+        />
+      )}
     </>
   );
 });

@@ -1,9 +1,24 @@
+<div
+  class="presswall-root"
+  data-presswall-root
+  data-proxy-url="{{ shop.url }}/apps/presswall/config"
+  {% if request.design_mode %}
+    data-presswall-design-mode
+  {% endif %}
+>
+  {% if request.design_mode %}
+    {% render 'presswall-static-preview' %}
+  {% else %}
+    {% render 'presswall-live' %}
+  {% endif %}
+</div>
+
 {% schema %}
 {
   "name": "Presswall",
   "target": "section",
+  "class": "presswall-block",
   "stylesheet": "presswall.css",
-  "javascript": "presswall.js",
   "settings": [
     {
       "type": "paragraph",
@@ -12,11 +27,3 @@
   ]
 }
 {% endschema %}
-
-<div
-  class="presswall-root"
-  data-presswall-root
-  data-proxy-url="{{ shop.url }}/apps/presswall/config"
->
-  <div class="presswall-loading">Loading press logos...</div>
-</div>

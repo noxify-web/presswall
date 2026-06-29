@@ -4,10 +4,10 @@ import type { PresswallConfig } from "@/lib/presswall-types";
 const BASE_PRESSWALL_CONFIG = {
   headingText: "As seen on",
   showHeading: true,
-  headingFontSize: 16,
+  headingFontSize: 12,
   colorMode: "mono",
   layout: "bar",
-  logoHeight: 32,
+  logoHeight: 28,
   logosPerRowDesktop: 4,
   logosPerRowMobile: 2,
   headingAlignment: "center",
@@ -15,10 +15,12 @@ const BASE_PRESSWALL_CONFIG = {
   backgroundColor: "transparent",
   textColor: "#111111",
   borderRadius: 0,
-  paddingY: 20,
+  paddingY: 40,
   paddingX: 24,
+  contentMaxWidth: 840,
   marqueeSpeed: 30,
   grayscaleOpacity: 70,
+  logoSpacing: "space-between",
 } satisfies Omit<PresswallConfig, "gap" | "headingSpacing">;
 
 export const DEFAULT_PRESSWALL_CONFIG: PresswallConfig = withDerivedSpacing(
