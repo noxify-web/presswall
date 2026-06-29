@@ -6,6 +6,38 @@ import {
   getPresswallDesignLabel,
   getResolvedPresswallTemplateConfig,
 } from "@/lib/presswall-templates";
+import type { PresswallConfig } from "@/lib/presswall-types";
+
+describe("applyPresswallTemplate", () => {
+  test("resets omitted keys instead of carrying them from a prior config", () => {
+    const editorial = getResolvedPresswallTemplateConfig("editorial");
+
+    expect(editorial.grayscaleOpacity).toBe(60);
+
+    const classic = applyPresswallTemplate("classic");
+
+    expect(classic.grayscaleOpacity).toBe(
+      DEFAULT_PRESSWALL_CONFIG.grayscaleOpacity
+    );
+    expect(findMatchingPresswallTemplateId(classic)).toBe("classic");
+  });
+
+  test("matches after switching templates from a customized current state", () => {
+    const customized: PresswallConfig = {
+      ...getResolvedPresswallTemplateConfig("grid"),
+      gap: 42,
+      headingText: "Press",
+      colorMode: "color",
+    };
+
+    expect(findMatchingPresswallTemplateId(customized)).toBeNull();
+
+    const dark = applyPresswallTemplate("dark");
+
+    expect(findMatchingPresswallTemplateId(dark)).toBe("dark");
+    expect(getPresswallDesignLabel(dark)).toBe("Dark band");
+  });
+});
 
 describe("findMatchingPresswallTemplateId", () => {
   test("matches a pristine classic template config", () => {
@@ -15,7 +47,7 @@ describe("findMatchingPresswallTemplateId", () => {
   });
 
   test("returns null after a custom edit diverges from every template", () => {
-    const config = applyPresswallTemplate("classic", DEFAULT_PRESSWALL_CONFIG);
+    const config = applyPresswallTemplate("classic");
 
     expect(findMatchingPresswallTemplateId(config)).toBe("classic");
 

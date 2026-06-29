@@ -165,13 +165,11 @@ export function getPresswallTemplate(
 }
 
 export function applyPresswallTemplate(
-  templateId: PresswallTemplateId,
-  current: PresswallConfig = DEFAULT_PRESSWALL_CONFIG
+  templateId: PresswallTemplateId
 ): PresswallConfig {
   const template = getPresswallTemplate(templateId);
   return {
     ...DEFAULT_PRESSWALL_CONFIG,
-    ...current,
     ...template.config,
   };
 }
@@ -190,7 +188,7 @@ export function presswallConfigsEqual(
 export function getResolvedPresswallTemplateConfig(
   templateId: PresswallTemplateId
 ): PresswallConfig {
-  return applyPresswallTemplate(templateId, DEFAULT_PRESSWALL_CONFIG);
+  return applyPresswallTemplate(templateId);
 }
 
 export function findMatchingPresswallTemplateId(

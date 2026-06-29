@@ -210,7 +210,7 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   const applyTemplate = useCallback((templateId: PresswallTemplateId) => {
-    setConfig((current) => applyPresswallTemplate(templateId, current));
+    setConfig(applyPresswallTemplate(templateId));
   }, []);
 
   const updateConfig = useCallback(
