@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { OnboardingGoLiveStep } from "@/components/presswall/onboarding-go-live-step";
 import { OnboardingOutletsStep } from "@/components/presswall/onboarding-outlets-step";
-import { OnboardingStepDots } from "@/components/presswall/onboarding-step-dots";
 import { OnboardingTemplateStep } from "@/components/presswall/onboarding-template-step";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
-
-const ONBOARDING_STEPS = 3;
 
 interface OnboardingFlowProps {
   editor: PresswallEditor;
@@ -16,7 +13,9 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ editor }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
 
-  const dots = <OnboardingStepDots current={step} total={ONBOARDING_STEPS} />;
+  const handleSkip = () => {
+    editor.completeOnboarding().catch(() => undefined);
+  };
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
@@ -27,27 +26,27 @@ export function OnboardingFlow({ editor }: OnboardingFlowProps) {
         >
           {step === 0 ? (
             <OnboardingOutletsStep
-              dots={dots}
               editor={editor}
               onNext={() => setStep(1)}
+              onSkip={handleSkip}
             />
           ) : null}
 
           {step === 1 ? (
             <OnboardingTemplateStep
-              dots={dots}
               editor={editor}
               onBack={() => setStep(0)}
               onNext={() => setStep(2)}
+              onSkip={handleSkip}
             />
           ) : null}
 
           {step === 2 ? (
             <OnboardingGoLiveStep
-              dots={dots}
               editor={editor}
               onBack={() => setStep(1)}
               onComplete={() => editor.setNeedsOnboarding(false)}
+              onSkip={handleSkip}
             />
           ) : null}
         </div>

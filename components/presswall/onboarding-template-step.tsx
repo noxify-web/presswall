@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
@@ -12,10 +11,10 @@ import {
 import { cn } from "@/lib/utils";
 
 interface OnboardingTemplateStepProps {
-  dots: ReactNode;
   editor: PresswallEditor;
   onBack: () => void;
   onNext: () => void;
+  onSkip: () => void;
 }
 
 function templatePreviewTheme(
@@ -25,10 +24,10 @@ function templatePreviewTheme(
 }
 
 export function OnboardingTemplateStep({
-  dots,
   editor,
   onBack,
   onNext,
+  onSkip,
 }: OnboardingTemplateStepProps) {
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-8">
@@ -76,13 +75,14 @@ export function OnboardingTemplateStep({
       </div>
 
       <OnboardingActions
-        center={dots}
-        className="shrink-0 border-t pt-4 pb-6"
+        className="shrink-0 pt-4 pb-6"
         compact
         nextLabel="Next"
         onBack={onBack}
         onNext={onNext}
+        onSkip={onSkip}
         showBack
+        skipLoading={editor.isSaving}
       />
     </div>
   );

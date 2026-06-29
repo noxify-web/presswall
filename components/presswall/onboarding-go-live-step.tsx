@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCircleCheck, IconExternalLink } from "@tabler/icons-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,10 @@ import {
 import type { ThemeActivationStatus } from "@/lib/theme-activation";
 
 interface OnboardingGoLiveStepProps {
-  dots: ReactNode;
   editor: PresswallEditor;
   onBack: () => void;
   onComplete: () => void;
+  onSkip: () => void;
 }
 
 function templatePreviewTheme(
@@ -27,10 +27,10 @@ function templatePreviewTheme(
 }
 
 export function OnboardingGoLiveStep({
-  dots,
   editor,
   onBack,
   onComplete,
+  onSkip,
 }: OnboardingGoLiveStepProps) {
   const [status, setStatus] = useState<ThemeActivationStatus | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -155,8 +155,7 @@ export function OnboardingGoLiveStep({
       </div>
 
       <OnboardingActions
-        center={dots}
-        className="shrink-0 border-t pt-4 pb-6"
+        className="shrink-0 pt-4 pb-6"
         compact
         nextDisabled={!(isActive || acknowledged) || isChecking}
         nextLabel="Open editor"
@@ -165,7 +164,9 @@ export function OnboardingGoLiveStep({
         onNext={() => {
           handleFinish().catch(() => undefined);
         }}
+        onSkip={onSkip}
         showBack
+        skipLoading={editor.isSaving}
       />
     </div>
   );

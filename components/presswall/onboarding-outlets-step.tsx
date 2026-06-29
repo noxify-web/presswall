@@ -1,11 +1,18 @@
 "use client";
 
 import { IconPhotoUp, IconSearch, IconX } from "@tabler/icons-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CustomOutletForm } from "@/components/presswall/custom-outlet-form";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { PublisherLogo } from "@/components/presswall/publisher-logo";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Empty,
   EmptyDescription,
@@ -35,9 +42,9 @@ import { PUBLISHER_CATEGORIES } from "@/lib/publishers-seed";
 import { cn } from "@/lib/utils";
 
 interface OnboardingOutletsStepProps {
-  dots: ReactNode;
   editor: PresswallEditor;
   onNext: () => void;
+  onSkip: () => void;
 }
 
 function PositionBadge({ position }: { position: number }) {
@@ -217,7 +224,7 @@ function OutletGrid({
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border p-2">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {filteredCatalog.map((publisher) => (
           <OutletTile
             key={publisher.id}
@@ -233,13 +240,14 @@ function OutletGrid({
 }
 
 export function OnboardingOutletsStep({
-  dots,
   editor,
   onNext,
+  onSkip,
 }: OnboardingOutletsStepProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [tab, setTab] = useState<"bundled" | "uploads">("bundled");
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const uploadedLogos = useMemo(
     () => editor.selected.filter((item) => !item.publisherId),
@@ -260,15 +268,21 @@ export function OnboardingOutletsStep({
       ? "Select at least one outlet to continue."
       : "Order follows your selection sequence.";
 
+  const handleUploadAdd = (name: string, svg: string) => {
+    editor.addCustomPublisher(name, svg);
+    setTab("uploads");
+    setUploadOpen(false);
+  };
+
   return (
-    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4">
+    <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4">
       <p className="shrink-0 text-right text-muted-foreground text-xs">
         Step 1 of 3 — Add your press logos
       </p>
 
-      <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[1.7fr_1fr]">
-        <div className="flex min-h-0 flex-col rounded-xl border bg-card p-4 shadow-sm">
-          <div className="mb-3 shrink-0">
+      <div className="flex min-h-0 flex-1 flex-col rounded-xl border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
+          <div>
             <p className="font-medium text-sm">
               Library
               <span className="ml-1.5 font-normal text-muted-foreground tabular-nums">
@@ -278,110 +292,107 @@ export function OnboardingOutletsStep({
             <p className="text-muted-foreground text-xs">{selectionHint}</p>
           </div>
 
-          <Tabs
-            className="flex min-h-0 flex-1 flex-col gap-3"
-            onValueChange={(value) => setTab(value as "bundled" | "uploads")}
-            value={tab}
+          <Button
+            className="shrink-0"
+            onClick={() => setUploadOpen(true)}
+            size="sm"
+            variant="secondary"
           >
-            <TabsList className="grid h-9 w-full shrink-0 grid-cols-2">
-              <TabsTrigger value="bundled">
-                Bundled
-                <span className="ml-1 text-muted-foreground tabular-nums">
-                  {editor.catalog.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="uploads">
-                Your uploads
-                <span className="ml-1 text-muted-foreground tabular-nums">
-                  {uploadedLogos.length}
-                </span>
-              </TabsTrigger>
-            </TabsList>
+            <IconPhotoUp stroke={2} />
+            Upload logo
+          </Button>
+        </div>
 
-            <TabsContent
-              className="mt-0 flex min-h-0 flex-1 flex-col gap-3 outline-none"
-              value="bundled"
-            >
-              <LibraryFilters
-                category={category}
-                onCategoryChange={setCategory}
-                onSearchChange={setSearch}
-                search={search}
-              />
-              <OutletGrid
-                catalog={editor.catalog}
-                category={category}
-                onToggle={editor.togglePublisher}
-                search={search}
-                selectionPositionByKey={selectionPositionByKey}
-              />
-            </TabsContent>
+        <Tabs
+          className="flex min-h-0 flex-1 flex-col gap-3"
+          onValueChange={(value) => setTab(value as "bundled" | "uploads")}
+          value={tab}
+        >
+          <TabsList className="grid h-9 w-full shrink-0 grid-cols-2">
+            <TabsTrigger value="bundled">
+              Bundled
+              <span className="ml-1 text-muted-foreground tabular-nums">
+                {editor.catalog.length}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="uploads">
+              Your uploads
+              <span className="ml-1 text-muted-foreground tabular-nums">
+                {uploadedLogos.length}
+              </span>
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent
-              className="mt-0 flex min-h-0 flex-1 flex-col outline-none"
-              value="uploads"
-            >
-              {uploadedLogos.length === 0 ? (
-                <Empty className="flex-1 border">
-                  <EmptyHeader>
-                    <EmptyTitle>No uploads yet</EmptyTitle>
-                    <EmptyDescription>
-                      Use the upload form to add a custom outlet.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border p-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {uploadedLogos.map((item) => (
-                      <UploadedTile
-                        item={item}
-                        key={item.key}
-                        onRemove={editor.removePublisher}
-                        position={selectionPositionByKey.get(item.key) ?? 1}
-                      />
-                    ))}
-                  </div>
+          <TabsContent
+            className="mt-0 flex min-h-0 flex-1 flex-col gap-3 outline-none"
+            value="bundled"
+          >
+            <LibraryFilters
+              category={category}
+              onCategoryChange={setCategory}
+              onSearchChange={setSearch}
+              search={search}
+            />
+            <OutletGrid
+              catalog={editor.catalog}
+              category={category}
+              onToggle={editor.togglePublisher}
+              search={search}
+              selectionPositionByKey={selectionPositionByKey}
+            />
+          </TabsContent>
+
+          <TabsContent
+            className="mt-0 flex min-h-0 flex-1 flex-col outline-none"
+            value="uploads"
+          >
+            {uploadedLogos.length === 0 ? (
+              <Empty className="flex-1 border">
+                <EmptyHeader>
+                  <EmptyTitle>No uploads yet</EmptyTitle>
+                  <EmptyDescription>
+                    Click Upload logo to add a custom outlet.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border p-2">
+                <div className="grid grid-cols-4 gap-2">
+                  {uploadedLogos.map((item) => (
+                    <UploadedTile
+                      item={item}
+                      key={item.key}
+                      onRemove={editor.removePublisher}
+                      position={selectionPositionByKey.get(item.key) ?? 1}
+                    />
+                  ))}
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="flex min-h-0 flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md bg-muted">
-              <IconPhotoUp
-                className="size-4 text-muted-foreground"
-                stroke={2}
-              />
-            </span>
-            <div>
-              <p className="font-medium text-sm">Upload a logo</p>
-              <p className="text-muted-foreground text-xs">
-                PNG with a transparent background
-              </p>
-            </div>
-          </div>
-
-          <CustomOutletForm
-            compact
-            featured
-            onAdd={(name, svg) => {
-              editor.addCustomPublisher(name, svg);
-              setTab("uploads");
-            }}
-          />
-        </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
+      <Dialog onOpenChange={setUploadOpen} open={uploadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload a logo</DialogTitle>
+            <DialogDescription>
+              Add a custom outlet with a PNG on a transparent background.
+            </DialogDescription>
+          </DialogHeader>
+          <CustomOutletForm compact featured onAdd={handleUploadAdd} />
+        </DialogContent>
+      </Dialog>
+
       <OnboardingActions
-        center={dots}
-        className="shrink-0 border-t pt-4 pb-6"
+        className="shrink-0 pt-4 pb-6"
         compact
         nextDisabled={!canContinue}
         nextLabel="Next"
         onNext={onNext}
+        onSkip={onSkip}
+        skipLoading={editor.isSaving}
       />
     </div>
   );
