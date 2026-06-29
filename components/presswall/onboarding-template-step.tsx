@@ -31,12 +31,12 @@ export function OnboardingTemplateStep({
   onNext,
 }: OnboardingTemplateStepProps) {
   return (
-    <div className="flex w-full max-w-3xl flex-1 flex-col gap-8">
-      <p className="text-right text-muted-foreground text-xs">
+    <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-8">
+      <p className="shrink-0 text-right text-muted-foreground text-xs">
         Step 2 of 3 — Pick a starting look
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
         {PRESSWALL_TEMPLATES.map((template) => {
           const isSelected = editor.selectedTemplateId === template.id;
           const previewConfig = {
@@ -77,7 +77,7 @@ export function OnboardingTemplateStep({
 
       <OnboardingActions
         center={dots}
-        className="mt-auto pt-2"
+        className="shrink-0 border-t pt-4"
         compact
         nextLabel="Next"
         onBack={onBack}

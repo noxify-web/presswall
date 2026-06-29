@@ -190,12 +190,12 @@ export function OnboardingOutletsStep({
   const canContinue = editor.selected.length > 0;
 
   return (
-    <div className="flex w-full max-w-5xl flex-1 flex-col gap-4">
-      <p className="text-right text-muted-foreground text-xs">
+    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4">
+      <p className="shrink-0 text-right text-muted-foreground text-xs">
         Step 1 of 3 — Add your press logos
       </p>
 
-      <div className="grid gap-4 md:grid-cols-[1.7fr_1fr]">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto md:grid-cols-[1.7fr_1fr]">
         <div className="flex min-h-0 flex-col rounded-xl border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="font-medium text-sm">Library</p>
@@ -323,7 +323,7 @@ export function OnboardingOutletsStep({
 
       <OnboardingActions
         center={dots}
-        className="mt-auto pt-2"
+        className="shrink-0 border-t pt-4"
         compact
         nextDisabled={!canContinue}
         nextLabel="Next"
