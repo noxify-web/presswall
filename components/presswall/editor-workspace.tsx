@@ -1,121 +1,129 @@
 "use client";
 
 import { IconDeviceFloppy } from "@tabler/icons-react";
-import { CustomOutletForm } from "@/components/presswall/custom-outlet-form";
-import { EditorPanel } from "@/components/presswall/editor-panel";
-import { PresswallPreview } from "@/components/presswall/preview";
-import { PublisherLibrary } from "@/components/presswall/publisher-library";
-import { SelectedOutlets } from "@/components/presswall/selected-outlets";
-import { StyleControls } from "@/components/presswall/style-controls";
+import { useState } from "react";
+import { DeviceToggle } from "@/components/presswall/device-toggle";
+import { OnboardingPreviewCanvas } from "@/components/presswall/onboarding-preview-canvas";
+import { OnboardingTemplateCustomControls } from "@/components/presswall/onboarding-template-custom-controls";
+import { OutletLibraryPanel } from "@/components/presswall/outlet-library-panel";
+import { TemplatePicker } from "@/components/presswall/template-picker";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
+import type { PresswallViewport } from "@/lib/presswall-layout-style";
+import { getPresswallTemplate } from "@/lib/presswall-templates";
 
 interface EditorWorkspaceProps {
   editor: PresswallEditor;
 }
 
-export function EditorWorkspace({ editor }: EditorWorkspaceProps) {
-  return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-muted/30">
-        <PresswallPreview
-          catalog={editor.catalog}
-          config={editor.config}
-          isLoading={editor.isLoading}
-          selections={editor.selections}
-          variant="canvas"
-        />
-      </main>
+type EditorTab = "outlets" | "templates" | "custom";
 
-      <EditorPanel>
-        <Tabs className="min-h-0 flex-1" defaultValue="outlets">
-          <div className="shrink-0 border-b px-3 py-2">
-            <TabsList className="grid h-8 w-full grid-cols-2">
-              <TabsTrigger value="outlets">
-                Outlets
-                {editor.selected.length > 0 ? (
-                  <span className="ml-1 text-muted-foreground tabular-nums">
-                    ({editor.selected.length})
-                  </span>
-                ) : null}
-              </TabsTrigger>
-              <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            </TabsList>
+export function EditorWorkspace({ editor }: EditorWorkspaceProps) {
+  const [activeTab, setActiveTab] = useState<EditorTab>("outlets");
+  const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
+
+  return (
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3">
+      <div className="flex min-h-0 flex-1 gap-4">
+        <div className="flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="flex shrink-0 items-center justify-between border-b px-4 py-2.5">
+            <p className="font-medium text-sm">Live preview</p>
+            <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />
           </div>
 
-          <TabsContent
-            className="min-h-0 flex-1 overflow-y-auto p-3"
-            value="outlets"
-          >
-            <div className="flex flex-col gap-4">
-              <PublisherLibrary
-                catalog={editor.catalog}
-                category={editor.category}
-                listClassName="h-56"
-                onCategoryChange={editor.setCategory}
-                onSearchChange={editor.setSearch}
-                onToggle={editor.togglePublisher}
-                search={editor.search}
-                selectedIds={editor.selectedIds}
-              />
-
-              <Separator />
-
-              <div className="flex flex-col gap-2">
-                <div>
-                  <h3 className="font-medium text-sm">Selected</h3>
-                  <p className="text-muted-foreground text-xs">
-                    Reorder outlets — the first appears leftmost on your store.
-                  </p>
-                </div>
-                <SelectedOutlets
-                  catalogById={editor.catalogById}
-                  onMove={editor.movePublisher}
-                  onRemove={editor.removePublisher}
-                  selected={editor.selected}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex flex-col gap-2">
-                <div>
-                  <h3 className="font-medium text-sm">Custom outlet</h3>
-                  <p className="text-muted-foreground text-xs">
-                    Add a podcast, blog, or outlet not in the library.
-                  </p>
-                </div>
-                <CustomOutletForm compact onAdd={editor.addCustomPublisher} />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent
-            className="min-h-0 flex-1 overflow-y-auto p-3"
-            value="appearance"
-          >
-            <StyleControls
+          <div className="min-h-0 flex-1">
+            <OnboardingPreviewCanvas
+              catalog={editor.catalog}
               config={editor.config}
-              onUpdate={editor.updateConfig}
+              deviceMode={deviceMode}
+              selections={editor.selections}
             />
-          </TabsContent>
-        </Tabs>
-
-        <div className="shrink-0 border-t p-3">
-          <Button
-            className="w-full"
-            disabled={editor.isLoading || editor.isSaving}
-            onClick={() => {
-              editor.save().catch(() => undefined);
-            }}
-          >
-            <IconDeviceFloppy stroke={2} />
-            {editor.isSaving ? "Saving..." : "Save changes"}
-          </Button>
+          </div>
         </div>
-      </EditorPanel>
+
+        <div className="flex min-h-0 min-w-0 flex-[2] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+          <Tabs
+            className="flex min-h-0 flex-1 flex-col"
+            onValueChange={(value) => setActiveTab(value as EditorTab)}
+            value={activeTab}
+          >
+            <div className="shrink-0 border-b p-3">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="outlets">
+                  Outlets
+                  {editor.selected.length > 0 ? (
+                    <span className="ml-1 text-muted-foreground tabular-nums">
+                      ({editor.selected.length})
+                    </span>
+                  ) : null}
+                </TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent
+              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              value="outlets"
+            >
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="p-3">
+                  <OutletLibraryPanel
+                    catalog={editor.catalog}
+                    onAddCustom={editor.addCustomPublisher}
+                    onRemove={editor.removePublisher}
+                    onToggle={editor.togglePublisher}
+                    selected={editor.selected}
+                  />
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent
+              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              value="templates"
+            >
+              <TemplatePicker
+                catalog={editor.catalog}
+                matchedTemplateId={editor.matchedTemplateId}
+                onApply={editor.applyTemplate}
+                onCustomize={() => setActiveTab("custom")}
+                selections={editor.selections}
+              />
+            </TabsContent>
+
+            <TabsContent
+              className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              value="custom"
+            >
+              <OnboardingTemplateCustomControls
+                config={editor.config}
+                matchedTemplateName={
+                  editor.matchedTemplateId
+                    ? getPresswallTemplate(editor.matchedTemplateId).name
+                    : undefined
+                }
+                onUpdate={editor.updateConfig}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <div className="shrink-0 border-t p-3">
+            <Button
+              className="w-full"
+              disabled={editor.isLoading || editor.isSaving}
+              onClick={() => {
+                editor.save().catch(() => undefined);
+              }}
+            >
+              <IconDeviceFloppy stroke={2} />
+              {editor.isSaving ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

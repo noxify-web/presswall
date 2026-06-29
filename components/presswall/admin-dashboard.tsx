@@ -67,7 +67,9 @@ export function AdminDashboard() {
         </Alert>
       ) : null}
 
-      <EditorWorkspace editor={editor} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4 pb-6 sm:px-6">
+        <EditorWorkspace editor={editor} />
+      </div>
     </div>
   );
 }

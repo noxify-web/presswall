@@ -1,6 +1,8 @@
 const EXTENSION_UID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+const APP_HANDLE = "presswall";
 const EMBED_BLOCK_HANDLE = "presswall-embed";
 const SECTION_BLOCK_HANDLE = "presswall";
+const SHOPIFY_APPS_PREFIX = "shopify://apps/";
 
 const TEMPLATE_FILES = [
   "templates/index.json",
@@ -60,7 +62,21 @@ function parseJsonContent<T>(content: string): T | null {
   }
 }
 
-function isOurExtensionBlock(
+function getShopifyAppHandle(type: string): string | null {
+  if (!type.startsWith(SHOPIFY_APPS_PREFIX)) {
+    return null;
+  }
+
+  const remainder = type.slice(SHOPIFY_APPS_PREFIX.length);
+  const slashIndex = remainder.indexOf("/");
+  if (slashIndex === -1) {
+    return null;
+  }
+
+  return remainder.slice(0, slashIndex);
+}
+
+function isPresswallBlockType(
   type: string | undefined,
   apiKey: string
 ): boolean {
@@ -68,7 +84,13 @@ function isOurExtensionBlock(
     return false;
   }
 
-  return type.includes(apiKey) || type.includes(EXTENSION_UID);
+  if (type.includes(apiKey) || type.includes(EXTENSION_UID)) {
+    return true;
+  }
+
+  // Shopify persists theme app extension blocks as:
+  // shopify://apps/{app_handle}/blocks/{block_handle}/{instance_id}
+  return getShopifyAppHandle(type) === APP_HANDLE;
 }
 
 function isEmbedBlock(type: string | undefined, apiKey: string): boolean {
@@ -77,7 +99,7 @@ function isEmbedBlock(type: string | undefined, apiKey: string): boolean {
   }
 
   return (
-    isOurExtensionBlock(type, apiKey) &&
+    isPresswallBlockType(type, apiKey) &&
     type.includes(`/blocks/${EMBED_BLOCK_HANDLE}/`)
   );
 }
@@ -92,7 +114,7 @@ function isSectionBlock(type: string | undefined, apiKey: string): boolean {
   }
 
   return (
-    isOurExtensionBlock(type, apiKey) &&
+    isPresswallBlockType(type, apiKey) &&
     type.includes(`/blocks/${SECTION_BLOCK_HANDLE}/`)
   );
 }

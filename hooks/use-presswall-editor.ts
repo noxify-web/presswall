@@ -35,7 +35,6 @@ export interface PresswallEditor {
   isSaving: boolean;
   loadError: boolean;
   matchedTemplateId: PresswallTemplateId | null;
-  movePublisher: (index: number, direction: -1 | 1) => void;
   needsOnboarding: boolean;
   reload: () => Promise<void>;
   removePublisher: (key: string) => void;
@@ -147,20 +146,6 @@ export function usePresswallEditor(): PresswallEditor {
     });
   }, []);
 
-  const movePublisher = useCallback((index: number, direction: -1 | 1) => {
-    setSelected((current) => {
-      const next = [...current];
-      const target = index + direction;
-      if (target < 0 || target >= next.length) {
-        return current;
-      }
-      const temp = next[index];
-      next[index] = next[target];
-      next[target] = temp;
-      return next;
-    });
-  }, []);
-
   const removePublisher = useCallback((key: string) => {
     setSelected((current) => current.filter((item) => item.key !== key));
   }, []);
@@ -259,7 +244,6 @@ export function usePresswallEditor(): PresswallEditor {
     unavailableCount,
     addCustomPublisher,
     applyTemplate,
-    movePublisher,
     removePublisher,
     save,
     setCategory,
