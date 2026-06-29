@@ -16,39 +16,36 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ editor }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
 
+  const dots = <OnboardingStepDots current={step} total={ONBOARDING_STEPS} />;
+
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
-      <OnboardingStepDots current={step} total={ONBOARDING_STEPS} />
-
-      <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-6 pb-12">
+      <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-4 pb-12">
         <div className="fade-in w-full animate-in duration-300" key={step}>
           {step === 0 ? (
-            <div className="mx-auto flex justify-center">
-              <OnboardingOutletsStep
-                editor={editor}
-                onNext={() => setStep(1)}
-              />
-            </div>
+            <OnboardingOutletsStep
+              dots={dots}
+              editor={editor}
+              onNext={() => setStep(1)}
+            />
           ) : null}
 
           {step === 1 ? (
-            <div className="mx-auto flex justify-center">
-              <OnboardingTemplateStep
-                editor={editor}
-                onBack={() => setStep(0)}
-                onNext={() => setStep(2)}
-              />
-            </div>
+            <OnboardingTemplateStep
+              dots={dots}
+              editor={editor}
+              onBack={() => setStep(0)}
+              onNext={() => setStep(2)}
+            />
           ) : null}
 
           {step === 2 ? (
-            <div className="mx-auto flex justify-center">
-              <OnboardingGoLiveStep
-                editor={editor}
-                onBack={() => setStep(1)}
-                onComplete={() => editor.setNeedsOnboarding(false)}
-              />
-            </div>
+            <OnboardingGoLiveStep
+              dots={dots}
+              editor={editor}
+              onBack={() => setStep(1)}
+              onComplete={() => editor.setNeedsOnboarding(false)}
+            />
           ) : null}
         </div>
       </div>

@@ -182,15 +182,18 @@ export async function saveShopPresswall(
   const sanitizedSelections = sanitizeSelections(selections);
 
   await db.transaction(async (tx) => {
-    await tx.insert(shopConfigs).values(configRow).onConflictDoUpdate({
-      target: shopConfigs.shop,
-      set: {
-        ...configRow,
-        ...(options?.completeOnboarding
-          ? { onboardingCompletedAt: now }
-          : {}),
-      },
-    });
+    await tx
+      .insert(shopConfigs)
+      .values(configRow)
+      .onConflictDoUpdate({
+        target: shopConfigs.shop,
+        set: {
+          ...configRow,
+          ...(options?.completeOnboarding
+            ? { onboardingCompletedAt: now }
+            : {}),
+        },
+      });
 
     await tx.delete(shopPublishers).where(eq(shopPublishers.shop, shop));
 

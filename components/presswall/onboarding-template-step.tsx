@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
@@ -11,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface OnboardingTemplateStepProps {
+  dots: ReactNode;
   editor: PresswallEditor;
   onBack: () => void;
   onNext: () => void;
@@ -23,20 +25,16 @@ function templatePreviewTheme(
 }
 
 export function OnboardingTemplateStep({
+  dots,
   editor,
   onBack,
   onNext,
 }: OnboardingTemplateStepProps) {
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-8">
-      <div className="space-y-2 text-center">
-        <h1 className="font-semibold text-2xl tracking-tight">
-          Pick a starting look
-        </h1>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Choose a template — you can fine-tune everything later.
-        </p>
-      </div>
+    <div className="flex w-full max-w-3xl flex-1 flex-col gap-8">
+      <p className="text-right text-muted-foreground text-xs">
+        Step 2 of 3 — Pick a starting look
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PRESSWALL_TEMPLATES.map((template) => {
@@ -78,6 +76,9 @@ export function OnboardingTemplateStep({
       </div>
 
       <OnboardingActions
+        center={dots}
+        className="mt-auto pt-2"
+        compact
         nextLabel="Next"
         onBack={onBack}
         onNext={onNext}

@@ -24,7 +24,7 @@ export function OnboardingStepDots({
   return (
     <div
       aria-label={`Step ${current + 1} of ${total}`}
-      className="flex shrink-0 justify-center gap-2 pt-10"
+      className="flex shrink-0 items-center justify-center gap-2"
       role="status"
     >
       {(["first", "second", "third"] as const)

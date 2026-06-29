@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCircleCheck, IconExternalLink } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import type { ThemeActivationStatus } from "@/lib/theme-activation";
 
 interface OnboardingGoLiveStepProps {
+  dots: ReactNode;
   editor: PresswallEditor;
   onBack: () => void;
   onComplete: () => void;
@@ -26,6 +27,7 @@ function templatePreviewTheme(
 }
 
 export function OnboardingGoLiveStep({
+  dots,
   editor,
   onBack,
   onComplete,
@@ -88,15 +90,10 @@ export function OnboardingGoLiveStep({
   const isActive = status?.isActive ?? false;
 
   return (
-    <div className="flex w-full max-w-lg flex-col gap-8">
-      <div className="space-y-2 text-center">
-        <h1 className="font-semibold text-2xl tracking-tight">
-          Go live on your store
-        </h1>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Enable the Presswall embed so your logos appear on your storefront.
-        </p>
-      </div>
+    <div className="flex w-full max-w-lg flex-1 flex-col gap-6">
+      <p className="text-right text-muted-foreground text-xs">
+        Step 3 of 3 — Go live on your store
+      </p>
 
       <OnboardingPreview
         catalog={editor.catalog}
@@ -156,6 +153,9 @@ export function OnboardingGoLiveStep({
       </p>
 
       <OnboardingActions
+        center={dots}
+        className="mt-auto pt-2"
+        compact
         nextDisabled={!(isActive || acknowledged) || isChecking}
         nextLabel="Open editor"
         nextLoading={editor.isSaving}

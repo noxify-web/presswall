@@ -60,7 +60,10 @@ function parseJsonContent<T>(content: string): T | null {
   }
 }
 
-function isOurExtensionBlock(type: string | undefined, apiKey: string): boolean {
+function isOurExtensionBlock(
+  type: string | undefined,
+  apiKey: string
+): boolean {
   if (!type) {
     return false;
   }
