@@ -33,6 +33,13 @@ describe("theme bundle parity", () => {
       ),
       "utf8"
     );
+    const presswallLive = readFileSync(
+      join(
+        process.cwd(),
+        "extensions/presswall-theme/snippets/presswall-live.liquid"
+      ),
+      "utf8"
+    );
 
     expect(themeJs).toContain("buildContextAwareProxyUrl");
     expect(themeJs).toContain('searchParams.set("page_type"');
@@ -41,5 +48,8 @@ describe("theme bundle parity", () => {
     expect(presswallBlock).toContain("data-product-id");
     expect(presswallEmbed).toContain("data-page-type");
     expect(presswallEmbed).toContain("data-product-id");
+    expect(presswallLive).toContain("data-page-type");
+    expect(presswallLive).toContain("data-product-id");
+    expect(presswallLive).not.toContain("pw.publishers");
   });
 });

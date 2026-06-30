@@ -1,138 +1,17 @@
-{%- assign presswall_metafield = shop.metafields['$app'].storefront_config -%}
-{%- if presswall_metafield == blank -%}
-  <div class="presswall-loading">Not configured yet.</div>
-{%- else -%}
-  {%- assign pw = presswall_metafield.value -%}
-  {%- if pw.publishers == blank or pw.publishers.size == 0 -%}
-    <div class="presswall-loading">Add outlets in Presswall.</div>
-  {%- else -%}
-    {%- assign heading_alignment = pw.headingAlignment | default: 'center' -%}
-    {%- assign logo_alignment = pw.logoAlignment | default: heading_alignment -%}
-    {%- assign logos_per_row_desktop = pw.logosPerRowDesktop | default: 4 -%}
-    {%- assign logos_per_row_mobile = pw.logosPerRowMobile | default: 2 -%}
-    {%- assign layout = pw.layout | default: 'bar' -%}
-    {%- if layout == 'bar' -%}
-      {%- assign logo_spacing = pw.logoSpacing | default: 'space-between' -%}
-    {%- else -%}
-      {%- assign logo_spacing = pw.logoSpacing | default: 'gap' -%}
-    {%- endif -%}
-    {%- assign logo_height = pw.logoHeight | default: 28 -%}
-    {%- assign content_max_width = pw.contentMaxWidth | default: 840 -%}
-    {%- assign logo_filter_parts = '' -%}
-    {%- assign logo_opacity = '' -%}
-    {%- if pw.colorMode == 'mono' or pw.colorMode == 'muted' -%}
-      {%- assign logo_filter_parts = 'grayscale(100%)' -%}
-    {%- endif -%}
-    {%- assign invert_logos = pw.invertLogos -%}
-    {%- if invert_logos == blank -%}
-      {%- assign bg_color = pw.backgroundColor | default: 'transparent' | strip -%}
-      {%- if pw.colorMode != 'color' and bg_color != 'transparent' -%}
-        {%- assign bg_brightness = bg_color | color_to_rgb | color_brightness -%}
-        {%- if bg_brightness < 102 -%}
-          {%- assign invert_logos = true -%}
-        {%- endif -%}
-      {%- endif -%}
-    {%- endif -%}
-    {%- if invert_logos -%}
-      {%- if logo_filter_parts != '' -%}
-        {%- assign logo_filter_parts = logo_filter_parts | append: ' invert(1)' -%}
-      {%- else -%}
-        {%- assign logo_filter_parts = 'invert(1)' -%}
-      {%- endif -%}
-    {%- endif -%}
-    {%- assign logo_filter = '' -%}
-    {%- if logo_filter_parts != '' -%}
-      {%- assign logo_filter = 'filter:' | append: logo_filter_parts | append: ';' -%}
-    {%- endif -%}
-    {%- if pw.colorMode == 'muted' -%}
-      {%- assign logo_opacity = pw.grayscaleOpacity | default: 70 | divided_by: 100.0 -%}
-    {%- endif -%}
-    <div
-      class="presswall-shell presswall-live"
-      data-presswall-live
-      style="background:{{ pw.backgroundColor | default: 'transparent' }};color:{{ pw.textColor | default: '#111111' }};border-radius:{{ pw.borderRadius | default: 0 }}px;--presswall-padding-y:{{ pw.paddingY | default: 16 }}px;--presswall-padding-x:{{ pw.paddingX | default: 16 }}px;--presswall-logo-height:{{ logo_height }}px;--presswall-content-max-width:{{ content_max_width }}px;--presswall-gap:{{ pw.gap | default: 12 }}px;--presswall-heading-size:{{ pw.headingFontSize | default: 12 }}px;--presswall-heading-spacing:{{ pw.headingSpacing | default: 40 }}px;"
-    >
-      {%- if pw.layout == 'marquee' -%}
-        {%- assign fade_color = pw.backgroundColor | default: '#ffffff' -%}
-        {%- if fade_color == 'transparent' -%}
-          {%- assign fade_color = '#ffffff' -%}
-        {%- endif -%}
-        {%- assign inline_marquee_heading = false -%}
-        {%- if pw.showHeading and pw.headingText != blank and heading_alignment == 'left' -%}
-          {%- assign inline_marquee_heading = true -%}
-        {%- endif -%}
-        <div class="presswall-content">
-          {%- if pw.showHeading and pw.headingText != blank and inline_marquee_heading == false -%}
-            <p
-              class="presswall-heading presswall-heading-align-{{ heading_alignment }}"
-              style="color:{{ pw.textColor | default: '#111111' }}"
-            >
-              {{ pw.headingText | escape }}
-            </p>
-          {%- endif -%}
-          <div class="pw-mq-row">
-            {%- if inline_marquee_heading -%}
-              <div class="pw-mq-lead">
-                <p class="pw-mq-label" style="color:{{ pw.textColor | default: '#111111' }};font-size:{{ pw.headingFontSize | default: 12 }}px">
-                  {{ pw.headingText | escape }}
-                </p>
-                <span class="pw-mq-div" aria-hidden="true"></span>
-              </div>
-            {%- endif -%}
-            <div class="pw-mq-scroll" style="--pw-mq-fade:{{ fade_color }}">
-              <div class="pw-mq-wrap">
-                <div
-                  class="pw-mq-track"
-                  style="animation-duration:{{ pw.marqueeSpeed | default: 30 }}s;--pw-mq-n:4"
-                >
-                  {%- for repeat in (1..4) -%}
-                    {%- for publisher in pw.publishers -%}
-                      <div
-                        class="presswall-logo"
-                        style="height:{{ logo_height }}px;{{ logo_filter }}{% if logo_opacity != '' %}opacity:{{ logo_opacity }};{% endif %}"
-                      >
-                        {% render 'presswall-publisher-logo',
-                          publisher: publisher,
-                          height: logo_height
-                        %}
-                      </div>
-                    {%- endfor -%}
-                  {%- endfor -%}
-                </div>
-              </div>
-              <span class="pw-mq-fade pw-mq-fade-left" aria-hidden="true"></span>
-              <span class="pw-mq-fade pw-mq-fade-right" aria-hidden="true"></span>
-            </div>
-          </div>
-        </div>
-      {%- else -%}
-        <div class="presswall-content">
-          {%- if pw.showHeading and pw.headingText != blank -%}
-            <p
-              class="presswall-heading presswall-heading-align-{{ heading_alignment }}"
-              style="color:{{ pw.textColor | default: '#111111' }}"
-            >
-              {{ pw.headingText | escape }}
-            </p>
-          {%- endif -%}
-          <div
-            class="presswall-bar presswall-spacing-{{ logo_spacing }} presswall-align-{{ logo_alignment }}"
-            style="--lpr-d:{{ logos_per_row_desktop }};--lpr-m:{{ logos_per_row_mobile }}"
-          >
-            {%- for publisher in pw.publishers -%}
-              <div
-                class="presswall-logo"
-                style="height:{{ logo_height }}px;{{ logo_filter }}{% if logo_opacity != '' %}opacity:{{ logo_opacity }};{% endif %}"
-              >
-                {% render 'presswall-publisher-logo',
-                  publisher: publisher,
-                  height: logo_height
-                %}
-              </div>
-            {%- endfor -%}
-          </div>
-        </div>
-      {%- endif -%}
-    </div>
-  {%- endif -%}
+{%- if template.name == 'index' -%}
+  {%- assign presswall_page_type = 'homepage' -%}
+{%- elsif template.name == 'product' -%}
+  {%- assign presswall_page_type = 'product' -%}
 {%- endif -%}
+
+<div
+  class="presswall-loading presswall-live-loader"
+  {% if presswall_page_type != blank %}
+    data-page-type="{{ presswall_page_type }}"
+  {% endif %}
+  {% if product %}
+    data-product-id="{{ product.id }}"
+  {% endif %}
+>
+  Loading press strip…
+</div>

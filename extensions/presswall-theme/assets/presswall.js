@@ -93,8 +93,14 @@ const INLINE_RGB_COLOR_PATTERN =
     }
 
     const url = new URL(baseUrl, window.location.origin);
-    const pageType = root.dataset.pageType?.trim().toLowerCase();
-    const productId = root.dataset.productId?.trim();
+    const contextNode =
+      root.querySelector("[data-page-type], [data-product-id]") ?? root;
+    const pageType = (root.dataset.pageType ?? contextNode.dataset.pageType)
+      ?.trim()
+      .toLowerCase();
+    const productId = (
+      root.dataset.productId ?? contextNode.dataset.productId
+    )?.trim();
 
     if (pageType) {
       url.searchParams.set("page_type", pageType);

@@ -1,11 +1,14 @@
 import { listShopBannerAssignments } from "@/lib/banner-assignment-service";
 import type { BannerPageContext } from "@/lib/banner-page-context";
+import { getShopCustomLogos } from "@/lib/custom-logo-service";
 import { listShopCustomTemplates } from "@/lib/custom-template-service";
+import { hydrateBannerSelections } from "@/lib/hydrate-banner-selections";
 import { ensureLegacyBannerMigrated } from "@/lib/legacy-banner-migration";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import type {
   PresswallConfig,
   PublisherCatalogItem,
+  ShopCustomLogo,
   ShopPublisherSelection,
   StorefrontPayload,
 } from "@/lib/presswall-types";
@@ -18,11 +21,20 @@ import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers
 export function buildStorefrontPayload(
   config: PresswallConfig,
   selections: ShopPublisherSelection[],
-  catalog: PublisherCatalogItem[]
+  catalog: PublisherCatalogItem[],
+  options?: { customLogos?: ShopCustomLogo[] }
 ): StorefrontPayload {
+  const hydratedSelections = options?.customLogos
+    ? hydrateBannerSelections(selections, options.customLogos)
+    : selections;
+
   return {
     ...config,
-    publishers: resolveStorefrontPublishers(catalog, selections),
+    publishers: resolveStorefrontPublishers(
+      catalog,
+      hydratedSelections,
+      options
+    ),
   };
 }
 
@@ -31,11 +43,13 @@ export async function getResolvedStorefrontPayload(
   catalog: PublisherCatalogItem[],
   context: BannerPageContext | null
 ): Promise<StorefrontPayload> {
-  const [defaultBannerId, banners, assignments] = await Promise.all([
-    ensureLegacyBannerMigrated(shop),
-    listShopCustomTemplates(shop),
-    listShopBannerAssignments(shop),
-  ]);
+  const [defaultBannerId, banners, assignments, customLogos] =
+    await Promise.all([
+      ensureLegacyBannerMigrated(shop),
+      listShopCustomTemplates(shop),
+      listShopBannerAssignments(shop),
+      getShopCustomLogos(shop),
+    ]);
 
   const bannerRecords = banners.map((banner) => ({
     id: banner.id,
@@ -54,9 +68,16 @@ export async function getResolvedStorefrontPayload(
     defaultBannerId
   );
 
+  const payloadOptions = { customLogos };
+
   const banner = findBannerById(bannerRecords, resolvedBannerId);
   if (banner) {
-    return buildStorefrontPayload(banner.config, banner.selections, catalog);
+    return buildStorefrontPayload(
+      banner.config,
+      banner.selections,
+      catalog,
+      payloadOptions
+    );
   }
 
   const fallback =
@@ -65,9 +86,15 @@ export async function getResolvedStorefrontPayload(
     return buildStorefrontPayload(
       fallback.config,
       fallback.selections,
-      catalog
+      catalog,
+      payloadOptions
     );
   }
 
-  return buildStorefrontPayload(DEFAULT_PRESSWALL_CONFIG, [], catalog);
+  return buildStorefrontPayload(
+    DEFAULT_PRESSWALL_CONFIG,
+    [],
+    catalog,
+    payloadOptions
+  );
 }

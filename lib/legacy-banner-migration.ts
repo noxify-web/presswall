@@ -74,24 +74,65 @@ async function getLegacySelections(
   }));
 }
 
+async function promoteDefaultBanner(
+  shop: string,
+  bannerId: string
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  await db
+    .update(shopCustomTemplates)
+    .set({ isDefault: false, updatedAt: now })
+    .where(eq(shopCustomTemplates.shop, shop));
+
+  await db
+    .update(shopCustomTemplates)
+    .set({ isDefault: true, updatedAt: now })
+    .where(
+      and(
+        eq(shopCustomTemplates.shop, shop),
+        eq(shopCustomTemplates.id, bannerId)
+      )
+    );
+}
+
+async function getDefaultBannerId(shop: string): Promise<string | null> {
+  const defaultRows = await db
+    .select({ id: shopCustomTemplates.id })
+    .from(shopCustomTemplates)
+    .where(
+      and(
+        eq(shopCustomTemplates.shop, shop),
+        eq(shopCustomTemplates.isDefault, true)
+      )
+    )
+    .limit(1);
+
+  if (defaultRows[0]?.id) {
+    return defaultRows[0].id;
+  }
+
+  const oldestBanner = await db
+    .select({ id: shopCustomTemplates.id })
+    .from(shopCustomTemplates)
+    .where(eq(shopCustomTemplates.shop, shop))
+    .orderBy(asc(shopCustomTemplates.createdAt))
+    .limit(1);
+
+  if (!oldestBanner[0]?.id) {
+    return null;
+  }
+
+  await promoteDefaultBanner(shop, oldestBanner[0].id);
+  return oldestBanner[0].id;
+}
+
 export async function ensureLegacyBannerMigrated(
   shop: string
 ): Promise<string | null> {
-  const existingBanners = await db
-    .select({
-      id: shopCustomTemplates.id,
-      isDefault: shopCustomTemplates.isDefault,
-    })
-    .from(shopCustomTemplates)
-    .where(eq(shopCustomTemplates.shop, shop));
-
-  const defaultBanner = existingBanners.find((row) => row.isDefault);
-  if (defaultBanner?.id) {
-    return defaultBanner.id;
-  }
-
-  if (existingBanners.length > 0) {
-    return existingBanners[0]?.id ?? null;
+  const existingDefaultId = await getDefaultBannerId(shop);
+  if (existingDefaultId) {
+    return existingDefaultId;
   }
 
   const configRows = await db
@@ -138,18 +179,8 @@ export async function syncDefaultBannerFromEditor(
   configJson: string,
   selectionsJson: string
 ): Promise<void> {
-  const defaultBanner = await db
-    .select({ id: shopCustomTemplates.id })
-    .from(shopCustomTemplates)
-    .where(
-      and(
-        eq(shopCustomTemplates.shop, shop),
-        eq(shopCustomTemplates.isDefault, true)
-      )
-    )
-    .limit(1);
-
-  if (!defaultBanner[0]?.id) {
+  const defaultBannerId = await getDefaultBannerId(shop);
+  if (!defaultBannerId) {
     return;
   }
 
@@ -161,5 +192,5 @@ export async function syncDefaultBannerFromEditor(
       selectionsJson,
       updatedAt: now,
     })
-    .where(eq(shopCustomTemplates.id, defaultBanner[0].id));
+    .where(eq(shopCustomTemplates.id, defaultBannerId));
 }

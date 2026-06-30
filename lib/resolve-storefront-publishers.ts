@@ -1,6 +1,7 @@
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
 import type {
   PublisherCatalogItem,
+  ShopCustomLogo,
   ShopPublisherSelection,
   StorefrontPublisher,
 } from "@/lib/presswall-types";
@@ -22,9 +23,13 @@ function resolvePublisherUrl(
 
 export function resolveStorefrontPublishers(
   catalog: PublisherCatalogItem[],
-  selections: ShopPublisherSelection[]
+  selections: ShopPublisherSelection[],
+  options?: { customLogos?: ShopCustomLogo[] }
 ): StorefrontPublisher[] {
   const catalogById = new Map(catalog.map((item) => [item.id, item]));
+  const libraryById = new Map(
+    (options?.customLogos ?? []).map((logo) => [logo.id, logo])
+  );
 
   return selections
     .map((selection, index): StorefrontPublisher | null => {
@@ -46,16 +51,27 @@ export function resolveStorefrontPublishers(
         };
       }
 
-      if (!selection.customName?.trim()) {
+      const libraryLogo = selection.customLogoId
+        ? libraryById.get(selection.customLogoId)
+        : undefined;
+      const customName = (
+        libraryLogo?.name ??
+        selection.customName ??
+        ""
+      ).trim();
+      const customLogoSvg =
+        libraryLogo?.logoSvg ?? selection.customLogoSvg ?? "";
+
+      if (!customName) {
         return null;
       }
 
       return {
-        id: `custom-${index}`,
+        id: selection.customLogoId ?? `custom-${index}`,
         isCustom: true,
-        name: selection.customName.trim(),
+        name: customName,
         logoImageUrl: null,
-        logoSvg: sanitizeSvg(selection.customLogoSvg ?? ""),
+        logoSvg: sanitizeSvg(customLogoSvg),
         url: resolvePublisherUrl(selection.customUrl, null),
       };
     })

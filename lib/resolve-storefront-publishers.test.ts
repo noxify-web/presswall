@@ -70,6 +70,31 @@ describe("resolveStorefrontPublishers", () => {
     expect(publishers).toHaveLength(0);
   });
 
+  test("resolves custom outlets from library logo id", () => {
+    const publishers = resolveStorefrontPublishers(
+      catalog,
+      [{ customLogoId: "logo-podcast", position: 0 }],
+      {
+        customLogos: [
+          {
+            id: "logo-podcast",
+            name: "Local Podcast",
+            logoSvg: CUSTOM_SVG,
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      }
+    );
+
+    expect(publishers).toHaveLength(1);
+    expect(publishers[0]).toMatchObject({
+      id: "logo-podcast",
+      isCustom: true,
+      name: "Local Podcast",
+      logoSvg: CUSTOM_SVG,
+    });
+  });
+
   test("sanitizes malicious custom svg before storefront render", () => {
     const publishers = resolveStorefrontPublishers(catalog, [
       {
