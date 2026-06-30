@@ -5,7 +5,9 @@
 {%- endif -%}
 
 <div
-  class="presswall-loading presswall-live-loader"
+  class="presswall-root"
+  data-presswall-root
+  data-proxy-url="{{ shop.url }}/apps/presswall/config"
   {% if presswall_page_type != blank %}
     data-page-type="{{ presswall_page_type }}"
   {% endif %}
@@ -13,5 +15,7 @@
     data-product-id="{{ product.id }}"
   {% endif %}
 >
-  Loading press strip…
+  <div class="presswall-loading presswall-live-loader">
+    Loading press strip…
+  </div>
 </div>

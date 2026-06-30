@@ -6,6 +6,7 @@ import { getPreviewViewportWidth } from "@/lib/presswall-preview-viewport";
 import type {
   PresswallConfig,
   PublisherCatalogItem,
+  ShopCustomLogo,
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ type DeviceMode = "desktop" | "mobile";
 interface OnboardingPreviewCanvasProps {
   catalog: PublisherCatalogItem[];
   config: PresswallConfig;
+  customLogos?: ShopCustomLogo[];
   deviceMode: DeviceMode;
   selections: ShopPublisherSelection[];
 }
@@ -24,6 +26,7 @@ const CANVAS_HORIZONTAL_PADDING = 48;
 export function OnboardingPreviewCanvas({
   catalog,
   config,
+  customLogos,
   deviceMode,
   selections,
 }: OnboardingPreviewCanvasProps) {
@@ -103,6 +106,7 @@ export function OnboardingPreviewCanvas({
               catalog={catalog}
               className="border-black/10 shadow-sm"
               config={config}
+              customLogos={customLogos}
               deviceMode={deviceMode}
               scale="lg"
               selections={selections}

@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { createClient } from "@libsql/client";
-import { buildStorefrontPayload } from "@/lib/build-storefront-payload";
+import { saveShopBannerAssignments } from "@/lib/banner-assignment-service";
+import { getResolvedStorefrontPayload } from "@/lib/build-storefront-payload";
 import {
   listShopCustomTemplates,
   saveShopCustomTemplate,
@@ -62,7 +63,7 @@ describe("save/list shop banners", () => {
     expect(listed.length).toBeGreaterThanOrEqual(2);
   });
 
-  test("persists custom logo id selections and resolves them for storefront payload", async () => {
+  test("persists custom logo id selections and resolves them via getResolvedStorefrontPayload", async () => {
     const saved = await saveShopCustomTemplate(TEST_SHOP, {
       name: "Custom Logo Banner",
       config: {
@@ -72,31 +73,22 @@ describe("save/list shop banners", () => {
       selections: [{ customLogoId: CUSTOM_LOGO_ID, position: 0 }],
     });
 
+    await saveShopBannerAssignments(TEST_SHOP, {
+      homepageBannerId: saved.id,
+      allProductsBannerId: saved.id,
+    });
+
     const listed = await listShopCustomTemplates(TEST_SHOP);
     const banner = listed.find((entry) => entry.id === saved.id);
 
     expect(banner).toBeDefined();
     expect(banner?.selections[0]?.customLogoId).toBe(CUSTOM_LOGO_ID);
-    if (!banner) {
-      return;
-    }
 
-    const payload = buildStorefrontPayload(
-      banner.config,
-      banner.selections,
-      [],
-      {
-        customLogos: [
-          {
-            id: CUSTOM_LOGO_ID,
-            name: "Local Podcast",
-            logoSvg: CUSTOM_SVG,
-            createdAt: "2026-01-01T00:00:00.000Z",
-          },
-        ],
-      }
-    );
+    const payload = await getResolvedStorefrontPayload(TEST_SHOP, [], {
+      pageType: "homepage",
+    });
 
+    expect(payload.headingText).toBe("Press picks");
     expect(payload.publishers[0]?.name).toBe("Local Podcast");
     expect(payload.publishers[0]?.logoSvg).toBe(CUSTOM_SVG);
   });

@@ -279,6 +279,7 @@ export function MerchantOverview({ data }: MerchantOverviewProps) {
               <OnboardingPreviewCanvas
                 catalog={data.catalog}
                 config={data.config}
+                customLogos={data.customLogos}
                 deviceMode={deviceMode}
                 selections={data.selections}
               />

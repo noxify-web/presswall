@@ -32,6 +32,7 @@ mock.module("@/hooks/use-theme-activation-status", () => ({
 const dataFixture: MerchantOverviewData = {
   catalog: [],
   config: DEFAULT_PRESSWALL_CONFIG,
+  customLogos: [],
   selected: [{ key: "1", publisherId: "pub-1" }],
   selections: [{ publisherId: "pub-1", position: 0 }],
   unavailableCount: 0,

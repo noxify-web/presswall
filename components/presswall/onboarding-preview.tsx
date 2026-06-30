@@ -17,6 +17,7 @@ import { scaleSpacingForPreview } from "@/lib/presswall-spacing";
 import type {
   PresswallConfig,
   PublisherCatalogItem,
+  ShopCustomLogo,
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ interface OnboardingPreviewProps {
   catalog: PublisherCatalogItem[];
   className?: string;
   config: PresswallConfig;
+  customLogos?: ShopCustomLogo[];
   deviceMode?: PresswallViewport;
   previewTheme?: "light" | "dark";
   scale?: "sm" | "md" | "lg";
@@ -72,6 +74,7 @@ function getPreviewLogoMaxWidth(
 export function OnboardingPreview({
   catalog,
   config,
+  customLogos,
   selections,
   className,
   deviceMode,
@@ -117,6 +120,7 @@ export function OnboardingPreview({
 
   const { items, renderLogo } = usePresswallStripItems({
     catalog,
+    customLogos,
     logoHeight,
     logoMaxWidth,
     logoStyle,

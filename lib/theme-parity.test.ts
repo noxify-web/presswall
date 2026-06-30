@@ -48,8 +48,11 @@ describe("theme bundle parity", () => {
     expect(presswallBlock).toContain("data-product-id");
     expect(presswallEmbed).toContain("data-page-type");
     expect(presswallEmbed).toContain("data-product-id");
+    expect(presswallLive).toContain("data-presswall-root");
+    expect(presswallLive).toContain("data-proxy-url");
     expect(presswallLive).toContain("data-page-type");
     expect(presswallLive).toContain("data-product-id");
     expect(presswallLive).not.toContain("pw.publishers");
+    expect(themeJs).toContain('querySelectorAll("[data-presswall-root]")');
   });
 });

@@ -2,9 +2,11 @@
 
 import { useMemo } from "react";
 import { PublisherLogo } from "@/components/presswall/publisher-logo";
+import { hydrateBannerSelections } from "@/lib/hydrate-banner-selections";
 import { getLogoSlotStyle } from "@/lib/presswall-logo-style";
 import type {
   PublisherCatalogItem,
+  ShopCustomLogo,
   ShopPublisherSelection,
   StorefrontPublisher,
 } from "@/lib/presswall-types";
@@ -12,6 +14,7 @@ import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers
 
 interface UsePresswallStripItemsOptions {
   catalog: PublisherCatalogItem[];
+  customLogos?: ShopCustomLogo[];
   logoHeight: number;
   logoMaxWidth: number;
   logoStyle: React.CSSProperties | undefined;
@@ -20,15 +23,21 @@ interface UsePresswallStripItemsOptions {
 
 export function usePresswallStripItems({
   catalog,
+  customLogos,
   logoHeight,
   logoMaxWidth,
   logoStyle,
   selections,
 }: UsePresswallStripItemsOptions) {
-  const items = useMemo(
-    () => resolveStorefrontPublishers(catalog, selections),
-    [catalog, selections]
-  );
+  const items = useMemo(() => {
+    const hydratedSelections = customLogos?.length
+      ? hydrateBannerSelections(selections, customLogos)
+      : selections;
+
+    return resolveStorefrontPublishers(catalog, hydratedSelections, {
+      customLogos,
+    });
+  }, [catalog, customLogos, selections]);
 
   const renderLogo = useMemo(
     () => (item: StorefrontPublisher) => (

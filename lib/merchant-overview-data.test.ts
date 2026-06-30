@@ -31,6 +31,7 @@ describe("merchantOverviewFromEditor", () => {
     expect(data.selected).toEqual([{ key: "forbes", publisherId: "forbes" }]);
     expect(data.selections).toEqual([{ publisherId: "forbes", position: 0 }]);
     expect(data.catalog).toEqual(FORBES_CATALOG);
+    expect(data.customLogos).toEqual([]);
     expect(data.unavailableCount).toBe(0);
   });
 });

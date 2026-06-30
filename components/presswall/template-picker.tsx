@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 interface TemplatePickerProps {
   catalog: PresswallEditor["catalog"];
+  customLogos: PresswallEditor["customLogos"];
   customTemplates: ShopCustomTemplate[];
   matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
@@ -38,6 +39,7 @@ function templateLayoutLabel(layout: PresswallTemplate["config"]["layout"]) {
 
 function TemplateRow({
   catalog,
+  customLogos,
   isSelected,
   onApply,
   onCustomize,
@@ -48,6 +50,7 @@ function TemplateRow({
   layoutLabel,
 }: {
   catalog: PresswallEditor["catalog"];
+  customLogos: PresswallEditor["customLogos"];
   isSelected: boolean;
   layoutLabel: string;
   onApply: () => void;
@@ -76,6 +79,7 @@ function TemplateRow({
           catalog={catalog}
           className="pointer-events-none w-full border-black/5 shadow-none"
           config={previewConfig}
+          customLogos={customLogos}
           previewTheme={getTemplatePreviewTheme("classic")}
           scale="sm"
           selections={previewSelections}
@@ -132,6 +136,7 @@ function TemplateRow({
 
 export function TemplatePicker({
   catalog,
+  customLogos,
   customTemplates,
   matchedCustomTemplateId,
   matchedTemplateId,
@@ -146,6 +151,7 @@ export function TemplatePicker({
         {PRESSWALL_TEMPLATES.map((template) => (
           <TemplateRow
             catalog={catalog}
+            customLogos={customLogos}
             isSelected={matchedTemplateId === template.id}
             key={template.id}
             layoutLabel={templateLayoutLabel(template.config.layout)}
@@ -167,6 +173,7 @@ export function TemplatePicker({
             {customTemplates.map((template) => (
               <TemplateRow
                 catalog={catalog}
+                customLogos={customLogos}
                 isSelected={matchedCustomTemplateId === template.id}
                 key={template.id}
                 layoutLabel={templateLayoutLabel(template.config.layout)}

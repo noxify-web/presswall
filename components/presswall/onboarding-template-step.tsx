@@ -96,6 +96,7 @@ export function OnboardingTemplateStep({
             <OnboardingPreviewCanvas
               catalog={editor.catalog}
               config={editor.config}
+              customLogos={editor.customLogos}
               deviceMode={deviceMode}
               selections={editor.selections}
             />
@@ -123,6 +124,7 @@ export function OnboardingTemplateStep({
             >
               <TemplatePicker
                 catalog={editor.catalog}
+                customLogos={editor.customLogos}
                 customTemplates={editor.customTemplates}
                 matchedCustomTemplateId={editor.matchedCustomTemplateId}
                 matchedTemplateId={editor.matchedTemplateId}
