@@ -5,6 +5,17 @@ import { MAX_CUSTOM_LOGO_SVG_LENGTH } from "@/lib/presswall-validation";
 
 const THEME_MAX_CUSTOM_LOGO_SVG_LENGTH =
   /const MAX_CUSTOM_LOGO_SVG_LENGTH = 50[,_]?000;/;
+const LIQUID_SCHEMA_PATTERN = /{% schema %}\s*([\s\S]*?)\s*{% endschema %}/;
+
+function readBlockSchema(blockPath: string) {
+  const liquid = readFileSync(join(process.cwd(), blockPath), "utf8");
+  const schemaMatch = liquid.match(LIQUID_SCHEMA_PATTERN);
+  if (!schemaMatch?.[1]) {
+    throw new Error(`Missing schema block in ${blockPath}`);
+  }
+
+  return JSON.parse(schemaMatch[1]) as { javascript?: string };
+}
 
 describe("theme bundle parity", () => {
   test("keeps custom logo svg length limit in sync with theme JS", () => {
@@ -54,5 +65,17 @@ describe("theme bundle parity", () => {
     expect(presswallLive).toContain("data-product-id");
     expect(presswallLive).not.toContain("pw.publishers");
     expect(themeJs).toContain('querySelectorAll("[data-presswall-root]")');
+  });
+
+  test("declares presswall.js in both theme block schemas", () => {
+    const presswallBlockSchema = readBlockSchema(
+      "extensions/presswall-theme/blocks/presswall.liquid"
+    );
+    const presswallEmbedSchema = readBlockSchema(
+      "extensions/presswall-theme/blocks/presswall-embed.liquid"
+    );
+
+    expect(presswallBlockSchema.javascript).toBe("presswall.js");
+    expect(presswallEmbedSchema.javascript).toBe("presswall.js");
   });
 });

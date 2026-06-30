@@ -1,9 +1,6 @@
-import { listShopBannerAssignments } from "@/lib/banner-assignment-service";
 import type { BannerPageContext } from "@/lib/banner-page-context";
 import { getShopCustomLogos } from "@/lib/custom-logo-service";
-import { listShopCustomTemplates } from "@/lib/custom-template-service";
 import { hydrateBannerSelections } from "@/lib/hydrate-banner-selections";
-import { ensureLegacyBannerMigrated } from "@/lib/legacy-banner-migration";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import type {
   PresswallConfig,
@@ -17,6 +14,7 @@ import {
   resolveBannerIdForContext,
 } from "@/lib/resolve-banner-for-context";
 import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers";
+import { bootstrapShopBanners } from "@/lib/shop-banner-bootstrap";
 
 export function buildStorefrontPayload(
   config: PresswallConfig,
@@ -43,13 +41,12 @@ export async function getResolvedStorefrontPayload(
   catalog: PublisherCatalogItem[],
   context: BannerPageContext | null
 ): Promise<StorefrontPayload> {
-  const [defaultBannerId, banners, assignments, customLogos] =
-    await Promise.all([
-      ensureLegacyBannerMigrated(shop),
-      listShopCustomTemplates(shop),
-      listShopBannerAssignments(shop),
-      getShopCustomLogos(shop),
-    ]);
+  const [bootstrap, customLogos] = await Promise.all([
+    bootstrapShopBanners(shop),
+    getShopCustomLogos(shop),
+  ]);
+
+  const { defaultBannerId, banners, assignments } = bootstrap;
 
   const bannerRecords = banners.map((banner) => ({
     id: banner.id,

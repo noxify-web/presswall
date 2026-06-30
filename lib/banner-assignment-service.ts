@@ -1,85 +1,32 @@
-import { and, asc, eq } from "drizzle-orm";
-import { ensureLegacyBannerMigrated } from "@/lib/legacy-banner-migration";
+import { and, eq } from "drizzle-orm";
 import type { BannerAssignmentTarget } from "@/lib/resolve-banner-for-context";
+import {
+  bootstrapShopBanners,
+  type ProductBannerAssignmentRecord,
+  type ShopBannerAssignmentRecord,
+  type ShopBannerAssignmentsState,
+} from "@/lib/shop-banner-bootstrap";
 import { db } from "@/src/db";
 import { shopBannerAssignments } from "@/src/db/schema";
 
-export interface ShopBannerAssignment {
-  bannerId: string;
-  id: string;
-  target: BannerAssignmentTarget;
-  updatedAt: string;
-}
-
-export interface ProductBannerAssignment {
-  bannerId: string;
-  productId: string;
-  productTitle?: string;
-}
-
-export interface ShopBannerAssignmentsState {
-  allProductsBannerId: string | null;
-  defaultBannerId: string | null;
-  homepageBannerId: string | null;
-  productAssignments: ProductBannerAssignment[];
-}
+export type ShopBannerAssignment = ShopBannerAssignmentRecord;
+export type ProductBannerAssignment = ProductBannerAssignmentRecord;
+export type { ShopBannerAssignmentsState } from "@/lib/shop-banner-bootstrap";
 
 const CORE_TARGETS = new Set(["homepage", "all_products"]);
-const PRODUCT_TARGET_PREFIX_PATTERN = /^product:/;
-
-function mapAssignmentRow(
-  row: typeof shopBannerAssignments.$inferSelect
-): ShopBannerAssignment {
-  return {
-    id: row.id,
-    target: row.target as BannerAssignmentTarget,
-    bannerId: row.bannerId,
-    updatedAt: row.updatedAt,
-  };
-}
 
 export async function listShopBannerAssignments(
   shop: string
 ): Promise<ShopBannerAssignment[]> {
-  await ensureLegacyBannerMigrated(shop);
-
-  const rows = await db
-    .select()
-    .from(shopBannerAssignments)
-    .where(eq(shopBannerAssignments.shop, shop))
-    .orderBy(asc(shopBannerAssignments.target));
-
-  return rows.map(mapAssignmentRow);
+  const bootstrap = await bootstrapShopBanners(shop);
+  return bootstrap.assignments;
 }
 
 export async function getShopBannerAssignmentsState(
   shop: string
 ): Promise<ShopBannerAssignmentsState> {
-  const [assignments, defaultBannerId] = await Promise.all([
-    listShopBannerAssignments(shop),
-    ensureLegacyBannerMigrated(shop),
-  ]);
-
-  const homepageBannerId =
-    assignments.find((assignment) => assignment.target === "homepage")
-      ?.bannerId ?? null;
-  const allProductsBannerId =
-    assignments.find((assignment) => assignment.target === "all_products")
-      ?.bannerId ?? null;
-
-  const productAssignments = assignments
-    .filter((assignment) => !CORE_TARGETS.has(assignment.target))
-    .map((assignment) => ({
-      bannerId: assignment.bannerId,
-      productId: assignment.target.replace(PRODUCT_TARGET_PREFIX_PATTERN, ""),
-    }));
-
-  return {
-    defaultBannerId,
-    homepageBannerId,
-    allProductsBannerId,
-    productAssignments,
-  };
+  const bootstrap = await bootstrapShopBanners(shop);
+  return bootstrap.assignmentsState;
 }
 
 export async function saveShopBannerAssignments(
@@ -90,10 +37,10 @@ export async function saveShopBannerAssignments(
     productAssignments?: ProductBannerAssignment[];
   }
 ): Promise<ShopBannerAssignmentsState> {
-  await ensureLegacyBannerMigrated(shop);
+  const bootstrap = await bootstrapShopBanners(shop);
 
   const now = new Date().toISOString();
-  const existing = await listShopBannerAssignments(shop);
+  const existing = bootstrap.assignments;
   const existingByTarget = new Map(
     existing.map((assignment) => [assignment.target, assignment])
   );

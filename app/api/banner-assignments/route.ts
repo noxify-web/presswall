@@ -3,11 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionForRequest } from "@/lib/auth-helpers";
 import {
-  getShopBannerAssignmentsState,
   removeProductBannerAssignment,
   saveShopBannerAssignments,
 } from "@/lib/banner-assignment-service";
-import { listShopCustomTemplates } from "@/lib/custom-template-service";
+import { bootstrapShopBanners } from "@/lib/shop-banner-bootstrap";
 import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 const productAssignmentSchema = z.object({
@@ -28,14 +27,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [assignments, banners] = await Promise.all([
-    getShopBannerAssignmentsState(session.shop),
-    listShopCustomTemplates(session.shop),
-  ]);
+  const bootstrap = await bootstrapShopBanners(session.shop);
 
   return NextResponse.json({
-    assignments,
-    banners: banners.map((banner) => ({
+    assignments: bootstrap.assignmentsState,
+    banners: bootstrap.banners.map((banner) => ({
       id: banner.id,
       name: banner.name,
       description: banner.description,
