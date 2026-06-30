@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/admin-fetch";
 import { createPendingCustomLogoId } from "@/lib/custom-logo-pending";
+import type { ShopCustomTemplate } from "@/lib/custom-template-service";
 import { fetchPresswallClientData } from "@/lib/fetch-presswall-client-data";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import {
@@ -27,6 +28,7 @@ import type {
 } from "@/lib/presswall-types";
 
 export interface PresswallEditor {
+  applyCustomBanner: (templateId: string) => void;
   applyTemplate: (templateId: PresswallTemplateId) => void;
   catalog: PublisherCatalogItem[];
   catalogById: Map<string, PublisherCatalogItem>;
@@ -34,14 +36,17 @@ export interface PresswallEditor {
   completeOnboarding: () => Promise<boolean>;
   config: PresswallConfig;
   customLogos: ShopCustomLogo[];
+  customTemplates: ShopCustomTemplate[];
   deleteCustomLogo: (logoId: string) => Promise<void>;
   discard: () => void;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
   loadError: boolean;
+  matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   needsOnboarding: boolean;
+  refreshCustomTemplates: () => Promise<void>;
   reload: () => Promise<void>;
   save: () => Promise<void>;
   search: string;
@@ -81,16 +86,44 @@ export function usePresswallEditor(): PresswallEditor {
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(true);
+  const [customTemplates, setCustomTemplates] = useState<ShopCustomTemplate[]>(
+    []
+  );
+  const [activeCustomTemplateId, setActiveCustomTemplateId] = useState<
+    string | null
+  >(null);
   const [savedSnapshot, setSavedSnapshot] = useState<{
     config: PresswallConfig;
     customLogos: ShopCustomLogo[];
     selected: SelectedPublisher[];
   } | null>(null);
 
-  const matchedTemplateId = useMemo(
-    () => findMatchingPresswallTemplateId(config),
-    [config]
-  );
+  const matchedTemplateId = useMemo(() => {
+    if (activeCustomTemplateId) {
+      return null;
+    }
+
+    return findMatchingPresswallTemplateId(config);
+  }, [activeCustomTemplateId, config]);
+
+  const matchedCustomTemplateId = activeCustomTemplateId;
+
+  const loadCustomTemplates = useCallback(async () => {
+    try {
+      const response = await adminFetch("/api/custom-templates");
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as {
+        templates?: ShopCustomTemplate[];
+      };
+
+      setCustomTemplates(data.templates ?? []);
+    } catch {
+      // Non-blocking for the main editor flow.
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -109,13 +142,15 @@ export function usePresswallEditor(): PresswallEditor {
         selected: data.selected,
       });
       setNeedsOnboarding(data.needsOnboarding);
+      setActiveCustomTemplateId(null);
+      await loadCustomTemplates();
     } catch {
       setLoadError(true);
       toast.error("Failed to load Presswall settings");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadCustomTemplates]);
 
   useEffect(() => {
     loadData().catch(() => {
@@ -306,8 +341,24 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   const applyTemplate = useCallback((templateId: PresswallTemplateId) => {
+    setActiveCustomTemplateId(null);
     setConfig(applyPresswallTemplate(templateId));
   }, []);
+
+  const applyCustomBanner = useCallback(
+    (templateId: string) => {
+      const template = customTemplates.find((entry) => entry.id === templateId);
+      if (!template) {
+        toast.error("Saved banner not found");
+        return;
+      }
+
+      setActiveCustomTemplateId(template.id);
+      setConfig(template.config);
+      setSelected(selectedFromApi(template.selections));
+    },
+    [customTemplates]
+  );
 
   const updateConfig = useCallback(
     <K extends keyof PresswallConfig>(key: K, value: PresswallConfig[K]) => {
@@ -330,6 +381,7 @@ export function usePresswallEditor(): PresswallEditor {
     completeOnboarding,
     config,
     customLogos,
+    customTemplates,
     discard,
     isDirty,
     isLoading,
@@ -337,12 +389,15 @@ export function usePresswallEditor(): PresswallEditor {
     loadError,
     needsOnboarding,
     reload: loadData,
+    refreshCustomTemplates: loadCustomTemplates,
     search,
     selected,
     selectedIds,
+    matchedCustomTemplateId,
     matchedTemplateId,
     selections,
     unavailableCount,
+    applyCustomBanner,
     applyTemplate,
     deleteCustomLogo,
     save,

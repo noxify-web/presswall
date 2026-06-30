@@ -1,4 +1,5 @@
 import { getAppUrl } from "@/lib/app-url";
+import { getShopBannerAssignmentsState } from "@/lib/banner-assignment-service";
 import { shouldInvertLogos } from "@/lib/presswall-logo-contrast";
 import { getStorefrontPayload } from "@/lib/presswall-service";
 import type { StorefrontPayload } from "@/lib/presswall-types";
@@ -78,7 +79,10 @@ export async function syncStorefrontMetafield(
   accessToken: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const payload = await getStorefrontPayload(shop);
+    const [payload, assignments] = await Promise.all([
+      getStorefrontPayload(shop),
+      getShopBannerAssignmentsState(shop),
+    ]);
     const shopIdResult = await adminGraphql<ShopIdResult>(
       shop,
       accessToken,
@@ -102,7 +106,9 @@ export async function syncStorefrontMetafield(
             ownerId: shopId,
             key: STOREFRONT_CONFIG_KEY,
             type: "json",
-            value: JSON.stringify(serializeStorefrontPayload(shop, payload)),
+            value: JSON.stringify(
+              serializeStorefrontManifest(shop, payload, assignments)
+            ),
           },
         ],
       }
@@ -144,6 +150,22 @@ function serializeStorefrontPayload(shop: string, payload: StorefrontPayload) {
       ),
       logoSvg: publisher.logoSvg,
     })),
+  };
+}
+
+function serializeStorefrontManifest(
+  shop: string,
+  payload: StorefrontPayload,
+  assignments: Awaited<ReturnType<typeof getShopBannerAssignmentsState>>
+) {
+  return {
+    version: 2,
+    resolveViaProxy: true,
+    defaultBannerId: assignments.defaultBannerId,
+    homepageBannerId: assignments.homepageBannerId,
+    allProductsBannerId: assignments.allProductsBannerId,
+    productAssignments: assignments.productAssignments,
+    fallback: serializeStorefrontPayload(shop, payload),
   };
 }
 

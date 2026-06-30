@@ -9,6 +9,16 @@ declare global {
   interface Window {
     shopify?: {
       idToken: () => Promise<string>;
+      resourcePicker?: (options: {
+        type: "product";
+        multiple?: boolean;
+        action?: "select";
+      }) => Promise<
+        Array<{
+          id: string | number;
+          title?: string;
+        }>
+      >;
     };
   }
 

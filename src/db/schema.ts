@@ -67,11 +67,33 @@ export const shopCustomTemplates = sqliteTable(
     name: text("name").notNull(),
     description: text("description"),
     configJson: text("config_json").notNull(),
+    selectionsJson: text("selections_json").notNull().default("[]"),
+    isDefault: integer("is_default", { mode: "boolean" })
+      .notNull()
+      .default(false),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
   (table) => ({
     shopIdx: index("shop_custom_templates_shop_idx").on(table.shop),
+  })
+);
+
+export const shopBannerAssignments = sqliteTable(
+  "shop_banner_assignments",
+  {
+    id: text("id").primaryKey(),
+    shop: text("shop").notNull(),
+    target: text("target").notNull(),
+    bannerId: text("banner_id").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    shopIdx: index("shop_banner_assignments_shop_idx").on(table.shop),
+    shopTargetIdx: index("shop_banner_assignments_shop_target_idx").on(
+      table.shop,
+      table.target
+    ),
   })
 );
 

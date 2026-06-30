@@ -5,7 +5,9 @@ import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
+import type { ShopCustomTemplate } from "@/lib/custom-template-service";
 import {
   applyPresswallTemplate,
   getTemplatePreviewTheme,
@@ -17,8 +19,11 @@ import { cn } from "@/lib/utils";
 
 interface TemplatePickerProps {
   catalog: PresswallEditor["catalog"];
+  customTemplates: ShopCustomTemplate[];
+  matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   onApply: (templateId: PresswallTemplateId) => void;
+  onApplyCustom: (templateId: string) => void;
   onCustomize?: () => void;
   selections: PresswallEditor["selections"];
 }
@@ -36,18 +41,22 @@ function TemplateRow({
   isSelected,
   onApply,
   onCustomize,
-  selections,
-  template,
+  previewConfig,
+  previewSelections,
+  subtitle,
+  templateName,
+  layoutLabel,
 }: {
   catalog: PresswallEditor["catalog"];
   isSelected: boolean;
+  layoutLabel: string;
   onApply: () => void;
   onCustomize?: () => void;
-  selections: PresswallEditor["selections"];
-  template: PresswallTemplate;
+  previewConfig: PresswallEditor["config"];
+  previewSelections: PresswallEditor["selections"];
+  subtitle: string;
+  templateName: string;
 }) {
-  const previewConfig = applyPresswallTemplate(template.id);
-
   return (
     <div
       className={cn(
@@ -67,9 +76,9 @@ function TemplateRow({
           catalog={catalog}
           className="pointer-events-none w-full border-black/5 shadow-none"
           config={previewConfig}
-          previewTheme={getTemplatePreviewTheme(template.id)}
+          previewTheme={getTemplatePreviewTheme("classic")}
           scale="sm"
-          selections={selections}
+          selections={previewSelections}
         />
 
         {isSelected ? (
@@ -87,9 +96,9 @@ function TemplateRow({
             onClick={onApply}
             type="button"
           >
-            <p className="truncate font-medium text-sm">{template.name}</p>
+            <p className="truncate font-medium text-sm">{templateName}</p>
             <Badge className="shrink-0 text-[0.625rem]" variant="secondary">
-              {templateLayoutLabel(template.config.layout)}
+              {layoutLabel}
             </Badge>
           </button>
 
@@ -113,7 +122,7 @@ function TemplateRow({
           type="button"
         >
           <p className="line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-            {template.description}
+            {subtitle}
           </p>
         </button>
       </div>
@@ -123,8 +132,11 @@ function TemplateRow({
 
 export function TemplatePicker({
   catalog,
+  customTemplates,
+  matchedCustomTemplateId,
   matchedTemplateId,
   onApply,
+  onApplyCustom,
   onCustomize,
   selections,
 }: TemplatePickerProps) {
@@ -136,12 +148,41 @@ export function TemplatePicker({
             catalog={catalog}
             isSelected={matchedTemplateId === template.id}
             key={template.id}
+            layoutLabel={templateLayoutLabel(template.config.layout)}
             onApply={() => onApply(template.id)}
             onCustomize={onCustomize}
-            selections={selections}
-            template={template}
+            previewConfig={applyPresswallTemplate(template.id)}
+            previewSelections={selections}
+            subtitle={template.description}
+            templateName={template.name}
           />
         ))}
+
+        {customTemplates.length > 0 ? (
+          <>
+            <Separator className="my-3" />
+            <p className="px-0.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+              Saved banners
+            </p>
+            {customTemplates.map((template) => (
+              <TemplateRow
+                catalog={catalog}
+                isSelected={matchedCustomTemplateId === template.id}
+                key={template.id}
+                layoutLabel={templateLayoutLabel(template.config.layout)}
+                onApply={() => onApplyCustom(template.id)}
+                onCustomize={onCustomize}
+                previewConfig={template.config}
+                previewSelections={template.selections}
+                subtitle={
+                  template.description ??
+                  "Your saved banner with styling and outlets."
+                }
+                templateName={template.name}
+              />
+            ))}
+          </>
+        ) : null}
       </div>
     </ScrollArea>
   );

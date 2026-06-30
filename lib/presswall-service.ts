@@ -1,10 +1,16 @@
 import { asc, eq, inArray } from "drizzle-orm";
+import type { BannerPageContext } from "@/lib/banner-page-context";
+import {
+  buildStorefrontPayload,
+  getResolvedStorefrontPayload,
+} from "@/lib/build-storefront-payload";
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
 import { isPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import {
   getShopCustomLogos,
   syncShopCustomLogosInTransaction,
 } from "@/lib/custom-logo-service";
+import { syncDefaultBannerFromEditor } from "@/lib/legacy-banner-migration";
 import { normalizePresswallLayout } from "@/lib/normalize-presswall-layout";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import type {
@@ -17,7 +23,6 @@ import type {
 } from "@/lib/presswall-types";
 import { presswallConfigSchema } from "@/lib/presswall-types";
 import { getSeedPublishers } from "@/lib/publishers-seed";
-import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers";
 import { sanitizeSvg } from "@/lib/svg-sanitize";
 import { db } from "@/src/db";
 import { publishers, shopConfigs, shopPublishers } from "@/src/db/schema";
@@ -322,6 +327,12 @@ export async function saveShopPresswall(
 
   const hydratedSelections = await getShopPublisherSelections(shop);
 
+  await syncDefaultBannerFromEditor(
+    shop,
+    JSON.stringify(config),
+    JSON.stringify(hydratedSelections)
+  );
+
   return {
     customLogos: syncedLogos,
     selections: hydratedSelections,
@@ -329,18 +340,21 @@ export async function saveShopPresswall(
 }
 
 export async function getStorefrontPayload(
-  shop: string
+  shop: string,
+  context?: BannerPageContext | null
 ): Promise<StorefrontPayload> {
   await ensurePublisherCatalogSeeded();
 
-  const [config, selections, catalog] = await Promise.all([
-    getShopConfig(shop),
-    getShopPublisherSelections(shop),
-    getPublisherCatalog(),
-  ]);
+  const catalog = await getPublisherCatalog();
 
-  return {
-    ...config,
-    publishers: resolveStorefrontPublishers(catalog, selections),
-  };
+  if (context === undefined) {
+    const [config, selections] = await Promise.all([
+      getShopConfig(shop),
+      getShopPublisherSelections(shop),
+    ]);
+
+    return buildStorefrontPayload(config, selections, catalog);
+  }
+
+  return getResolvedStorefrontPayload(shop, catalog, context);
 }

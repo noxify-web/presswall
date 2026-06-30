@@ -1,6 +1,12 @@
 import { and, asc, eq } from "drizzle-orm";
-import type { PresswallConfig } from "@/lib/presswall-types";
-import { presswallConfigSchema } from "@/lib/presswall-types";
+import type {
+  PresswallConfig,
+  ShopPublisherSelection,
+} from "@/lib/presswall-types";
+import {
+  presswallConfigSchema,
+  shopPublisherSelectionSchema,
+} from "@/lib/presswall-types";
 import { db } from "@/src/db";
 import { shopCustomTemplates } from "@/src/db/schema";
 
@@ -9,8 +15,28 @@ export interface ShopCustomTemplate {
   createdAt: string;
   description: string | null;
   id: string;
+  isDefault: boolean;
   name: string;
+  selections: ShopPublisherSelection[];
   updatedAt: string;
+}
+
+function parseSelectionsJson(value: string): ShopPublisherSelection[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return [];
+  }
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  return parsed.flatMap((entry) => {
+    const result = shopPublisherSelectionSchema.safeParse(entry);
+    return result.success ? [result.data] : [];
+  });
 }
 
 function mapCustomTemplateRow(
@@ -33,6 +59,8 @@ function mapCustomTemplateRow(
     name: row.name,
     description: row.description,
     config: parsed.data,
+    selections: parseSelectionsJson(row.selectionsJson),
+    isDefault: row.isDefault,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -52,12 +80,29 @@ export async function listShopCustomTemplates(
     .filter((template): template is ShopCustomTemplate => template !== null);
 }
 
+export async function getShopCustomTemplateById(
+  shop: string,
+  id: string
+): Promise<ShopCustomTemplate | null> {
+  const rows = await db
+    .select()
+    .from(shopCustomTemplates)
+    .where(
+      and(eq(shopCustomTemplates.shop, shop), eq(shopCustomTemplates.id, id))
+    )
+    .limit(1);
+
+  const mapped = rows[0] ? mapCustomTemplateRow(rows[0]) : null;
+  return mapped;
+}
+
 export async function saveShopCustomTemplate(
   shop: string,
   input: {
     config: PresswallConfig;
     description?: string;
     name: string;
+    selections: ShopPublisherSelection[];
   }
 ): Promise<ShopCustomTemplate> {
   const now = new Date().toISOString();
@@ -86,6 +131,8 @@ export async function saveShopCustomTemplate(
     name: trimmedName,
     description: trimmedDescription,
     configJson: JSON.stringify(input.config),
+    selectionsJson: JSON.stringify(input.selections),
+    isDefault: false,
     createdAt: now,
     updatedAt: now,
   });

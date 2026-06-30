@@ -55,6 +55,7 @@ export function OnboardingTemplateStep({
   const handleTemplateSaved = (name: string) => {
     setLastSavedConfig(editor.config);
     setSavedTemplateName(name);
+    editor.refreshCustomTemplates().catch(() => undefined);
   };
 
   let saveTemplateAction: ReactNode = null;
@@ -122,8 +123,11 @@ export function OnboardingTemplateStep({
             >
               <TemplatePicker
                 catalog={editor.catalog}
+                customTemplates={editor.customTemplates}
+                matchedCustomTemplateId={editor.matchedCustomTemplateId}
                 matchedTemplateId={editor.matchedTemplateId}
                 onApply={editor.applyTemplate}
+                onApplyCustom={editor.applyCustomBanner}
                 onCustomize={() => setActiveTab("custom")}
                 selections={editor.selections}
               />
@@ -162,6 +166,7 @@ export function OnboardingTemplateStep({
         onOpenChange={setSaveDialogOpen}
         onSaved={handleTemplateSaved}
         open={saveDialogOpen}
+        selections={editor.selections}
       />
     </div>
   );

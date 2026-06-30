@@ -16,13 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { adminFetch } from "@/lib/admin-fetch";
-import type { PresswallConfig } from "@/lib/presswall-types";
+import type {
+  PresswallConfig,
+  ShopPublisherSelection,
+} from "@/lib/presswall-types";
 
 interface SaveTemplateDialogProps {
   config: PresswallConfig;
   onOpenChange: (open: boolean) => void;
   onSaved: (name: string) => void;
   open: boolean;
+  selections: ShopPublisherSelection[];
 }
 
 export function SaveTemplateDialog({
@@ -30,6 +34,7 @@ export function SaveTemplateDialog({
   onOpenChange,
   config,
   onSaved,
+  selections,
 }: SaveTemplateDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -63,6 +68,7 @@ export function SaveTemplateDialog({
           name: trimmedName,
           description: description.trim() || undefined,
           config,
+          selections,
         }),
       });
 

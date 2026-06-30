@@ -43,6 +43,17 @@ const MIGRATIONS = [
   )`,
   "CREATE INDEX IF NOT EXISTS shop_custom_logos_shop_idx ON shop_custom_logos (shop)",
   "ALTER TABLE shop_publishers ADD COLUMN custom_logo_id text",
+  "ALTER TABLE shop_custom_templates ADD COLUMN selections_json text DEFAULT '[]' NOT NULL",
+  "ALTER TABLE shop_custom_templates ADD COLUMN is_default integer DEFAULT 0 NOT NULL",
+  `CREATE TABLE IF NOT EXISTS shop_banner_assignments (
+    id text PRIMARY KEY NOT NULL,
+    shop text NOT NULL,
+    target text NOT NULL,
+    banner_id text NOT NULL,
+    updated_at text NOT NULL
+  )`,
+  "CREATE INDEX IF NOT EXISTS shop_banner_assignments_shop_idx ON shop_banner_assignments (shop)",
+  "CREATE INDEX IF NOT EXISTS shop_banner_assignments_shop_target_idx ON shop_banner_assignments (shop, target)",
 ];
 
 function isIgnorableMigrationError(error: unknown): boolean {

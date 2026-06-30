@@ -1,7 +1,19 @@
+{%- if template.name == 'index' -%}
+  {%- assign presswall_page_type = 'homepage' -%}
+{%- elsif template.name == 'product' -%}
+  {%- assign presswall_page_type = 'product' -%}
+{%- endif -%}
+
 <div
   class="presswall-root"
   data-presswall-root
   data-proxy-url="{{ shop.url }}/apps/presswall/config"
+  {% if presswall_page_type != blank %}
+    data-page-type="{{ presswall_page_type }}"
+  {% endif %}
+  {% if product %}
+    data-product-id="{{ product.id }}"
+  {% endif %}
   {% if request.design_mode %}
     data-presswall-design-mode
   {% endif %}
@@ -9,7 +21,7 @@
   {% if request.design_mode %}
     {% render 'presswall-static-preview' %}
   {% else %}
-    {% render 'presswall-live' %}
+    <div class="presswall-loading">Loading press strip…</div>
   {% endif %}
 </div>
 

@@ -6,12 +6,16 @@ import {
   listShopCustomTemplates,
   saveShopCustomTemplate,
 } from "@/lib/custom-template-service";
-import { presswallConfigSchema } from "@/lib/presswall-types";
+import {
+  presswallConfigSchema,
+  shopPublisherSelectionSchema,
+} from "@/lib/presswall-types";
 
 const saveCustomTemplateSchema = z.object({
   config: presswallConfigSchema,
   description: z.string().trim().max(240).optional(),
   name: z.string().trim().min(1).max(80),
+  selections: z.array(shopPublisherSelectionSchema),
 });
 
 export async function GET(request: NextRequest) {

@@ -25,11 +25,7 @@ const INLINE_RGB_COLOR_PATTERN =
   }
 
   for (const root of roots) {
-    if (root.querySelector("[data-presswall-live]")) {
-      continue;
-    }
-
-    const proxyUrl = root.dataset.proxyUrl;
+    const proxyUrl = buildContextAwareProxyUrl(root);
     if (!proxyUrl) {
       continue;
     }
@@ -88,6 +84,27 @@ const INLINE_RGB_COLOR_PATTERN =
         root.innerHTML =
           '<div class="presswall-loading">Not configured yet.</div>';
       });
+  }
+
+  function buildContextAwareProxyUrl(root) {
+    const baseUrl = root.dataset.proxyUrl;
+    if (!baseUrl) {
+      return null;
+    }
+
+    const url = new URL(baseUrl, window.location.origin);
+    const pageType = root.dataset.pageType?.trim().toLowerCase();
+    const productId = root.dataset.productId?.trim();
+
+    if (pageType) {
+      url.searchParams.set("page_type", pageType);
+    }
+
+    if (productId) {
+      url.searchParams.set("product_id", productId);
+    }
+
+    return url.toString();
   }
 
   function renderPresswall(config) {
