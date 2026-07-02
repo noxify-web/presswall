@@ -10,7 +10,7 @@ import {
   getShopCustomLogos,
   syncShopCustomLogosInTransaction,
 } from "@/lib/custom-logo-service";
-import { syncDefaultBannerFromEditor } from "@/lib/legacy-banner-migration";
+import { syncBannerFromEditor } from "@/lib/legacy-banner-migration";
 import { normalizePresswallLayout } from "@/lib/normalize-presswall-layout";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import type {
@@ -262,6 +262,7 @@ export async function saveShopPresswall(
   config: PresswallConfig,
   selections: ShopPublisherSelection[],
   options?: {
+    bannerId?: string | null;
     completeOnboarding?: boolean;
     customLogos?: CustomLogoSaveInput[];
   }
@@ -327,10 +328,11 @@ export async function saveShopPresswall(
 
   const hydratedSelections = await getShopPublisherSelections(shop);
 
-  await syncDefaultBannerFromEditor(
+  await syncBannerFromEditor(
     shop,
     JSON.stringify(config),
-    JSON.stringify(hydratedSelections)
+    JSON.stringify(hydratedSelections),
+    options?.bannerId
   );
 
   return {

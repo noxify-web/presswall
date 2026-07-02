@@ -272,6 +272,7 @@ export function usePresswallEditor(): PresswallEditor {
         const response = await adminFetch("/api/presswall", {
           method: "PUT",
           body: JSON.stringify({
+            bannerId: activeCustomTemplateId,
             config,
             selections,
             customLogos,
@@ -314,7 +315,7 @@ export function usePresswallEditor(): PresswallEditor {
         setIsSaving(false);
       }
     },
-    [config, customLogos, selections, selected]
+    [activeCustomTemplateId, config, customLogos, selections, selected]
   );
 
   const save = useCallback(async () => {

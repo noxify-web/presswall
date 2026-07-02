@@ -16,6 +16,7 @@ import {
 import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 const saveSchema = z.object({
+  bannerId: z.string().uuid().nullable().optional(),
   config: presswallConfigSchema,
   selections: z.array(shopPublisherSelectionSchema),
   customLogos: z.array(customLogoSaveSchema).optional(),
@@ -74,6 +75,7 @@ export async function PUT(request: NextRequest) {
       parsed.data.config,
       parsed.data.selections,
       {
+        bannerId: parsed.data.bannerId,
         completeOnboarding: parsed.data.completeOnboarding,
         customLogos: parsed.data.customLogos,
       }

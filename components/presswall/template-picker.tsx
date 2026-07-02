@@ -10,6 +10,7 @@ import type { PresswallEditor } from "@/hooks/use-presswall-editor";
 import type { ShopCustomTemplate } from "@/lib/custom-template-service";
 import {
   applyPresswallTemplate,
+  getConfigPreviewTheme,
   getTemplatePreviewTheme,
   PRESSWALL_TEMPLATES,
   type PresswallTemplate,
@@ -70,6 +71,7 @@ function TemplateRow({
   onCustomize,
   previewConfig,
   previewSelections,
+  previewTheme,
   subtitle,
   templateName,
   layoutLabel,
@@ -82,6 +84,7 @@ function TemplateRow({
   onCustomize?: () => void;
   previewConfig: PresswallEditor["config"];
   previewSelections: PresswallEditor["selections"];
+  previewTheme: "light" | "dark";
   subtitle: string;
   templateName: string;
 }) {
@@ -105,7 +108,7 @@ function TemplateRow({
           className="pointer-events-none w-full border-black/5 shadow-none"
           config={previewConfig}
           customLogos={customLogos}
-          previewTheme={getTemplatePreviewTheme("classic")}
+          previewTheme={previewTheme}
           scale="sm"
           selections={previewSelections}
         />
@@ -217,6 +220,7 @@ export function TemplatePicker({
                 onCustomize={onCustomize}
                 previewConfig={template.config}
                 previewSelections={template.selections}
+                previewTheme={getConfigPreviewTheme(template.config)}
                 subtitle={
                   template.description ??
                   "Your saved banner with styling and outlets."
@@ -248,6 +252,7 @@ export function TemplatePicker({
               onCustomize={onCustomize}
               previewConfig={applyPresswallTemplate(template.id)}
               previewSelections={selections}
+              previewTheme={getTemplatePreviewTheme(template.id)}
               subtitle={template.description}
               templateName={template.name}
             />

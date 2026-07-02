@@ -1,4 +1,10 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const sessions = sqliteTable("Session", {
   id: text("id").primaryKey(),
@@ -94,6 +100,9 @@ export const shopBannerAssignments = sqliteTable(
       table.shop,
       table.target
     ),
+    shopTargetUnique: uniqueIndex(
+      "shop_banner_assignments_shop_target_unique"
+    ).on(table.shop, table.target),
   })
 );
 

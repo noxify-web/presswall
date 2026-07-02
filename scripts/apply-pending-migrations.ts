@@ -54,6 +54,13 @@ const MIGRATIONS = [
   )`,
   "CREATE INDEX IF NOT EXISTS shop_banner_assignments_shop_idx ON shop_banner_assignments (shop)",
   "CREATE INDEX IF NOT EXISTS shop_banner_assignments_shop_target_idx ON shop_banner_assignments (shop, target)",
+  `DELETE FROM shop_banner_assignments
+    WHERE id NOT IN (
+      SELECT MIN(id)
+      FROM shop_banner_assignments
+      GROUP BY shop, target
+    )`,
+  "CREATE UNIQUE INDEX IF NOT EXISTS shop_banner_assignments_shop_target_unique ON shop_banner_assignments (shop, target)",
 ];
 
 function isIgnorableMigrationError(error: unknown): boolean {

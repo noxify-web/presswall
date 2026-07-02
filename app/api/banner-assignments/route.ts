@@ -58,8 +58,8 @@ export async function PUT(request: NextRequest) {
 
   try {
     const assignments = await saveShopBannerAssignments(session.shop, {
-      homepageBannerId: parsed.data.homepageBannerId ?? undefined,
-      allProductsBannerId: parsed.data.allProductsBannerId ?? undefined,
+      homepageBannerId: parsed.data.homepageBannerId,
+      allProductsBannerId: parsed.data.allProductsBannerId,
       productAssignments: parsed.data.productAssignments,
     });
 

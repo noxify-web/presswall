@@ -15,6 +15,52 @@ export type { ShopBannerAssignmentsState } from "@/lib/shop-banner-bootstrap";
 
 const CORE_TARGETS = new Set(["homepage", "all_products"]);
 
+type AssignmentTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function deleteCoreAssignmentIfCleared(
+  tx: AssignmentTx,
+  existingByTarget: Map<BannerAssignmentTarget, ShopBannerAssignmentRecord>,
+  target: BannerAssignmentTarget,
+  bannerId: string | null | undefined
+) {
+  if (bannerId !== null) {
+    return;
+  }
+
+  const current = existingByTarget.get(target);
+  if (current) {
+    await tx
+      .delete(shopBannerAssignments)
+      .where(eq(shopBannerAssignments.id, current.id));
+  }
+}
+
+async function upsertAssignment(
+  tx: AssignmentTx,
+  shop: string,
+  now: string,
+  existingByTarget: Map<BannerAssignmentTarget, ShopBannerAssignmentRecord>,
+  target: BannerAssignmentTarget,
+  bannerId: string
+) {
+  const current = existingByTarget.get(target);
+  if (current) {
+    await tx
+      .update(shopBannerAssignments)
+      .set({ bannerId, updatedAt: now })
+      .where(eq(shopBannerAssignments.id, current.id));
+    return;
+  }
+
+  await tx.insert(shopBannerAssignments).values({
+    id: crypto.randomUUID(),
+    shop,
+    target,
+    bannerId,
+    updatedAt: now,
+  });
+}
+
 export async function listShopBannerAssignments(
   shop: string
 ): Promise<ShopBannerAssignment[]> {
@@ -45,12 +91,21 @@ export async function saveShopBannerAssignments(
     existing.map((assignment) => [assignment.target, assignment])
   );
 
+  const bannerIds = new Set(bootstrap.banners.map((banner) => banner.id));
+
+  const assertBannerId = (bannerId: string, label: string) => {
+    if (!bannerIds.has(bannerId)) {
+      throw new Error(`${label} references an unknown banner`);
+    }
+  };
+
   const nextCoreAssignments: Array<{
     bannerId: string;
     target: BannerAssignmentTarget;
   }> = [];
 
   if (input.homepageBannerId) {
+    assertBannerId(input.homepageBannerId, "Homepage assignment");
     nextCoreAssignments.push({
       target: "homepage",
       bannerId: input.homepageBannerId,
@@ -58,6 +113,7 @@ export async function saveShopBannerAssignments(
   }
 
   if (input.allProductsBannerId) {
+    assertBannerId(input.allProductsBannerId, "All products assignment");
     nextCoreAssignments.push({
       target: "all_products",
       bannerId: input.allProductsBannerId,
@@ -68,23 +124,33 @@ export async function saveShopBannerAssignments(
     (assignment) => assignment.bannerId && assignment.productId
   );
 
+  for (const assignment of nextProductAssignments) {
+    assertBannerId(assignment.bannerId, "Product assignment");
+  }
+
   await db.transaction(async (tx) => {
+    await deleteCoreAssignmentIfCleared(
+      tx,
+      existingByTarget,
+      "homepage",
+      input.homepageBannerId
+    );
+    await deleteCoreAssignmentIfCleared(
+      tx,
+      existingByTarget,
+      "all_products",
+      input.allProductsBannerId
+    );
+
     for (const assignment of nextCoreAssignments) {
-      const current = existingByTarget.get(assignment.target);
-      if (current) {
-        await tx
-          .update(shopBannerAssignments)
-          .set({ bannerId: assignment.bannerId, updatedAt: now })
-          .where(eq(shopBannerAssignments.id, current.id));
-      } else {
-        await tx.insert(shopBannerAssignments).values({
-          id: crypto.randomUUID(),
-          shop,
-          target: assignment.target,
-          bannerId: assignment.bannerId,
-          updatedAt: now,
-        });
-      }
+      await upsertAssignment(
+        tx,
+        shop,
+        now,
+        existingByTarget,
+        assignment.target,
+        assignment.bannerId
+      );
     }
 
     const nextProductTargets = new Set(
@@ -95,35 +161,29 @@ export async function saveShopBannerAssignments(
     );
 
     for (const assignment of existing) {
-      if (CORE_TARGETS.has(assignment.target)) {
+      if (
+        CORE_TARGETS.has(assignment.target) ||
+        nextProductTargets.has(assignment.target)
+      ) {
         continue;
       }
 
-      if (!nextProductTargets.has(assignment.target)) {
-        await tx
-          .delete(shopBannerAssignments)
-          .where(eq(shopBannerAssignments.id, assignment.id));
-      }
+      await tx
+        .delete(shopBannerAssignments)
+        .where(eq(shopBannerAssignments.id, assignment.id));
     }
 
     for (const assignment of nextProductAssignments) {
       const target =
         `product:${assignment.productId}` as BannerAssignmentTarget;
-      const current = existingByTarget.get(target);
-      if (current) {
-        await tx
-          .update(shopBannerAssignments)
-          .set({ bannerId: assignment.bannerId, updatedAt: now })
-          .where(eq(shopBannerAssignments.id, current.id));
-      } else {
-        await tx.insert(shopBannerAssignments).values({
-          id: crypto.randomUUID(),
-          shop,
-          target,
-          bannerId: assignment.bannerId,
-          updatedAt: now,
-        });
-      }
+      await upsertAssignment(
+        tx,
+        shop,
+        now,
+        existingByTarget,
+        target,
+        assignment.bannerId
+      );
     }
   });
 

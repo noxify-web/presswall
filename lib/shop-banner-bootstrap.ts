@@ -142,6 +142,37 @@ function buildAssignmentsState(
   };
 }
 
+type BootstrapTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function backfillEmptyTemplateSelections(
+  tx: BootstrapTx,
+  shop: string,
+  now: string
+) {
+  const legacySelections = await readLegacySelections(tx, shop);
+  if (legacySelections.length === 0) {
+    return;
+  }
+
+  const templatesNeedingSelections = await tx
+    .select({
+      id: shopCustomTemplates.id,
+      selectionsJson: shopCustomTemplates.selectionsJson,
+    })
+    .from(shopCustomTemplates)
+    .where(eq(shopCustomTemplates.shop, shop));
+
+  const selectionsJson = JSON.stringify(legacySelections);
+  for (const template of templatesNeedingSelections) {
+    if (template.selectionsJson === "[]") {
+      await tx
+        .update(shopCustomTemplates)
+        .set({ selectionsJson, updatedAt: now })
+        .where(eq(shopCustomTemplates.id, template.id));
+    }
+  }
+}
+
 async function ensureShopBannerBootstrap(shop: string): Promise<void> {
   await db.transaction(async (tx) => {
     const existingBanners = await tx
@@ -198,6 +229,8 @@ async function ensureShopBannerBootstrap(shop: string): Promise<void> {
           )
         );
     }
+
+    await backfillEmptyTemplateSelections(tx, shop, now);
 
     if (!defaultBannerId) {
       return;

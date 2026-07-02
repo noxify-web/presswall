@@ -10,13 +10,19 @@ export async function ensureLegacyBannerMigrated(
   return bootstrap.defaultBannerId;
 }
 
-export async function syncDefaultBannerFromEditor(
+export async function syncBannerFromEditor(
   shop: string,
   configJson: string,
-  selectionsJson: string
+  selectionsJson: string,
+  bannerId?: string | null
 ): Promise<void> {
   const bootstrap = await bootstrapShopBanners(shop);
-  if (!bootstrap.defaultBannerId) {
+  const targetBannerId =
+    bannerId && bootstrap.banners.some((banner) => banner.id === bannerId)
+      ? bannerId
+      : bootstrap.defaultBannerId;
+
+  if (!targetBannerId) {
     return;
   }
 
@@ -28,5 +34,8 @@ export async function syncDefaultBannerFromEditor(
       selectionsJson,
       updatedAt: now,
     })
-    .where(eq(shopCustomTemplates.id, bootstrap.defaultBannerId));
+    .where(eq(shopCustomTemplates.id, targetBannerId));
 }
+
+/** @deprecated Use syncBannerFromEditor */
+export const syncDefaultBannerFromEditor = syncBannerFromEditor;
