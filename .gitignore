@@ -42,3 +42,6 @@ data/dev.db-shm
 
 # drizzle
 /drizzle/meta
+
+# app listing promo videos (local assets — not committed)
+public/video/*.mp4
