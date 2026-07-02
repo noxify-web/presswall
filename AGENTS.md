@@ -4,6 +4,8 @@ Shopify embedded app (Next.js App Router) for merchant “as seen on” press lo
 
 **Production URL:** `https://presswall.noxify.io` (domain: `noxify.io`, subdomain `presswall`).
 
+**GitHub:** `https://github.com/niiithish/presswall` (`origin` remote). Intended org home: `noxify/presswall` — transfer requires noxify org admin approval.
+
 ## Setup & run (local dev)
 
 - Package manager: **Bun** (`bun install`).
