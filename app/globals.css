@@ -168,35 +168,13 @@
   background-size: 12px 12px;
 }
 
-/* Logo tiles: soft surface so white/light marks stay visible in the library */
+/* Logo tiles: solid surface so marks read clearly (no checker “transparency”) */
 .presswall-logo-tile {
-  background-color: oklch(0.965 0.003 286);
-  background-image:
-    linear-gradient(45deg, oklch(0.93 0.004 286) 25%, transparent 25%),
-    linear-gradient(-45deg, oklch(0.93 0.004 286) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, oklch(0.93 0.004 286) 75%),
-    linear-gradient(-45deg, transparent 75%, oklch(0.93 0.004 286) 75%);
-  background-position:
-    0 0,
-    0 6px,
-    6px -6px,
-    -6px 0;
-  background-size: 12px 12px;
+  background-color: #f6f6f7;
 }
 
 .presswall-logo-tile-dark {
-  background-color: oklch(0.22 0 0);
-  background-image:
-    linear-gradient(45deg, oklch(0.28 0 0) 25%, transparent 25%),
-    linear-gradient(-45deg, oklch(0.28 0 0) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, oklch(0.28 0 0) 75%),
-    linear-gradient(-45deg, transparent 75%, oklch(0.28 0 0) 75%);
-  background-position:
-    0 0,
-    0 6px,
-    6px -6px,
-    -6px 0;
-  background-size: 12px 12px;
+  background-color: #1a1a1a;
 }
 
 .presswall-canvas-bg-dots {
