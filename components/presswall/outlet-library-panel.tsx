@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPhotoUp, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconSearch, IconTrash, IconUpload } from "@tabler/icons-react";
 import { memo, useMemo, useState } from "react";
 import { CustomOutletForm } from "@/components/presswall/custom-outlet-form";
 import { PublisherLogo } from "@/components/presswall/publisher-logo";
