@@ -199,12 +199,26 @@ function sha256(buffer: Buffer): string {
 }
 
 describe("bundled catalog + variant assets", () => {
-  test("catalog has at least 45 outlets", () => {
-    expect(BUNDLED_PUBLISHERS.length).toBeGreaterThanOrEqual(45);
+  test("catalog is the Brandfetch-curated set of 10", () => {
+    expect(BUNDLED_PUBLISHERS.length).toBe(10);
+    expect(BUNDLED_PUBLISHERS.map((p) => p.id).sort()).toEqual(
+      [
+        "bbc",
+        "bloomberg",
+        "cnn",
+        "economist",
+        "forbes",
+        "fortune",
+        "new-york-times",
+        "techcrunch",
+        "vogue",
+        "wired",
+      ].sort()
+    );
   });
 
   test("readBundledPublisherLogo serves pure black and pure white ink", async () => {
-    const samples = ["forbes", "cnbc", "techcrunch"].filter((id) =>
+    const samples = ["forbes", "bloomberg", "techcrunch"].filter((id) =>
       BUNDLED_PUBLISHERS.some((p) => p.id === id)
     );
 
@@ -227,7 +241,7 @@ describe("bundled catalog + variant assets", () => {
   });
 
   test("two different outlets use full-black RGB (consistent intensity)", async () => {
-    for (const id of ["forbes", "cnbc"]) {
+    for (const id of ["forbes", "bloomberg"]) {
       const mean = await opaqueInkMean(
         `public/publishers/logos/${id}/black.png`
       );
@@ -235,8 +249,8 @@ describe("bundled catalog + variant assets", () => {
     }
   });
 
-  test("colorful brands serve non-black color assets (CNBC, Guardian)", async () => {
-    for (const id of ["cnbc", "the-guardian"]) {
+  test("colorful brands serve non-black color assets (CNN, Economist, TechCrunch)", async () => {
+    for (const id of ["cnn", "economist", "techcrunch"]) {
       const color = await readBundledPublisherLogo(id, "color");
       const black = await readBundledPublisherLogo(id, "black");
       expect(color).not.toBeNull();
@@ -253,14 +267,9 @@ describe("bundled catalog + variant assets", () => {
     }
   });
 
-  test("economist is not the New Yorker mark (wrong-brand regression)", async () => {
+  test("economist color asset is red brand ink", async () => {
     const economist = await readBundledPublisherLogo("economist", "color");
-    const newYorker = await readBundledPublisherLogo("new-yorker", "color");
     expect(economist).not.toBeNull();
-    expect(newYorker).not.toBeNull();
-    // Shipped color assets must be distinct files (was previously New Yorker on economist)
-    expect(sha256(economist!.body)).not.toBe(sha256(newYorker!.body));
-    // Economist red-box brand has significant red channel in opaque ink
     const means = await opaqueChannelMeans(
       "public/publishers/logos/economist/color.png"
     );
@@ -268,22 +277,23 @@ describe("bundled catalog + variant assets", () => {
     expect(means.r).toBeGreaterThan(means.b + 0.15);
   });
 
-  test("previously multi-logo outlets serve distinct single color assets", async () => {
-    // These were multi-logo packs or wrong brands; each must still resolve via shipped path
-    for (const id of ["wired", "mashable", "variety", "venturebeat"]) {
+  test("every catalog outlet has color/black/white assets", async () => {
+    for (const { id } of BUNDLED_PUBLISHERS) {
       const color = await readBundledPublisherLogo(id, "color");
       const black = await readBundledPublisherLogo(id, "black");
+      const white = await readBundledPublisherLogo(id, "white");
       expect(color).not.toBeNull();
       expect(black).not.toBeNull();
+      expect(white).not.toBeNull();
       expect(color!.body.byteLength).toBeGreaterThan(400);
       expect(black!.body.byteLength).toBeGreaterThan(400);
+      expect(white!.body.byteLength).toBeGreaterThan(400);
     }
   });
 
   test("fixed mono variants are logo ink on transparent (not solid fills)", async () => {
     // Regression: solid white/black rectangles (alpha≈1, no glyph structure)
-    // after multi-logo repair for economist/mashable/npr.
-    for (const id of ["economist", "mashable", "npr"]) {
+    for (const id of ["economist", "wired", "forbes"]) {
       const black = await readBundledPublisherLogo(id, "black");
       const white = await readBundledPublisherLogo(id, "white");
       expect(black).not.toBeNull();

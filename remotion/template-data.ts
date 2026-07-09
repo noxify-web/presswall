@@ -74,7 +74,7 @@ export const TEMPLATES: TemplateDefinition[] = [
 export const FEATURES = [
   {
     title: "Pick outlets",
-    body: "90+ publishers — or upload your own logos",
+    body: "Curated press logos — or upload your own",
   },
   {
     title: "Style the strip",
