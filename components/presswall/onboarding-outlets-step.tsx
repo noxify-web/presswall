@@ -19,24 +19,15 @@ export function OnboardingOutletsStep({
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4">
-      <header className="shrink-0 space-y-1.5">
+      <header className="shrink-0 space-y-1">
         <p className="text-muted-foreground text-xs">Step 1 of 3</p>
         <h1 className="font-semibold text-base tracking-tight">
           Choose which press logos to show on your store
         </h1>
-        <p className="max-w-xl text-muted-foreground text-sm leading-relaxed">
-          Pick outlets that have featured your brand. These logos appear in an
-          “As seen on” strip on your storefront so shoppers trust you faster.
-          Click a logo to add it — you can change the set anytime later.
+        <p className="text-muted-foreground text-sm">
+          Click logos to add them to your “As seen on” strip. You can change
+          this later.
         </p>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 pt-0.5 text-[0.6875rem] text-muted-foreground">
-          <li>
-            <span className="font-medium text-foreground/80">Tip:</span> 4–8
-            logos works well for most stores
-          </li>
-          <li>Order follows the order you click</li>
-          <li>Missing a logo? Upload your own</li>
-        </ul>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col rounded-xl border bg-card p-4 shadow-sm">
