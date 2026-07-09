@@ -258,23 +258,25 @@ function UploadLogoHint({
 }) {
   const hasSearch = Boolean(searchQuery?.trim());
   return (
-    <div className="flex flex-col items-center gap-2 px-3 py-4 text-center">
-      <p className="text-muted-foreground text-xs">
-        {hasSearch
-          ? `No match for “${searchQuery?.trim()}”. Upload a custom logo if you have one.`
-          : "Not seeing a logo you want?"}
-      </p>
-      <Button
-        className="h-7 px-2.5 text-xs"
-        onClick={onUpload}
-        size="sm"
-        type="button"
-        variant="secondary"
-      >
-        <IconPhotoUp stroke={2} />
-        Upload logo
-      </Button>
-    </div>
+    <button
+      className="flex w-full flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-7 text-center transition-colors hover:border-foreground/25 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      onClick={onUpload}
+      type="button"
+    >
+      <span className="flex size-12 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border">
+        <IconPhotoUp className="size-6 text-foreground/70" stroke={1.5} />
+      </span>
+      <span className="space-y-0.5">
+        <span className="block font-medium text-sm">
+          {hasSearch ? "Upload a custom logo" : "Not seeing a logo you want?"}
+        </span>
+        <span className="block text-muted-foreground text-xs">
+          {hasSearch
+            ? `No match for “${searchQuery?.trim()}”. Add your own PNG.`
+            : "Upload your own press logo as a transparent PNG"}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -312,15 +314,9 @@ function OutletGrid({
 
   if (filteredCatalog.length === 0) {
     return (
-      <Empty className="flex-1 border">
-        <EmptyHeader>
-          <EmptyTitle>No matches</EmptyTitle>
-          <EmptyDescription>
-            Try another search, or upload a custom logo with the button above.
-          </EmptyDescription>
-        </EmptyHeader>
+      <div className="flex min-h-0 flex-1 flex-col justify-center rounded-lg border p-3">
         <UploadLogoHint onUpload={onUpload} searchQuery={search} />
-      </Empty>
+      </div>
     );
   }
 
@@ -343,7 +339,7 @@ function OutletGrid({
           />
         ))}
       </div>
-      <div className="mt-3 border-t pt-1">
+      <div className="mt-3">
         <UploadLogoHint onUpload={onUpload} />
       </div>
     </div>
