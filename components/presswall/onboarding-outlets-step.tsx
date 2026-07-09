@@ -22,7 +22,7 @@ export function OnboardingOutletsStep({
         Step 1 of 3 — Add your press logos
       </p>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+      <div className="flex min-h-0 flex-1 flex-col rounded-xl border bg-card p-4 shadow-sm">
         <OutletLibraryPanel
           catalog={editor.catalog}
           colorMode={editor.config.colorMode}

@@ -86,7 +86,7 @@ export function OnboardingTemplateStep({
       </p>
 
       <div className="flex min-h-0 flex-1 gap-4">
-        <div className="flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+        <div className="flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
           <div className="flex shrink-0 items-center justify-between border-b px-4 py-2.5">
             <p className="font-medium text-sm">Live preview</p>
             <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />

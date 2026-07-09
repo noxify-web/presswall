@@ -156,18 +156,26 @@ const OutletTile = memo(function OutletTile({
   const selected = position !== null;
   // White marks need a dark tile so they stay visible in the library.
   const whiteOnDark = colorMode === "white";
-  const tileClass = cn(
-    "relative flex h-10 items-center justify-center rounded-md border px-1.5 transition-colors",
-    whiteOnDark
-      ? cn(
-          "presswall-logo-tile-dark border-neutral-600 hover:border-neutral-500",
-          selected && "ring-1 ring-neutral-400/50"
-        )
-      : cn(
-          "presswall-logo-tile border-border/80 hover:border-border",
-          selected && "ring-1 ring-foreground/15"
-        )
-  );
+  let tileClass =
+    "relative flex h-10 items-center justify-center rounded-md border px-1.5 transition-colors";
+  if (whiteOnDark && selected) {
+    tileClass = cn(
+      tileClass,
+      "border-neutral-600 bg-neutral-900 ring-1 ring-neutral-500/50"
+    );
+  } else if (whiteOnDark) {
+    tileClass = cn(
+      tileClass,
+      "border-neutral-700 bg-neutral-900 hover:border-neutral-500"
+    );
+  } else if (selected) {
+    tileClass = cn(
+      tileClass,
+      "border-border bg-muted/30 ring-1 ring-border/60"
+    );
+  } else {
+    tileClass = cn(tileClass, "hover:border-border hover:bg-muted/20");
+  }
 
   return (
     <button
@@ -211,8 +219,10 @@ const CustomLogoTile = memo(function CustomLogoTile({
         aria-label={actionLabel}
         aria-pressed={selected}
         className={cn(
-          "presswall-logo-tile relative flex h-10 min-w-0 flex-1 items-center justify-center rounded-md border border-border/80 px-1.5 transition-colors hover:border-border",
-          selected && "ring-1 ring-foreground/15"
+          "relative flex h-10 min-w-0 flex-1 items-center justify-center rounded-md border px-1.5 transition-colors",
+          selected
+            ? "border-border bg-muted/30 ring-1 ring-border/60"
+            : "hover:border-border hover:bg-muted/20"
         )}
         onClick={onToggle}
         title={actionLabel}
@@ -283,7 +293,7 @@ function OutletGrid({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border/80 bg-muted/30 p-2">
+    <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border p-2">
       <div
         className={cn(
           "grid gap-1.5",

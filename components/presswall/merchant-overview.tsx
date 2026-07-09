@@ -252,7 +252,7 @@ export function MerchantOverview({ data }: MerchantOverviewProps) {
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4 pb-6 sm:px-6">
         <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2.5">
               <p className="font-medium text-sm">Storefront preview</p>
               <div className="flex items-center gap-2">
