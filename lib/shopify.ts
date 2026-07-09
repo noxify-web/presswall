@@ -3,11 +3,13 @@ import { ApiVersion, shopifyApi } from "@shopify/shopify-api";
 import { getAppUrl } from "@/lib/app-url";
 import { sessionStorage } from "@/lib/session-storage";
 
+const PROTOCOL_PREFIX = /^https?:\/\//;
+
 function createShopifyClient() {
   const appUrl = getAppUrl();
   const apiKey = process.env.SHOPIFY_API_KEY ?? "";
   const apiSecret = process.env.SHOPIFY_API_SECRET ?? "";
-  const hostName = appUrl.replace(/^https?:\/\//, "");
+  const hostName = appUrl.replace(PROTOCOL_PREFIX, "");
   const hostScheme = appUrl.startsWith("https") ? "https" : "http";
   const scopes = (process.env.SCOPES ?? "").split(",").filter(Boolean);
 

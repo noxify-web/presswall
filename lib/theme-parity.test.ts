@@ -7,7 +7,6 @@ import { PRESSWALL_THEME_EXTENSION_UID } from "@/lib/theme-extension";
 const THEME_MAX_CUSTOM_LOGO_SVG_LENGTH =
   /const MAX_CUSTOM_LOGO_SVG_LENGTH = 50[,_]?000;/;
 const LIQUID_SCHEMA_PATTERN = /{% schema %}\s*([\s\S]*?)\s*{% endschema %}/;
-const DARK_LUMINANCE_THRESHOLD_PATTERN = /<\s*0\.4/;
 
 function readBlockSchema(blockPath: string) {
   const liquid = readFileSync(join(process.cwd(), blockPath), "utf8");
@@ -90,15 +89,17 @@ describe("theme bundle parity", () => {
     expect(toml).toContain(`uid = "${PRESSWALL_THEME_EXTENSION_UID}"`);
   });
 
-  test("theme JS keeps dark luminance threshold aligned with admin", () => {
+  test("theme JS uses pre-rendered logo assets (no CSS invert path)", () => {
     const themeJs = readFileSync(
       join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
       "utf8"
     );
 
-    // lib/presswall-logo-contrast.ts uses 0.4 — storefront must match.
-    expect(themeJs).toContain("relativeLuminance");
-    expect(themeJs).toMatch(DARK_LUMINANCE_THRESHOLD_PATTERN);
+    // Color/black/white come from app assets — storefront must not invert via CSS.
+    expect(themeJs).toContain("pre-rendered pure assets");
+    expect(themeJs).toContain("no grayscale/invert filters");
+    expect(themeJs).not.toContain("shouldInvertLogos");
+    expect(themeJs).not.toContain("relativeLuminance");
   });
 
   test("theme CSS does not retain retired grid layout class", () => {

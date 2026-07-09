@@ -183,22 +183,22 @@
 
   /* Cell + logo must respect the grid track so wide wordmarks don't overflow */
   .pw-gi {
+    width: 100%;
     min-width: 0;
     max-width: 100%;
-    width: 100%;
   }
 
   .presswall-logo {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
     flex-shrink: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .presswall-logo svg,
   .presswall-logo-img {
-    max-width: 100%;
     width: auto;
+    max-width: 100%;
     height: auto;
     max-height: var(--presswall-logo-height);
     object-fit: contain;

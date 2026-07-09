@@ -7,9 +7,6 @@ const EVENT_HANDLER_ATTR = /\s(on\w+)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
 const JAVASCRIPT_URI = /javascript:/gi;
 // Keep in sync with lib/presswall-validation.ts and lib/presswall-heading-rules.ts.
 const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
-const INLINE_HEX_COLOR_PATTERN = /^[0-9a-f]{3}([0-9a-f]{3})?$/i;
-const INLINE_RGB_COLOR_PATTERN =
-  /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
 
 (function presswallInit() {
   if (
@@ -252,66 +249,6 @@ const INLINE_RGB_COLOR_PATTERN =
     }
 
     return "";
-  }
-
-  function shouldInvertLogos(_config) {
-    // Pure black/white assets — never invert via CSS.
-    return false;
-  }
-
-  function isDarkBackgroundColor(color) {
-    const rgb = parseCssColor(color);
-    if (!rgb) {
-      return false;
-    }
-
-    return relativeLuminance(rgb[0], rgb[1], rgb[2]) < 0.4;
-  }
-
-  function parseCssColor(color) {
-    if (color.startsWith("#")) {
-      const hex = color.slice(1);
-      if (!INLINE_HEX_COLOR_PATTERN.test(hex)) {
-        return null;
-      }
-
-      const normalized =
-        hex.length === 3
-          ? hex
-              .split("")
-              .map((char) => char + char)
-              .join("")
-          : hex;
-
-      return [
-        Number.parseInt(normalized.slice(0, 2), 16),
-        Number.parseInt(normalized.slice(2, 4), 16),
-        Number.parseInt(normalized.slice(4, 6), 16),
-      ];
-    }
-
-    const match = color.match(INLINE_RGB_COLOR_PATTERN);
-
-    if (!match) {
-      return null;
-    }
-
-    return [Number(match[1]), Number(match[2]), Number(match[3])];
-  }
-
-  function relativeLuminance(red, green, blue) {
-    const toLinear = (channel) => {
-      const normalized = channel / 255;
-      return normalized <= 0.039_28
-        ? normalized / 12.92
-        : ((normalized + 0.055) / 1.055) ** 2.4;
-    };
-
-    const linearRed = toLinear(red);
-    const linearGreen = toLinear(green);
-    const linearBlue = toLinear(blue);
-
-    return 0.2126 * linearRed + 0.7152 * linearGreen + 0.0722 * linearBlue;
   }
 
   function sanitizeAlignment(value) {

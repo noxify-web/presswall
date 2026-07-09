@@ -5,6 +5,9 @@
     "ultracite/biome/react",
     "ultracite/biome/next"
   ],
+  "files": {
+    "includes": ["!remotion", "!scripts/fetch-brandfetch-batch.mjs"]
+  },
   "overrides": [
     {
       "includes": ["shopify-env.d.ts"],

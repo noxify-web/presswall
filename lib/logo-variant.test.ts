@@ -1,7 +1,6 @@
-import { createHash } from "node:crypto";
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 import { BUNDLED_PUBLISHERS } from "@/lib/bundled-publishers";
-import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import {
   colorModeSchema,
   logoVariantForColorMode,
@@ -9,13 +8,16 @@ import {
   normalizeColorMode,
   parseLogoVariant,
 } from "@/lib/logo-variant";
+import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
+import { presswallConfigSchema } from "@/lib/presswall-types";
 import {
   absoluteBundledLogoUrl,
   bundledLogoPath,
 } from "@/lib/publisher-logo-path";
-import { presswallConfigSchema } from "@/lib/presswall-types";
 import { readBundledPublisherLogo } from "@/lib/read-bundled-logo";
 import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers";
+
+const WHITESPACE = /\s+/;
 
 describe("logoVariantForColorMode", () => {
   test("maps colorful / black / white / muted / legacy mono", () => {
@@ -190,7 +192,7 @@ async function opaqueChannelMeans(
       }
     });
   });
-  const [r, g, b] = out.trim().split(/\s+/).map(Number);
+  const [r, g, b] = out.trim().split(WHITESPACE).map(Number);
   return { r, g, b };
 }
 
@@ -258,8 +260,12 @@ describe("bundled catalog + variant assets", () => {
       expect(color).not.toBeNull();
       expect(black).not.toBeNull();
 
+      if (!(color && black)) {
+        throw new Error(`missing color/black assets for ${id}`);
+      }
+
       // Color PNG bytes must not match pure black silhouette
-      expect(sha256(color!.body)).not.toBe(sha256(black!.body));
+      expect(sha256(color.body)).not.toBe(sha256(black.body));
 
       const means = await opaqueChannelMeans(
         `public/publishers/logos/${id}/color.png`
@@ -287,9 +293,12 @@ describe("bundled catalog + variant assets", () => {
       expect(color).not.toBeNull();
       expect(black).not.toBeNull();
       expect(white).not.toBeNull();
-      expect(color!.body.byteLength).toBeGreaterThan(400);
-      expect(black!.body.byteLength).toBeGreaterThan(400);
-      expect(white!.body.byteLength).toBeGreaterThan(400);
+      if (!(color && black && white)) {
+        throw new Error(`missing logo variants for ${id}`);
+      }
+      expect(color.body.byteLength).toBeGreaterThan(400);
+      expect(black.body.byteLength).toBeGreaterThan(400);
+      expect(white.body.byteLength).toBeGreaterThan(400);
     }
   });
 

@@ -69,9 +69,7 @@ export function EditorAppWindowHost() {
       }
 
       if (event.data.type === EDITOR_SAVE_BAR_MESSAGE.dirty) {
-        const dirty = Boolean(
-          (event.data as { dirty?: unknown }).dirty === true
-        );
+        const dirty = (event.data as { dirty?: unknown }).dirty === true;
         syncEditorSaveBar(dirty).catch(() => undefined);
       }
     };
