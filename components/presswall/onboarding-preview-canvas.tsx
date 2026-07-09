@@ -1,7 +1,18 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  type Node,
+  type NodeProps,
+  ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
+} from "@xyflow/react";
+import { useEffect, useMemo } from "react";
 import { OnboardingPreview } from "@/components/presswall/onboarding-preview";
+import { PreviewLogoStyleToggle } from "@/components/presswall/preview-logo-style-toggle";
 import { getPreviewViewportWidth } from "@/lib/presswall-preview-viewport";
 import type {
   PresswallConfig,
@@ -9,7 +20,8 @@ import type {
   ShopCustomLogo,
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
-import { cn } from "@/lib/utils";
+
+import "@xyflow/react/dist/style.css";
 
 type DeviceMode = "desktop" | "mobile";
 
@@ -18,108 +30,185 @@ interface OnboardingPreviewCanvasProps {
   config: PresswallConfig;
   customLogos?: ShopCustomLogo[];
   deviceMode: DeviceMode;
+  /** When set, shows Color / Black / White in the canvas corner. */
+  onColorModeChange?: (value: PresswallConfig["colorMode"]) => void;
+  /** Editor: hover a logo → change control opens the replace picker. */
+  onReplaceLogoAt?: (selectionIndex: number) => void;
   selections: ShopPublisherSelection[];
+  showViewportHint?: boolean;
 }
 
-const CANVAS_HORIZONTAL_PADDING = 48;
+interface PreviewNodeData extends Record<string, unknown> {
+  catalog: PublisherCatalogItem[];
+  config: PresswallConfig;
+  customLogos?: ShopCustomLogo[];
+  deviceMode: DeviceMode;
+  onReplaceLogoAt?: (selectionIndex: number) => void;
+  selections: ShopPublisherSelection[];
+  viewportWidth: number;
+}
 
-export function OnboardingPreviewCanvas({
+const PREVIEW_NODE_ID = "presswall-preview";
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2.5;
+const FIT_PADDING = 0.18;
+
+function PreviewStripNode({ data }: NodeProps<Node<PreviewNodeData>>) {
+  return (
+    <div
+      className={
+        data.onReplaceLogoAt ? "select-none" : "pointer-events-none select-none"
+      }
+      style={{ width: data.viewportWidth }}
+    >
+      <OnboardingPreview
+        catalog={data.catalog}
+        className="border-black/10 shadow-sm"
+        config={data.config}
+        customLogos={data.customLogos}
+        deviceMode={data.deviceMode}
+        onReplaceLogoAt={data.onReplaceLogoAt}
+        scale="lg"
+        selections={data.selections}
+      />
+    </div>
+  );
+}
+
+const nodeTypes = {
+  preview: PreviewStripNode,
+};
+
+function PreviewCanvasFlow({
   catalog,
   config,
   customLogos,
   deviceMode,
+  onReplaceLogoAt,
   selections,
-}: OnboardingPreviewCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-
-  useLayoutEffect(() => {
-    const element = containerRef.current;
-    if (!element) {
-      return;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  useLayoutEffect(() => {
-    const element = contentRef.current;
-    if (!element) {
-      return;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setContentHeight(entry.contentRect.height);
-      }
-    });
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
+}: Omit<
+  OnboardingPreviewCanvasProps,
+  "onColorModeChange" | "showViewportHint"
+>) {
+  const { fitView } = useReactFlow();
   const viewportWidth = getPreviewViewportWidth(deviceMode);
-  const scale =
-    containerWidth > 0
-      ? Math.min(
-          1,
-          (containerWidth - CANVAS_HORIZONTAL_PADDING) / viewportWidth
-        )
-      : 1;
-  const scaledWidth = viewportWidth * scale;
-  const scaledHeight = contentHeight > 0 ? contentHeight * scale : undefined;
-  const isReady = containerWidth > 0 && contentHeight > 0;
+
+  const nodes = useMemo<Node<PreviewNodeData>[]>(
+    () => [
+      {
+        id: PREVIEW_NODE_ID,
+        type: "preview",
+        position: { x: 0, y: 0 },
+        data: {
+          catalog,
+          config,
+          customLogos,
+          deviceMode,
+          onReplaceLogoAt,
+          selections,
+          viewportWidth,
+        },
+        draggable: false,
+        selectable: false,
+        focusable: false,
+      },
+    ],
+    [
+      catalog,
+      config,
+      customLogos,
+      deviceMode,
+      onReplaceLogoAt,
+      selections,
+      viewportWidth,
+    ]
+  );
+
+  useEffect(() => {
+    const animate = deviceMode === "desktop" || deviceMode === "mobile";
+    const timer = window.setTimeout(() => {
+      fitView({
+        padding: FIT_PADDING,
+        duration: animate ? 200 : 0,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+      });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [deviceMode, fitView]);
 
   return (
-    <div
-      className="presswall-canvas-bg-dots relative h-full w-full overflow-auto"
-      ref={containerRef}
+    <ReactFlow
+      className="presswall-preview-flow h-full w-full"
+      colorMode="light"
+      defaultEdgeOptions={{ hidden: true }}
+      deleteKeyCode={null}
+      elementsSelectable={false}
+      fitView
+      fitViewOptions={{ padding: FIT_PADDING }}
+      maxZoom={MAX_ZOOM}
+      minZoom={MIN_ZOOM}
+      multiSelectionKeyCode={null}
+      nodes={nodes}
+      nodesConnectable={false}
+      nodesDraggable={false}
+      nodeTypes={nodeTypes}
+      panOnDrag
+      panOnScroll={false}
+      preventScrolling
+      proOptions={{ hideAttribution: true }}
+      selectionKeyCode={null}
+      zoomOnDoubleClick
+      zoomOnPinch
+      zoomOnScroll
     >
-      <div className="flex min-h-full items-center justify-center p-6">
-        <div
-          className={cn(!isReady && "opacity-0")}
-          style={{
-            height: scaledHeight,
-            width: scaledWidth,
-          }}
-        >
-          <div
-            ref={contentRef}
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-              width: viewportWidth,
-            }}
-          >
-            <OnboardingPreview
-              catalog={catalog}
-              className="border-black/10 shadow-sm"
-              config={config}
-              customLogos={customLogos}
-              deviceMode={deviceMode}
-              scale="lg"
-              selections={selections}
-            />
-          </div>
-        </div>
-      </div>
+      {/* Built-in React Flow dotted canvas (pans/zooms with the viewport). */}
+      <Background
+        bgColor="#f4f4f5"
+        color="#a1a1aa"
+        gap={16}
+        size={1.5}
+        variant={BackgroundVariant.Dots}
+      />
+      <Controls
+        className="presswall-preview-flow-controls overflow-hidden rounded-md border bg-background/95 shadow-sm"
+        fitViewOptions={{ padding: FIT_PADDING }}
+        position="bottom-right"
+        showInteractive={false}
+      />
+    </ReactFlow>
+  );
+}
 
-      <p className="pointer-events-none absolute top-3 left-3 rounded-md border bg-background/90 px-2.5 py-1 text-[0.625rem] text-muted-foreground shadow-sm backdrop-blur-sm">
-        {deviceMode === "desktop" ? "Desktop" : "Mobile"} · {viewportWidth}px
-        wide
-        {scale < 1 ? ` · scaled ${Math.round(scale * 100)}%` : null}
-      </p>
+export function OnboardingPreviewCanvas({
+  onColorModeChange,
+  showViewportHint = true,
+  ...props
+}: OnboardingPreviewCanvasProps) {
+  const viewportWidth = getPreviewViewportWidth(props.deviceMode);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      <ReactFlowProvider>
+        <PreviewCanvasFlow {...props} />
+      </ReactFlowProvider>
+
+      {showViewportHint ? (
+        <p className="pointer-events-none absolute top-3 left-3 z-10 rounded-md border bg-background/90 px-2.5 py-1 text-[0.625rem] text-muted-foreground shadow-sm backdrop-blur-sm">
+          {props.deviceMode === "desktop" ? "Desktop" : "Mobile"} ·{" "}
+          {viewportWidth}px
+        </p>
+      ) : null}
+
+      {onColorModeChange ? (
+        <div className="absolute bottom-3 left-3 z-10">
+          <PreviewLogoStyleToggle
+            onChange={onColorModeChange}
+            value={props.config.colorMode}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

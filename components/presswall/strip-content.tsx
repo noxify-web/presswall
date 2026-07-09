@@ -51,7 +51,11 @@ interface PresswallStripProps {
   };
   items: StorefrontPublisher[];
   logosPerRow: number;
-  renderLogo: (item: StorefrontPublisher) => React.ReactNode;
+  /** Second arg is the selection index (stable across marquee repeats). */
+  renderLogo: (
+    item: StorefrontPublisher,
+    selectionIndex: number
+  ) => React.ReactNode;
   staticLayoutItemLimit?: number;
   textColor: string;
   viewport?: PresswallViewport;
@@ -99,6 +103,7 @@ function LogoBar({
   logoSpacing,
   logosPerRow,
   renderLogo,
+  selectionIndexOffset = 0,
 }: {
   constrainRows: boolean;
   gap: number;
@@ -106,7 +111,11 @@ function LogoBar({
   logoAlignment: PresswallStripConfig["logoAlignment"];
   logoSpacing: PresswallStripConfig["logoSpacing"];
   logosPerRow: number;
-  renderLogo: (item: StorefrontPublisher) => React.ReactNode;
+  renderLogo: (
+    item: StorefrontPublisher,
+    selectionIndex: number
+  ) => React.ReactNode;
+  selectionIndexOffset?: number;
 }) {
   if (constrainRows) {
     return (
@@ -114,12 +123,12 @@ function LogoBar({
         className={getLogosBarConstrainedClassName(logoAlignment)}
         style={getLogosBarConstrainedStyle(logosPerRow, gap, logoSpacing)}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
-            className="flex min-w-0 items-center justify-center"
+            className="flex w-full min-w-0 max-w-full items-center justify-center"
             key={item.id}
           >
-            {renderLogo(item)}
+            {renderLogo(item, selectionIndexOffset + index)}
           </div>
         ))}
       </div>
@@ -131,9 +140,9 @@ function LogoBar({
       className={getLogosBarClassName(logoAlignment, logoSpacing)}
       style={getLogosBarStyle(gap, logoSpacing)}
     >
-      {items.map((item) => (
+      {items.map((item, index) => (
         <div className="flex min-w-0 items-center" key={item.id}>
-          {renderLogo(item)}
+          {renderLogo(item, selectionIndexOffset + index)}
         </div>
       ))}
     </div>
@@ -159,7 +168,11 @@ export const PresswallStrip = memo(function PresswallStrip({
   if (config.layout === "marquee") {
     const segments = getMarqueeRepeatCount(items.length);
     const marqueeItems = Array.from({ length: segments }, (_, segment) =>
-      items.map((item) => ({ item, suffix: String(segment) }))
+      items.map((item, selectionIndex) => ({
+        item,
+        selectionIndex,
+        suffix: String(segment),
+      }))
     ).flat();
 
     const marqueeConfig = usesInlineMarqueeHeading(config)
@@ -185,9 +198,12 @@ export const PresswallStrip = memo(function PresswallStrip({
               config.marqueeSpeed
             )}
           >
-            {marqueeItems.map(({ item, suffix }) => (
-              <div className="pw-mq-item shrink-0" key={`${item.id}-${suffix}`}>
-                {renderLogo(item)}
+            {marqueeItems.map(({ item, selectionIndex, suffix }) => (
+              <div
+                className="pw-mq-item shrink-0"
+                key={`${item.id}-${suffix}-${selectionIndex}`}
+              >
+                {renderLogo(item, selectionIndex)}
               </div>
             ))}
           </MarqueeTrack>

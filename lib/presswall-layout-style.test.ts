@@ -56,13 +56,16 @@ describe("mobile bar row constraints", () => {
     expect(shouldConstrainBarRows("desktop")).toBe(false);
   });
 
-  test("uses row gap without column gap for space-between bars", () => {
+  test("uses row gap and a half-gap column breathing room for space-between bars", () => {
     expect(getLogosBarConstrainedStyle(2, 24, "space-between")).toEqual({
       gap: "24px",
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
       width: "100%",
-      columnGap: 0,
+      columnGap: "12px",
       rowGap: "24px",
     });
+    expect(getLogosBarConstrainedStyle(2, 32, "space-between").columnGap).toBe(
+      "16px"
+    );
   });
 });

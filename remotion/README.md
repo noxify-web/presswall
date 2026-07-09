@@ -49,8 +49,8 @@ bun run render:gif
 ## Background music
 
 Track lives at `public/audio/bg-music.mp3` and is mixed in `PresswallPromo.tsx`
-(`BG_MUSIC_VOLUME`, fade in/out). Dashboard screen recording is muted so only
-the bed plays.
+(`BG_MUSIC_VOLUME = 0.4`, fade in/out). Dashboard screen recording is muted so
+only the bed plays.
 
 ## Notes
 

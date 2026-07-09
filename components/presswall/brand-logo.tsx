@@ -3,41 +3,41 @@ import { cn } from "@/lib/utils";
 interface BrandLogoProps {
   className?: string;
   size?: number;
+  /**
+   * solid — dark tile + white mark (app icon / dark UI)
+   * outline — transparent tile + dark stroke + black mark
+   * mono-light — white tile + black mark (light surfaces)
+   */
   variant?: "solid" | "outline" | "mono-light";
 }
 
 type LogoVariant = NonNullable<BrandLogoProps["variant"]>;
 
-const BG_FILLS: Record<LogoVariant, string> = {
-  solid: "#111111",
-  outline: "transparent",
-  "mono-light": "#ffffff",
+const TILE: Record<LogoVariant, { fill: string; stroke?: string }> = {
+  solid: { fill: "#1F2123" },
+  outline: { fill: "transparent", stroke: "#111111" },
+  "mono-light": { fill: "#ffffff" },
 };
 
-const STROKES: Record<LogoVariant, string | undefined> = {
-  solid: undefined,
-  outline: "#111111",
-  "mono-light": undefined,
-};
-
-const PATH_FILLS: Record<LogoVariant, string> = {
+const MARK: Record<LogoVariant, string> = {
   solid: "#ffffff",
   outline: "#111111",
   "mono-light": "#111111",
 };
 
-const CIRCLE_FILLS: Record<LogoVariant, string> = {
-  solid: "#111111",
-  outline: "#ffffff",
-  "mono-light": "#111111",
-};
-
+/**
+ * Presswall mark: three stacked rounded squares (matches public/brand/*-bg-logo).
+ * Geometry normalized from the brand SVG into a 48×48 tile.
+ */
 export function BrandLogo({
   className,
   size = 40,
   variant = "solid",
 }: BrandLogoProps) {
-  const stroke = STROKES[variant];
+  const tile = TILE[variant];
+  const mark = MARK[variant];
+  // Static id is fine — at most one brand mark is typically mounted.
+  const gradientId = "presswall-brand-stroke";
 
   return (
     <svg
@@ -50,19 +50,66 @@ export function BrandLogo({
       width={size}
       xmlns="http://www.w3.org/2000/svg"
     >
+      {variant === "solid" ? (
+        <defs>
+          <linearGradient
+            gradientUnits="userSpaceOnUse"
+            id={gradientId}
+            x1={24}
+            x2={24}
+            y1={1}
+            y2={47}
+          >
+            <stop stopColor="#2B2D2F" />
+            <stop offset={1} stopColor="#131517" />
+          </linearGradient>
+        </defs>
+      ) : null}
       <rect
-        fill={BG_FILLS[variant]}
-        height={48}
-        rx={12}
-        stroke={stroke}
-        strokeWidth={stroke ? 2 : undefined}
-        width={48}
+        fill={tile.fill}
+        height={44}
+        rx={9.5}
+        stroke={
+          variant === "solid"
+            ? `url(#${gradientId})`
+            : (tile.stroke ?? undefined)
+        }
+        strokeWidth={
+          variant === "outline" ? 2 : variant === "solid" ? 1.9 : undefined
+        }
+        width={44}
+        x={2}
+        y={2}
       />
-      <path
-        d="M16 35V13h8.5c4.7 0 7.5 2.8 7.5 7s-2.8 7-7.5 7H21v8h-5z"
-        fill={PATH_FILLS[variant]}
+      {/* Back plate */}
+      <rect
+        fill={mark}
+        height={20.7}
+        opacity={0.2}
+        rx={4.15}
+        width={20.7}
+        x={10.5}
+        y={17.2}
       />
-      <circle cx={20.5} cy={20} fill={CIRCLE_FILLS[variant]} r={2.5} />
+      {/* Mid plate */}
+      <rect
+        fill={mark}
+        height={20.7}
+        opacity={0.4}
+        rx={4.15}
+        width={20.7}
+        x={14}
+        y={13.7}
+      />
+      {/* Front plate */}
+      <rect
+        fill={mark}
+        height={20.7}
+        rx={4.15}
+        width={20.7}
+        x={17.5}
+        y={10.2}
+      />
     </svg>
   );
 }

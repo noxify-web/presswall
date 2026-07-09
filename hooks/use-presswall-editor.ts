@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/admin-fetch";
 import type { ShopBanner } from "@/lib/banner-service";
+import { nextCustomBannerName } from "@/lib/custom-banner-name";
 import { createPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import { fetchPresswallClientData } from "@/lib/fetch-presswall-client-data";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
@@ -27,6 +28,10 @@ import type {
   ShopCustomLogo,
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
+import {
+  replaceSelectionWithCustomLogo,
+  replaceSelectionWithPublisher,
+} from "@/lib/replace-selection";
 
 export interface PresswallEditor {
   activeBannerId: string | null;
@@ -38,6 +43,20 @@ export interface PresswallEditor {
   category: string;
   completeOnboarding: () => Promise<boolean>;
   config: PresswallConfig;
+  /**
+   * Add a custom logo to the shop library only (does not change strip selection).
+   * Used by the replace-logo dialog upload flow.
+   */
+  createCustomLogo: (
+    name: string,
+    svg: string
+  ) => Promise<ShopCustomLogo | null>;
+  /**
+   * Silently create a merchant banner named `Custom banner N` from the current
+   * config + selections (onboarding step 2 only). Returns the created banner
+   * name, or null if create was skipped/failed.
+   */
+  createOnboardingCustomBanner: () => Promise<string | null>;
   customLogos: ShopCustomLogo[];
   /** @deprecated Use banners */
   customTemplates: ShopBanner[];
@@ -54,6 +73,9 @@ export interface PresswallEditor {
   /** @deprecated Use refreshBanners */
   refreshCustomTemplates: () => Promise<void>;
   reload: () => Promise<void>;
+  /** Replace the logo at a selection index (live preview change control). */
+  replaceCustomLogoAt: (index: number, logo: ShopCustomLogo) => void;
+  replacePublisherAt: (index: number, publisher: PublisherCatalogItem) => void;
   save: () => Promise<void>;
   search: string;
   selected: SelectedPublisher[];
@@ -264,11 +286,29 @@ export function usePresswallEditor(): PresswallEditor {
     });
   }, []);
 
-  const uploadCustomLogo = useCallback((name: string, svg: string) => {
+  const replacePublisherAt = useCallback(
+    (index: number, publisher: PublisherCatalogItem) => {
+      setSelected((current) =>
+        replaceSelectionWithPublisher(current, index, publisher)
+      );
+    },
+    []
+  );
+
+  const replaceCustomLogoAt = useCallback(
+    (index: number, logo: ShopCustomLogo) => {
+      setSelected((current) =>
+        replaceSelectionWithCustomLogo(current, index, logo)
+      );
+    },
+    []
+  );
+
+  const createCustomLogo = useCallback((name: string, svg: string) => {
     const trimmedName = name.trim();
     if (!(trimmedName && svg.trim())) {
       toast.error("Could not save custom logo");
-      return Promise.resolve(false);
+      return Promise.resolve(null);
     }
 
     const logo: ShopCustomLogo = {
@@ -279,18 +319,30 @@ export function usePresswallEditor(): PresswallEditor {
     };
 
     setCustomLogos((current) => [...current, logo]);
-    setSelected((current) => [
-      ...current,
-      {
-        key: `custom-${logo.id}`,
-        customLogoId: logo.id,
-        customName: logo.name,
-        customLogoSvg: logo.logoSvg,
-      },
-    ]);
-
-    return Promise.resolve(true);
+    return Promise.resolve(logo);
   }, []);
+
+  const uploadCustomLogo = useCallback(
+    async (name: string, svg: string) => {
+      const logo = await createCustomLogo(name, svg);
+      if (!logo) {
+        return false;
+      }
+
+      setSelected((current) => [
+        ...current,
+        {
+          key: `custom-${logo.id}`,
+          customLogoId: logo.id,
+          customName: logo.name,
+          customLogoSvg: logo.logoSvg,
+        },
+      ]);
+
+      return true;
+    },
+    [createCustomLogo]
+  );
 
   const deleteCustomLogo = useCallback((logoId: string) => {
     setCustomLogos((current) => current.filter((logo) => logo.id !== logoId));
@@ -404,6 +456,48 @@ export function usePresswallEditor(): PresswallEditor {
     [banners]
   );
 
+  const createOnboardingCustomBanner = useCallback(async () => {
+    const name = nextCustomBannerName(banners.map((banner) => banner.name));
+
+    try {
+      const response = await adminFetch("/api/banners", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          config,
+          selections,
+        }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = (await response.json()) as {
+        banner?: ShopBanner;
+        template?: ShopBanner;
+      };
+      const banner = data.banner ?? data.template;
+      if (!banner) {
+        return null;
+      }
+
+      setBanners((current) => {
+        if (current.some((entry) => entry.id === banner.id)) {
+          return current;
+        }
+        return [...current, banner].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+      });
+      setActiveBannerId(banner.id);
+
+      return banner.name;
+    } catch {
+      return null;
+    }
+  }, [banners, config, selections]);
+
   const updateConfig = useCallback(
     <K extends keyof PresswallConfig>(key: K, value: PresswallConfig[K]) => {
       setConfig((current) => {
@@ -425,6 +519,8 @@ export function usePresswallEditor(): PresswallEditor {
     category,
     completeOnboarding,
     config,
+    createCustomLogo,
+    createOnboardingCustomBanner,
     customLogos,
     banners,
     customTemplates: banners,
@@ -447,6 +543,8 @@ export function usePresswallEditor(): PresswallEditor {
     applyCustomBanner,
     applyTemplate,
     deleteCustomLogo,
+    replaceCustomLogoAt,
+    replacePublisherAt,
     save,
     setCategory,
     setNeedsOnboarding,

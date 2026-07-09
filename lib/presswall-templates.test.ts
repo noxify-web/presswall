@@ -54,7 +54,11 @@ describe("applyPresswallTemplate", () => {
     const dark = getResolvedPresswallTemplateConfig("dark");
     const softCard = getResolvedPresswallTemplateConfig("soft-card");
 
+    // Classic / Dark band / Soft card: equal-height strip + justify-between
     expect(classic.logoSpacing).toBe("space-between");
+    expect(dark.logoSpacing).toBe("space-between");
+    expect(softCard.logoSpacing).toBe("space-between");
+    expect(classic.logoHeight).toBe(28);
     expect(findMatchingPresswallTemplateId(classic)).toBe("classic");
     expect(dark.logoHeight).toBe(classic.logoHeight);
     expect(softCard.logoHeight).toBe(classic.logoHeight);

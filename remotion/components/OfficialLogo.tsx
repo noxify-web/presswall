@@ -1,15 +1,15 @@
 import { Img, staticFile } from "remotion";
 
 /**
- * Solid mark assets (matches app icon / listing artwork):
- * - light → white logo on black square (dark backgrounds)
- * - dark  → black logo on white square (light backgrounds)
+ * Official brand mark assets in `public/brand/`:
+ * - light → white mark on dark tile (dark backgrounds / intro / CTA)
+ * - dark  → black mark on white tile (light backgrounds)
  */
 type LogoVariant = "dark" | "light";
 
 const LOGO_SRC: Record<LogoVariant, string> = {
-  dark: "brand/white-back.png",
-  light: "brand/black-back.png",
+  dark: "brand/white-bg-logo.png",
+  light: "brand/black-bg-logo.png",
 };
 
 export function OfficialLogo({
@@ -23,6 +23,7 @@ export function OfficialLogo({
     <Img
       src={staticFile(LOGO_SRC[variant])}
       style={{
+        // Logo tiles already include rounded corners; keep slight clip soft.
         borderRadius: Math.round(height * 0.18),
         height,
         objectFit: "contain",

@@ -79,7 +79,8 @@
   --presswall-padding-x: 16px;
   --presswall-padding-x-desktop-boost: 20px;
   --presswall-logo-height: 28px;
-  --presswall-logo-max-width: calc(var(--presswall-logo-height) * 3);
+  /* 12× height so long wordmarks keep equal strip height (see admin ratio). */
+  --presswall-logo-max-width: calc(var(--presswall-logo-height) * 12);
   --presswall-content-max-width: 840px;
   box-sizing: border-box;
   width: 100%;
@@ -175,8 +176,32 @@
 
   .presswall-bar.presswall-spacing-space-between {
     row-gap: var(--presswall-gap);
-    column-gap: 0;
+    /* Half-gap between columns so wide marks don't kiss; rows keep full gap */
+    column-gap: max(12px, calc(var(--presswall-gap) * 0.5));
     justify-content: initial;
+  }
+
+  /* Cell + logo must respect the grid track so wide wordmarks don't overflow */
+  .pw-gi {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .presswall-logo {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .presswall-logo svg,
+  .presswall-logo-img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    max-height: var(--presswall-logo-height);
+    object-fit: contain;
   }
 }
 
@@ -201,7 +226,8 @@
   display: block;
   width: auto;
   max-width: var(--presswall-logo-max-width);
-  height: auto;
+  /* Equal height across outlets; width varies by wordmark aspect */
+  height: 100%;
   max-height: var(--presswall-logo-height);
   object-fit: contain;
   object-position: center;

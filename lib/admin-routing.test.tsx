@@ -18,6 +18,7 @@ describe("embedded app bridge setup", () => {
     expect(layout).toContain('name="shopify-api-key"');
     expect(layout).toContain("<head>");
     expect(layout).toContain("PresswallAppNav");
+    expect(layout).toContain("EditorAppWindowHost");
   });
 });
 
@@ -47,8 +48,25 @@ describe("editor sub-page", () => {
 
     expect(editorView).toContain("EditorWorkspace");
     expect(editorView).toContain("usePresswallEditor");
+    expect(editorView).toContain("s-page");
+    expect(editorView).toContain("Edit press logos");
     expect(editorPage).toContain("hasEmbeddedEntryParams");
     expect(editorPage).toContain("EditorView");
+  });
+
+  test("editor opens via App Window helpers for fullscreen overlay", () => {
+    const overview = readSource("components/presswall/merchant-overview.tsx");
+    const appWindow = readSource("lib/editor-app-window.ts");
+    const host = readSource(
+      "components/presswall/editor-app-window-host.tsx"
+    );
+
+    expect(overview).toContain("openEditorAppWindow");
+    expect(appWindow).toContain("EDITOR_APP_WINDOW_ID");
+    expect(appWindow).toContain("openEditorAppWindow");
+    expect(appWindow).toContain("presswall-editor-window");
+    expect(host).toContain("s-app-window");
+    expect(host).toContain("EDITOR_APP_WINDOW_ID");
   });
 });
 

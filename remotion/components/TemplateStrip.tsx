@@ -1,6 +1,9 @@
 import { Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { GEIST_FONT } from "../fonts";
-import { getPublisherLogoStyle } from "../logo-style";
+import {
+  getPublisherLogoSrc,
+  getPublisherLogoStyle,
+} from "../logo-style";
 import { SHOWCASE_PUBLISHERS, type TemplateDefinition } from "../template-data";
 
 const LOGO_HEIGHT = 48;
@@ -16,7 +19,7 @@ function PublisherLogo({
 }) {
   return (
     <Img
-      src={staticFile(`publishers/logos/${id}.png`)}
+      src={staticFile(getPublisherLogoSrc(id, template))}
       style={{
         height: LOGO_HEIGHT,
         maxWidth: LOGO_MAX_WIDTH,

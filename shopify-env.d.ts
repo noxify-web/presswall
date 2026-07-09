@@ -3,7 +3,13 @@
 import type {
   SAppNavAttributes,
   SAppNavLinkAttributes,
+  SAppWindowAttributes,
 } from "@shopify/app-bridge-types";
+
+interface SPageAttributes {
+  children?: React.ReactNode;
+  heading?: string;
+}
 
 declare global {
   interface Window {
@@ -25,7 +31,22 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       "s-app-nav": SAppNavAttributes;
+      "s-app-window": SAppWindowAttributes;
+      "s-badge": {
+        slot?: string;
+        tone?: string;
+        children?: React.ReactNode;
+      };
+      "s-button": {
+        slot?: string;
+        variant?: string;
+        tone?: string;
+        disabled?: boolean;
+        onClick?: (event: Event) => void;
+        children?: React.ReactNode;
+      };
       "s-link": SAppNavLinkAttributes;
+      "s-page": SPageAttributes;
     }
   }
 }
@@ -34,7 +55,22 @@ declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "s-app-nav": SAppNavAttributes;
+      "s-app-window": SAppWindowAttributes;
+      "s-badge": {
+        slot?: string;
+        tone?: string;
+        children?: React.ReactNode;
+      };
+      "s-button": {
+        slot?: string;
+        variant?: string;
+        tone?: string;
+        disabled?: boolean;
+        onClick?: (event: Event) => void;
+        children?: React.ReactNode;
+      };
       "s-link": SAppNavLinkAttributes;
+      "s-page": SPageAttributes;
     }
   }
 }

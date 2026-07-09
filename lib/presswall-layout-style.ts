@@ -91,6 +91,11 @@ export function getLogosBarConstrainedClassName(
   return getLogosRowGridClassName(alignment);
 }
 
+/** Horizontal gap between mobile grid columns for space-between bars. */
+export function getMobileSpaceBetweenColumnGap(gap: number): number {
+  return Math.max(12, Math.round(gap * 0.5));
+}
+
 export function getLogosBarConstrainedStyle(
   logosPerRow: number,
   gap: number,
@@ -101,7 +106,7 @@ export function getLogosBarConstrainedStyle(
   if (logoSpacing === "space-between") {
     return {
       ...style,
-      columnGap: 0,
+      columnGap: `${getMobileSpaceBetweenColumnGap(gap)}px`,
       rowGap: `${gap}px`,
     };
   }

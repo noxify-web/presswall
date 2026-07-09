@@ -56,40 +56,34 @@ function isDarkBackgroundColor(backgroundColor: string): boolean {
   return relativeLuminance(...rgb) < DARK_BACKGROUND_LUMINANCE_THRESHOLD;
 }
 
-function shouldInvertLogos(template: TemplateDefinition): boolean {
+/** Bundled logo variant folder: black | white | color. */
+export function getPublisherLogoVariant(
+  template: TemplateDefinition
+): "black" | "white" | "color" {
   if (template.colorMode === "color") {
-    return false;
+    return "color";
   }
 
-  if (isTransparentBackground(template.backgroundColor)) {
-    return false;
+  if (
+    !isTransparentBackground(template.backgroundColor) &&
+    isDarkBackgroundColor(template.backgroundColor)
+  ) {
+    return "white";
   }
 
-  return isDarkBackgroundColor(template.backgroundColor);
+  return "black";
+}
+
+export function getPublisherLogoSrc(id: string, template: TemplateDefinition): string {
+  return `publishers/logos/${id}/${getPublisherLogoVariant(template)}.png`;
 }
 
 export function getPublisherLogoStyle(
   template: TemplateDefinition
 ): CSSProperties {
-  const filters: string[] = [];
-
-  if (template.colorMode === "mono" || template.colorMode === "muted") {
-    filters.push("grayscale(100%)");
-  }
-
-  if (shouldInvertLogos(template)) {
-    filters.push("invert(1)");
-  }
-
-  const style: CSSProperties = {};
-
-  if (filters.length > 0) {
-    style.filter = filters.join(" ");
-  }
-
   if (template.colorMode === "muted") {
-    style.opacity = 0.55;
+    return { opacity: 0.55 };
   }
 
-  return style;
+  return {};
 }

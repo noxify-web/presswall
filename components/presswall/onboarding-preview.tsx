@@ -10,10 +10,15 @@ import {
 import { getLogoImageStyle } from "@/lib/presswall-logo-style";
 import { getPreviewColors } from "@/lib/presswall-preview-colors";
 import {
+  getPreviewLogoGap,
+  getPreviewLogoHeight,
+  getPreviewLogoMaxWidth,
+  TEMPLATE_THUMBNAIL_PADDING_CAP,
+} from "@/lib/presswall-preview-scale";
+import {
   formatContentMaxWidth,
   getEffectiveShellPaddingX,
 } from "@/lib/presswall-shell-padding";
-import { scaleSpacingForPreview } from "@/lib/presswall-spacing";
 import type {
   PresswallConfig,
   PublisherCatalogItem,
@@ -28,15 +33,12 @@ interface OnboardingPreviewProps {
   config: PresswallConfig;
   customLogos?: ShopCustomLogo[];
   deviceMode?: PresswallViewport;
+  /** Editor live preview: open replace picker for this selection index. */
+  onReplaceLogoAt?: (selectionIndex: number) => void;
   previewTheme?: "light" | "dark";
   scale?: "sm" | "md" | "lg";
   selections: ShopPublisherSelection[];
 }
-
-/** ~25% smaller than the previous template thumbnail caps. */
-const TEMPLATE_THUMBNAIL_LOGO_HEIGHT_CAP = 12;
-const TEMPLATE_THUMBNAIL_LOGO_MAX_WIDTH = 42;
-const TEMPLATE_THUMBNAIL_PADDING_CAP = 9;
 
 const onboardingEmptyState = (
   <div className="flex h-8 items-center justify-center text-[10px] text-muted-foreground/70">
@@ -55,22 +57,6 @@ function usesContainedPreviewLayout(
   return config.layout !== "marquee" || !usesInlineMarqueeHeading(config);
 }
 
-function getPreviewLogoMaxWidth(
-  config: PresswallConfig,
-  isLivePreview: boolean,
-  isTemplateThumbnail: boolean
-): number {
-  if (isLivePreview) {
-    return Math.round(config.logoHeight * 3);
-  }
-
-  if (isTemplateThumbnail) {
-    return TEMPLATE_THUMBNAIL_LOGO_MAX_WIDTH;
-  }
-
-  return 56;
-}
-
 export function OnboardingPreview({
   catalog,
   config,
@@ -78,6 +64,7 @@ export function OnboardingPreview({
   selections,
   className,
   deviceMode,
+  onReplaceLogoAt,
   scale = "md",
   previewTheme = "light",
 }: OnboardingPreviewProps) {
@@ -89,15 +76,12 @@ export function OnboardingPreview({
 
   const viewport = deviceMode ?? "desktop";
   const logosPerRow = getLogosPerRow(config, viewport);
-  const logoHeight = isLivePreview
-    ? config.logoHeight
-    : Math.min(
-        config.logoHeight,
-        isTemplateThumbnail ? TEMPLATE_THUMBNAIL_LOGO_HEIGHT_CAP : 16
-      );
-  const gap = isLivePreview
-    ? config.gap
-    : scaleSpacingForPreview(config.gap, config.logoHeight, logoHeight);
+  const logoHeight = getPreviewLogoHeight(
+    config.logoHeight,
+    scale,
+    isLivePreview
+  );
+  const gap = getPreviewLogoGap(config, logoHeight, isLivePreview);
   const paddingY = isLivePreview
     ? config.paddingY
     : Math.min(
@@ -111,11 +95,8 @@ export function OnboardingPreview({
         isTemplateThumbnail ? TEMPLATE_THUMBNAIL_PADDING_CAP : 12
       );
 
-  const logoMaxWidth = getPreviewLogoMaxWidth(
-    config,
-    isLivePreview,
-    isTemplateThumbnail
-  );
+  // Always cap at 3× rendered height (storefront rule), including thumbnails.
+  const logoMaxWidth = getPreviewLogoMaxWidth(logoHeight);
   const usesContainedLayout = usesContainedPreviewLayout(config, isLivePreview);
 
   const { items, renderLogo } = usePresswallStripItems({
@@ -125,6 +106,7 @@ export function OnboardingPreview({
     logoHeight,
     logoMaxWidth,
     logoStyle,
+    onReplaceLogoAt: isLivePreview ? onReplaceLogoAt : undefined,
     selections,
   });
 

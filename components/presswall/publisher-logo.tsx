@@ -60,9 +60,9 @@ export function PublisherLogo({
           <img
             alt=""
             className="presswall-logo-img"
-            height={32}
+            height={28}
             src={dataUrl}
-            width={140}
+            width={336}
           />
         ) : (
           <span className="font-semibold text-[0.625rem] text-muted-foreground uppercase">
@@ -96,10 +96,10 @@ export function PublisherLogo({
       <img
         alt={`${name} logo`}
         className="presswall-logo-img"
-        height={32}
+        height={28}
         onError={() => setFailed(true)}
         src={logoUrl}
-        width={140}
+        width={336}
       />
     </LogoSlot>
   );

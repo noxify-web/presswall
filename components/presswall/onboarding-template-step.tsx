@@ -1,27 +1,61 @@
 "use client";
 
-import { IconBookmark } from "@tabler/icons-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DeviceToggle } from "@/components/presswall/device-toggle";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreviewCanvas } from "@/components/presswall/onboarding-preview-canvas";
 import { OnboardingTemplateCustomControls } from "@/components/presswall/onboarding-template-custom-controls";
-import { SaveTemplateDialog } from "@/components/presswall/save-template-dialog";
 import { TemplatePicker } from "@/components/presswall/template-picker";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
 import type { PresswallViewport } from "@/lib/presswall-layout-style";
-import {
-  getPresswallTemplate,
-  presswallConfigsEqual,
-} from "@/lib/presswall-templates";
-import type { PresswallConfig } from "@/lib/presswall-types";
+import { getPresswallTemplate } from "@/lib/presswall-templates";
 
 interface OnboardingTemplateStepProps {
   editor: PresswallEditor;
   onBack: () => void;
   onNext: () => void;
+}
+
+/**
+ * When the merchant leaves a built-in template (custom design), silently
+ * create a `Custom banner N` once for this custom session. Resets if they
+ * re-apply a built-in so a later customize can create the next N.
+ */
+export function useOnboardingAutoCustomBanner(editor: PresswallEditor): void {
+  const creatingRef = useRef(false);
+  const createdForCustomSessionRef = useRef(false);
+
+  useEffect(() => {
+    if (editor.matchedTemplateId !== null) {
+      createdForCustomSessionRef.current = false;
+      return;
+    }
+
+    // Already on a merchant banner that still matches — no new create.
+    if (editor.matchedCustomTemplateId !== null) {
+      createdForCustomSessionRef.current = true;
+      return;
+    }
+
+    if (createdForCustomSessionRef.current || creatingRef.current) {
+      return;
+    }
+
+    creatingRef.current = true;
+    createdForCustomSessionRef.current = true;
+
+    editor
+      .createOnboardingCustomBanner()
+      .catch(() => null)
+      .finally(() => {
+        creatingRef.current = false;
+      });
+  }, [
+    editor.createOnboardingCustomBanner,
+    editor.matchedCustomTemplateId,
+    editor.matchedTemplateId,
+  ]);
 }
 
 export function OnboardingTemplateStep({
@@ -33,51 +67,8 @@ export function OnboardingTemplateStep({
     "templates"
   );
   const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [lastSavedConfig, setLastSavedConfig] =
-    useState<PresswallConfig | null>(null);
-  const [savedTemplateName, setSavedTemplateName] = useState<string | null>(
-    null
-  );
 
-  const isCustomDesign = editor.matchedTemplateId === null;
-  const showSaveTemplate = useMemo(() => {
-    if (!isCustomDesign) {
-      return false;
-    }
-
-    return (
-      lastSavedConfig === null ||
-      !presswallConfigsEqual(editor.config, lastSavedConfig)
-    );
-  }, [editor.config, isCustomDesign, lastSavedConfig]);
-
-  const handleTemplateSaved = (name: string) => {
-    setLastSavedConfig(editor.config);
-    setSavedTemplateName(name);
-    editor.refreshCustomTemplates().catch(() => undefined);
-  };
-
-  let saveTemplateAction: ReactNode = null;
-  if (showSaveTemplate) {
-    saveTemplateAction = (
-      <Button
-        onClick={() => setSaveDialogOpen(true)}
-        size="sm"
-        type="button"
-        variant="secondary"
-      >
-        <IconBookmark stroke={2} />
-        Save template
-      </Button>
-    );
-  } else if (savedTemplateName) {
-    saveTemplateAction = (
-      <p className="text-muted-foreground text-xs">
-        Saved as {savedTemplateName}
-      </p>
-    );
-  }
+  useOnboardingAutoCustomBanner(editor);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3">
@@ -126,6 +117,7 @@ export function OnboardingTemplateStep({
                 catalog={editor.catalog}
                 customLogos={editor.customLogos}
                 customTemplates={editor.customTemplates}
+                hideSavedBanners
                 matchedCustomTemplateId={editor.matchedCustomTemplateId}
                 matchedTemplateId={editor.matchedTemplateId}
                 onApply={editor.applyTemplate}
@@ -159,16 +151,7 @@ export function OnboardingTemplateStep({
         nextLabel="Next"
         onBack={onBack}
         onNext={onNext}
-        secondaryAction={saveTemplateAction}
         showBack
-      />
-
-      <SaveTemplateDialog
-        config={editor.config}
-        onOpenChange={setSaveDialogOpen}
-        onSaved={handleTemplateSaved}
-        open={saveDialogOpen}
-        selections={editor.selections}
       />
     </div>
   );

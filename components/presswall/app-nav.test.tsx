@@ -1,9 +1,12 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanup, render } from "@testing-library/react";
 import { assertPresswallAppNavContract } from "@/lib/presswall-app-nav-contract";
-import { PresswallAppNav } from "./app-nav";
+
+mock.module("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 function mountGlobalStyles() {
   const styleId = "presswall-test-globals";
@@ -19,6 +22,8 @@ function mountGlobalStyles() {
   );
   document.head.append(style);
 }
+
+const { PresswallAppNav } = await import("./app-nav");
 
 describe("PresswallAppNav", () => {
   afterEach(() => {

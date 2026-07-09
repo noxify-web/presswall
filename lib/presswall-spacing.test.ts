@@ -4,6 +4,7 @@ import {
   applyDerivedSpacingPatch,
   deriveHeadingSpacing,
   deriveLogoGap,
+  scaleSpacingForPreview,
   withDerivedSpacing,
 } from "@/lib/presswall-spacing";
 
@@ -60,5 +61,24 @@ describe("withDerivedSpacing", () => {
 
     expect(config.gap).toBe(36);
     expect(config.headingSpacing).toBe(54);
+  });
+});
+
+describe("scaleSpacingForPreview", () => {
+  test("scales classic bar gap with logo height for thumbnails", () => {
+    // Default classic: logoHeight 28, gap 32 → thumbnail height 12
+    const scaled = scaleSpacingForPreview(32, 28, 12);
+    expect(scaled).toBe(14);
+    expect(scaled).toBeGreaterThan(0);
+  });
+
+  test("scales marquee gap proportionally and never collapses to zero", () => {
+    const scaled = scaleSpacingForPreview(36, 32, 12);
+    expect(scaled).toBe(14);
+    expect(scaleSpacingForPreview(8, 100, 1)).toBeGreaterThanOrEqual(2);
+  });
+
+  test("keeps full gap when preview height matches config", () => {
+    expect(scaleSpacingForPreview(32, 28, 28)).toBe(32);
   });
 });

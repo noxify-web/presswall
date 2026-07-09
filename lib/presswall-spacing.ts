@@ -67,14 +67,32 @@ export function applyDerivedSpacingPatch(
   return {};
 }
 
+/**
+ * Scale bar/marquee gap (or other spacing) when admin previews shrink logo height.
+ * Keeps gap proportional to the full config so thumbnails do not collapse spacing
+ * to zero when logos are capped smaller than the live strip.
+ */
 export function scaleSpacingForPreview(
   spacing: number,
   configLogoHeight: number,
-  previewLogoHeight: number
+  previewLogoHeight: number,
+  options?: { min?: number }
 ): number {
-  if (configLogoHeight <= 0) {
-    return spacing;
+  const min = options?.min ?? 2;
+
+  if (spacing <= 0) {
+    return 0;
   }
 
-  return roundToStep(spacing * (previewLogoHeight / configLogoHeight));
+  if (configLogoHeight <= 0 || previewLogoHeight <= 0) {
+    return Math.max(min, spacing);
+  }
+
+  if (previewLogoHeight >= configLogoHeight) {
+    return Math.max(min, spacing);
+  }
+
+  const scaled = roundToStep(spacing * (previewLogoHeight / configLogoHeight));
+
+  return Math.max(min, scaled);
 }

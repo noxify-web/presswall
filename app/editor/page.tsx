@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { AppEmptyState } from "@/components/presswall/app-empty-state";
+import { EditorShellSkeleton } from "@/components/presswall/editor-shell-skeleton";
 import { EditorView } from "@/components/presswall/editor-view";
 import { authenticatePage } from "@/lib/authenticate-page";
 import { hasEmbeddedEntryParams } from "@/lib/embedded-entry";
@@ -25,5 +27,9 @@ export default async function EditorPage({ searchParams }: PageProps) {
   await authenticatePage(searchParams, "/editor");
   await ensurePublisherCatalogSeeded();
 
-  return <EditorView />;
+  return (
+    <Suspense fallback={<EditorShellSkeleton />}>
+      <EditorView />
+    </Suspense>
+  );
 }

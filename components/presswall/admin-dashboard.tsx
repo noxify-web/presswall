@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { HomeShellSkeleton } from "@/components/presswall/home-shell-skeleton";
 import { MerchantOverview } from "@/components/presswall/merchant-overview";
 import { OnboardingAdminView } from "@/components/presswall/onboarding-admin-view";
@@ -15,6 +16,7 @@ import {
   type PresswallEditor,
   usePresswallEditor,
 } from "@/hooks/use-presswall-editor";
+import { EDITOR_APP_WINDOW_CLOSED_EVENT } from "@/lib/editor-app-window";
 import { merchantOverviewFromEditor } from "@/lib/merchant-overview-data";
 
 export function AdminDashboardView({ editor }: { editor: PresswallEditor }) {
@@ -60,6 +62,23 @@ export function AdminDashboardView({ editor }: { editor: PresswallEditor }) {
 
 export function AdminDashboard() {
   const editor = usePresswallEditor();
+
+  useEffect(() => {
+    const onEditorWindowClosed = () => {
+      editor.reload().catch(() => undefined);
+    };
+
+    window.addEventListener(
+      EDITOR_APP_WINDOW_CLOSED_EVENT,
+      onEditorWindowClosed
+    );
+    return () => {
+      window.removeEventListener(
+        EDITOR_APP_WINDOW_CLOSED_EVENT,
+        onEditorWindowClosed
+      );
+    };
+  }, [editor.reload]);
 
   return <AdminDashboardView editor={editor} />;
 }

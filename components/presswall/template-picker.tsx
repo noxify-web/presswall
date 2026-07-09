@@ -22,6 +22,8 @@ interface TemplatePickerProps {
   catalog: PresswallEditor["catalog"];
   customLogos: PresswallEditor["customLogos"];
   customTemplates?: ShopBanner[];
+  /** When true, hide merchant Saved banners (onboarding step 2). */
+  hideSavedBanners?: boolean;
   matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   onApply: (templateId: PresswallTemplateId) => void;
@@ -166,6 +168,7 @@ export function TemplatePicker({
   catalog,
   customLogos,
   customTemplates = [],
+  hideSavedBanners = false,
   matchedCustomTemplateId,
   matchedTemplateId,
   onApply,
@@ -174,6 +177,9 @@ export function TemplatePicker({
   onGoToPlacement,
   selections,
 }: TemplatePickerProps) {
+  const visibleCustomTemplates = hideSavedBanners ? [] : customTemplates;
+  const showSavedBanners = visibleCustomTemplates.length > 0;
+
   const placementAction = onGoToPlacement ? (
     <Button
       className="h-auto shrink-0 px-0 text-xs"
@@ -187,7 +193,10 @@ export function TemplatePicker({
 
   let builtInTemplatesDescription =
     "Pick a starting look, then customize outlets and styling. Use Save as template to keep your design for later.";
-  if (customTemplates.length > 0) {
+  if (hideSavedBanners) {
+    builtInTemplatesDescription =
+      "Pick a starting look, then customize outlets and styling.";
+  } else if (showSavedBanners) {
     builtInTemplatesDescription =
       "Starting points from Presswall. Apply one, then customize outlets and styling.";
   } else if (onGoToPlacement) {
@@ -198,7 +207,7 @@ export function TemplatePicker({
   return (
     <ScrollArea className="min-h-0 flex-1">
       <div className="space-y-3 p-3">
-        {customTemplates.length > 0 ? (
+        {showSavedBanners ? (
           <section className="space-y-2">
             <TemplateSectionHeader
               action={placementAction}
@@ -209,7 +218,7 @@ export function TemplatePicker({
               }
               title="Saved banners"
             />
-            {customTemplates.map((template) => (
+            {visibleCustomTemplates.map((template) => (
               <TemplateRow
                 catalog={catalog}
                 customLogos={customLogos}
@@ -232,12 +241,10 @@ export function TemplatePicker({
         ) : null}
 
         <section
-          className={
-            customTemplates.length > 0 ? "space-y-2 border-t pt-4" : "space-y-2"
-          }
+          className={showSavedBanners ? "space-y-2 border-t pt-4" : "space-y-2"}
         >
           <TemplateSectionHeader
-            action={customTemplates.length === 0 ? placementAction : undefined}
+            action={showSavedBanners ? undefined : placementAction}
             description={builtInTemplatesDescription}
             title="Built-in templates"
           />

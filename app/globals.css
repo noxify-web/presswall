@@ -174,39 +174,112 @@
   background-size: 20px 20px;
 }
 
+/* Live preview pan/zoom (React Flow) */
+.presswall-preview-flow.react-flow {
+  /* Own stacking context so Background z-index:-1 stays inside the canvas
+     (otherwise overflow:hidden parents hide the dotted SVG entirely). */
+  background-color: #f4f4f5 !important;
+  /* Own stacking context so Background z-index:-1 stays inside the canvas
+     (otherwise overflow:hidden parents hide the dotted SVG entirely). */
+  isolation: isolate;
+}
+
+.presswall-preview-flow.react-flow,
+.presswall-preview-flow .react-flow__renderer,
+.presswall-preview-flow .react-flow__pane {
+  background: transparent !important;
+}
+
+.presswall-preview-flow .react-flow__background {
+  /* Default RF style is z-index:-1; keep it above the flow root fill */
+  z-index: 0 !important;
+  opacity: 1;
+}
+
+.presswall-preview-flow .react-flow__viewport {
+  z-index: 1;
+}
+
+.presswall-preview-flow .react-flow__pane {
+  cursor: grab;
+}
+
+.presswall-preview-flow .react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.presswall-preview-flow .react-flow__node {
+  cursor: default;
+  /* Transparent node chrome so only the strip card is opaque */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.presswall-preview-flow-controls {
+  margin: 12px !important;
+  box-shadow: none !important;
+}
+
+.presswall-preview-flow-controls .react-flow__controls-button {
+  width: 28px;
+  height: 28px;
+  background: oklch(1 0 0 / 0.95);
+  border-bottom-color: oklch(0.922 0 0);
+  fill: oklch(0.35 0 0);
+}
+
+.presswall-preview-flow-controls .react-flow__controls-button:hover {
+  background: oklch(0.97 0 0);
+}
+
 .presswall-canvas-bg-dots-dark {
   background-color: oklch(0.18 0 0);
   background-image: radial-gradient(oklch(0.3 0 0) 1px, transparent 1px);
 }
 
+/* Match storefront: every logo fills the shared slot height; width varies. */
 .presswall-logo-slot {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: auto;
-  max-width: var(--logo-max-width, 8.75rem);
+  max-width: var(--logo-max-width, 21rem);
   height: var(--logo-height, 1.5rem);
-}
-
-.presswall-logo-row .presswall-logo-slot {
-  width: auto;
-  max-width: none;
+  max-height: var(--logo-height, 1.5rem);
 }
 
 .presswall-logo-slot > img,
 .presswall-logo-slot .presswall-logo-img {
   display: block;
   width: auto;
-  max-width: var(--logo-max-width, 8.75rem);
+  max-width: var(--logo-max-width, 21rem);
+  /* Force equal visual height; object-fit keeps aspect without crop */
   height: 100%;
+  max-height: 100%;
   object-fit: contain;
   object-position: center;
 }
 
-.presswall-logo-row .presswall-logo-slot > img,
-.presswall-logo-row .presswall-logo-slot .presswall-logo-img {
-  max-width: none;
+/*
+ * Mobile bar uses a 2-col grid. Wide wordmarks must shrink to the cell —
+ * otherwise max-width (12× height) overflows and logos overlap (CNBC/Economist).
+ */
+.presswall-logo-row.grid .presswall-logo-slot {
+  flex-shrink: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.presswall-logo-row.grid .presswall-logo-slot > img,
+.presswall-logo-row.grid .presswall-logo-slot .presswall-logo-img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .presswall-svg-logo {

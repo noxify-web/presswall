@@ -46,7 +46,7 @@ const CTA_START = DASHBOARD_START + DASHBOARD_VIDEO_FRAMES;
 export const PROMO_DURATION_FRAMES = CTA_START + CTA;
 
 /** Background music under dialogue-free promo (0–1). */
-const BG_MUSIC_VOLUME = 0.28;
+const BG_MUSIC_VOLUME = 0.4;
 const BG_MUSIC_FADE_IN_FRAMES = 60; // 1.0s
 const BG_MUSIC_FADE_OUT_FRAMES = 90; // 1.5s
 

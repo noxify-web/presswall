@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { EditorShellSkeleton } from "@/components/presswall/editor-shell-skeleton";
 import { EditorWorkspace } from "@/components/presswall/editor-workspace";
 import { ThemeActivationBanner } from "@/components/presswall/theme-activation-banner";
@@ -14,9 +15,15 @@ import {
 } from "@/components/ui/empty";
 import { usePresswallEditor } from "@/hooks/use-presswall-editor";
 import { navigateAdminPath } from "@/lib/admin-navigation";
+import { isAppWindowRequest } from "@/lib/editor-app-window";
 
 export function EditorView() {
   const editor = usePresswallEditor();
+  const searchParams = useSearchParams();
+  const inAppWindow = useMemo(
+    () => isAppWindowRequest(searchParams),
+    [searchParams]
+  );
 
   useEffect(() => {
     if (!editor.isLoading && editor.needsOnboarding) {
@@ -53,9 +60,44 @@ export function EditorView() {
     );
   }
 
+  const saveDisabled = !editor.isDirty || editor.isLoading || editor.isSaving;
+
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
-      <ThemeActivationBanner variant="compact" />
+      {/*
+        App Bridge title bar for fullscreen App Window (and admin chrome on
+        the regular /editor route). Save stays in the preview toolbar for the
+        in-app control pattern; primary action mirrors it in the native bar.
+      */}
+      <s-page heading="Edit press logos">
+        {editor.isDirty ? (
+          <s-badge slot="accessory" tone="warning">
+            Unsaved
+          </s-badge>
+        ) : null}
+        <s-button
+          disabled={saveDisabled}
+          onClick={() => {
+            editor.save().catch(() => undefined);
+          }}
+          slot="primary-action"
+        >
+          {editor.isSaving ? "Saving..." : "Save"}
+        </s-button>
+        {editor.isDirty ? (
+          <s-button
+            disabled={saveDisabled}
+            onClick={() => {
+              editor.discard();
+            }}
+            slot="secondary-actions"
+          >
+            Discard
+          </s-button>
+        ) : null}
+      </s-page>
+
+      {inAppWindow ? null : <ThemeActivationBanner variant="compact" />}
 
       {editor.unavailableCount > 0 ? (
         <Alert className="shrink-0 rounded-none border-x-0 border-t-0 py-2">
@@ -70,8 +112,14 @@ export function EditorView() {
         </Alert>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4 pb-6 sm:px-6">
-        <EditorWorkspace editor={editor} />
+      <div
+        className={
+          inAppWindow
+            ? "flex min-h-0 flex-1 flex-col overflow-hidden px-3 pt-3 pb-4 sm:px-4"
+            : "flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4 pb-6 sm:px-6"
+        }
+      >
+        <EditorWorkspace editor={editor} fullBleed={inAppWindow} />
       </div>
     </div>
   );

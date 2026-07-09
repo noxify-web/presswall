@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 
 import "./globals.css";
 import { PresswallAppNav } from "@/components/presswall/app-nav";
+import { EditorAppWindowHost } from "@/components/presswall/editor-app-window-host";
 import { SessionBootstrap } from "@/components/session-bootstrap";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,8 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Presswall",
     description: "As seen on press logos for your Shopify storefront",
     icons: {
-      icon: "/brand/black-back.png",
-      apple: "/brand/black-back.png",
+      icon: "/brand/black-bg-logo.png",
+      apple: "/brand/black-bg-logo.png",
     },
   };
 }
@@ -53,7 +55,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <PresswallAppNav />
+        <Suspense fallback={null}>
+          <PresswallAppNav />
+        </Suspense>
+        <EditorAppWindowHost />
         <SessionBootstrap />
         <TooltipProvider delay={400}>
           {children}

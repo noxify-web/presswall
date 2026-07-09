@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAdminNavigation } from "@/hooks/use-admin-navigation";
+import { openEditorAppWindow } from "@/lib/editor-app-window";
 import type { MerchantOverviewData } from "@/lib/merchant-overview-data";
 import type { PresswallViewport } from "@/lib/presswall-layout-style";
 
@@ -97,41 +97,45 @@ function StorefrontEmbedCard() {
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="gap-2 border-b pb-3">
+    <Card className="h-full shadow-sm">
+      <CardHeader className="gap-1.5 border-b pb-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <CardTitle className="text-sm">Storefront embed</CardTitle>
             <CardDescription className="text-xs leading-relaxed">
               Required for your press strip to appear on the live store.
             </CardDescription>
           </div>
-          <EmbedStatusBadge
-            isActive={isActive}
-            isChecking={isLoading || isChecking}
-          />
+          <div className="shrink-0 pt-0.5">
+            <EmbedStatusBadge
+              isActive={isActive}
+              isChecking={isLoading || isChecking}
+            />
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-4">
-        {status?.themeName ? (
-          <p className="text-muted-foreground text-xs">
-            Theme: <span className="text-foreground">{status.themeName}</span>
-          </p>
-        ) : null}
 
-        {isActive ? (
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            Presswall is enabled on your storefront. You can still open the
-            theme editor to review embed settings.
-          </p>
-        ) : (
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            Turn on the Presswall app embed in your theme editor, save, then
-            check status here.
-          </p>
-        )}
+      <CardContent className="flex flex-1 flex-col gap-4 pt-4">
+        <div className="flex flex-1 flex-col gap-2">
+          {status?.themeName ? (
+            <p className="text-muted-foreground text-xs">
+              Theme:{" "}
+              <span className="font-medium text-foreground">
+                {status.themeName}
+              </span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-xs">Theme: —</p>
+          )}
 
-        <div className="flex flex-wrap gap-2">
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {isActive
+              ? "Presswall is enabled on your storefront. Open the theme editor anytime to review embed settings."
+              : "Turn on the Presswall app embed in your theme editor, save, then check status here."}
+          </p>
+        </div>
+
+        <div className="mt-auto flex flex-wrap gap-2">
           <Button
             disabled={!status?.activateEmbedUrl || isLoading}
             onClick={() => {
@@ -173,21 +177,30 @@ function ThemePlacementCard() {
     : null;
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="gap-2 border-b pb-3">
-        <CardTitle className="text-sm">Add to your theme</CardTitle>
-        <CardDescription className="text-xs leading-relaxed">
-          Place the Presswall block where shoppers will see it.
-        </CardDescription>
+    <Card className="h-full shadow-sm">
+      <CardHeader className="gap-1.5 border-b pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="text-sm">Add to your theme</CardTitle>
+            <CardDescription className="text-xs leading-relaxed">
+              Place the Presswall block where shoppers will see it.
+            </CardDescription>
+          </div>
+          {/* Spacer keeps header height aligned with the embed status badge */}
+          <div aria-hidden className="invisible shrink-0 pt-0.5">
+            <EmbedStatusBadge isActive isChecking={false} />
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-4">
-        <ol className="space-y-2">
+
+      <CardContent className="flex flex-1 flex-col gap-4 pt-4">
+        <ol className="flex flex-1 flex-col gap-2">
           {PLACEMENT_STEPS.map((step, index) => (
             <li
               className="flex items-start gap-2 text-muted-foreground text-xs leading-relaxed"
               key={step}
             >
-              <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full border bg-background font-medium text-[0.625rem] tabular-nums">
+              <span className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border bg-muted/40 font-medium text-[0.625rem] text-foreground tabular-nums">
                 {index + 1}
               </span>
               <span>{step}</span>
@@ -195,7 +208,7 @@ function ThemePlacementCard() {
           ))}
         </ol>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-auto flex flex-wrap gap-2">
           <Button
             disabled={!homepageUrl}
             onClick={() => {
@@ -231,7 +244,16 @@ function ThemePlacementCard() {
 
 export function MerchantOverview({ data }: MerchantOverviewProps) {
   const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
-  const { isNavigating, navigate } = useAdminNavigation();
+  const [isOpeningEditor, setIsOpeningEditor] = useState(false);
+
+  const handleOpenEditor = () => {
+    setIsOpeningEditor(true);
+    openEditorAppWindow()
+      .catch(() => undefined)
+      .finally(() => {
+        setIsOpeningEditor(false);
+      });
+  };
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
@@ -258,19 +280,17 @@ export function MerchantOverview({ data }: MerchantOverviewProps) {
               <div className="flex items-center gap-2">
                 <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />
                 <Button
-                  disabled={isNavigating}
-                  onClick={() => {
-                    navigate("/editor").catch(() => undefined);
-                  }}
+                  disabled={isOpeningEditor}
+                  onClick={handleOpenEditor}
                   size="sm"
                   type="button"
                 >
-                  {isNavigating ? (
+                  {isOpeningEditor ? (
                     <IconLoader2 className="size-4 animate-spin" stroke={2} />
                   ) : (
                     <IconEdit stroke={2} />
                   )}
-                  {isNavigating ? "Opening..." : "Open editor"}
+                  {isOpeningEditor ? "Opening..." : "Open editor"}
                 </Button>
               </div>
             </div>
@@ -286,7 +306,7 @@ export function MerchantOverview({ data }: MerchantOverviewProps) {
             </div>
           </div>
 
-          <div className="grid shrink-0 gap-3 md:grid-cols-2">
+          <div className="grid shrink-0 items-stretch gap-3 md:grid-cols-2">
             <StorefrontEmbedCard />
             <ThemePlacementCard />
           </div>

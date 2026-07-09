@@ -6,6 +6,28 @@ interface LogoImageStyleOptions {
 }
 
 /**
+ * Max logo width as a multiple of logo height.
+ * Long wordmarks (Economist, WSJ, FT) are often 6–12× as wide as tall; a
+ * tight 3× cap forced those marks to shrink below the shared strip height.
+ * 12× lets essentially the full catalog render at equal height while still
+ * bounding pathological SVGs. Bar templates use space-between so extra width
+ * is absorbed as spacing, not equal fixed gaps.
+ */
+export const STOREFRONT_LOGO_MAX_WIDTH_RATIO = 12;
+
+/**
+ * Cap logo width relative to rendered height — same rule as theme CSS
+ * (`max-width: calc(var(--presswall-logo-height) * N)`).
+ */
+export function getStorefrontLogoMaxWidth(logoHeight: number): number {
+  if (logoHeight <= 0) {
+    return 0;
+  }
+
+  return Math.round(logoHeight * STOREFRONT_LOGO_MAX_WIDTH_RATIO);
+}
+
+/**
  * CSS applied on top of pre-rendered variant assets.
  * Black / white / color modes use pure assets — no invert/grayscale filters
  * (those caused uneven ink intensity across outlets).
