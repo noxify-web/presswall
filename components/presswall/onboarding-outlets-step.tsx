@@ -24,7 +24,7 @@ export function OnboardingOutletsStep({
         <h1 className="font-semibold text-base tracking-tight">
           Choose which press logos to show on your store
         </h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-xs">
           Click logos to add them to your “As seen on” strip. You can change
           this later.
         </p>
