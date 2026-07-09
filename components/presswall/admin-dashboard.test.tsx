@@ -28,7 +28,9 @@ describe("AdminDashboard render routing", () => {
       />
     );
 
-    expect(view.getByText("Step 1 of 3 — Add your press logos")).toBeTruthy();
+    expect(
+      view.getByText("Choose which press logos to show on your store")
+    ).toBeTruthy();
     expect(view.queryByText("Quick actions")).toBeNull();
   });
 

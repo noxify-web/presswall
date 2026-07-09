@@ -121,11 +121,15 @@ describe("onboarding completion handoff", () => {
     const view = render(<HandoffHarness />);
 
     await waitFor(() => {
-      expect(view.getByText("Step 1 of 3 — Add your press logos")).toBeTruthy();
+      expect(
+        view.getByText("Choose which press logos to show on your store")
+      ).toBeTruthy();
     });
 
     fireEvent.click(view.getByRole("button", { name: "Forbes" }));
-    fireEvent.click(view.getByRole("button", { name: "Next" }));
+    fireEvent.click(
+      view.getByRole("button", { name: "Continue with 1 logo" })
+    );
 
     await waitFor(() => {
       expect(view.getByText(STEP_TWO_LABEL)).toBeTruthy();
@@ -151,7 +155,9 @@ describe("onboarding completion handoff", () => {
       expect(view.getByText("Storefront embed")).toBeTruthy();
       expect(view.getByText("Add to your theme")).toBeTruthy();
       expect(view.getByRole("button", { name: "Open editor" })).toBeTruthy();
-      expect(view.queryByText("Step 1 of 3 — Add your press logos")).toBeNull();
+      expect(
+        view.queryByText("Choose which press logos to show on your store")
+      ).toBeNull();
       expect(view.queryByText("Discard")).toBeNull();
     });
   });
