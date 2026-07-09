@@ -29,18 +29,48 @@ describe("resolveStorefrontPublishers", () => {
       name: "TechCrunch",
       logoSvg: "",
     });
-    expect(publishers[0]?.logoImageUrl).toBe("/api/publishers/techcrunch/logo");
+    expect(publishers[0]?.logoImageUrl).toBe(
+      "/api/publishers/techcrunch/logo?variant=black"
+    );
+  });
+
+  test("resolves logo variant from colorMode", () => {
+    const color = resolveStorefrontPublishers(
+      catalog,
+      [{ publisherId: "techcrunch", position: 0 }],
+      { colorMode: "color" }
+    );
+    const white = resolveStorefrontPublishers(
+      catalog,
+      [{ publisherId: "techcrunch", position: 0 }],
+      { colorMode: "white" }
+    );
+    const monoLegacy = resolveStorefrontPublishers(
+      catalog,
+      [{ publisherId: "techcrunch", position: 0 }],
+      { colorMode: "mono" }
+    );
+
+    expect(color[0]?.logoImageUrl).toBe(
+      "/api/publishers/techcrunch/logo?variant=color"
+    );
+    expect(white[0]?.logoImageUrl).toBe(
+      "/api/publishers/techcrunch/logo?variant=white"
+    );
+    expect(monoLegacy[0]?.logoImageUrl).toBe(
+      "/api/publishers/techcrunch/logo?variant=black"
+    );
   });
 
   test("can resolve absolute bundled logo urls for storefront payloads", () => {
     const publishers = resolveStorefrontPublishers(
       catalog,
       [{ publisherId: "techcrunch", position: 0 }],
-      { absoluteLogoUrls: true }
+      { absoluteLogoUrls: true, colorMode: "black" }
     );
 
     expect(publishers[0]?.logoImageUrl).toContain(
-      "/api/publishers/techcrunch/logo"
+      "/api/publishers/techcrunch/logo?variant=black"
     );
   });
 

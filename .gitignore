@@ -38,6 +38,9 @@ next-env.d.ts
 .env.local
 # database (shared SQLite file)
 data/dev.db
+
+# Rust tool build artifacts
+/tools/**/target/
 data/dev.db-wal
 data/dev.db-shm
 
@@ -46,3 +49,6 @@ data/dev.db-shm
 
 # app listing promo videos (local assets — not committed)
 public/video/*.mp4
+
+# local scratch (logo compare dumps, etc.)
+/tmp/

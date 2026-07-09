@@ -241,43 +241,24 @@ const INLINE_RGB_COLOR_PATTERN =
   }
 
   function getLogoStyle(config) {
-    const filters = [];
-
-    if (config.colorMode === "muted" || config.colorMode === "mono") {
-      filters.push("grayscale(100%)");
-    }
-
-    if (shouldInvertLogos(config)) {
-      filters.push("invert(1)");
-    }
-
-    if (config.colorMode === "muted") {
-      const opacity = sanitizeCssSize(config.grayscaleOpacity, 70) / 100;
-      const filter = filters.length ? `filter:${filters.join(" ")};` : "";
-      return `${filter}opacity:${opacity}`;
-    }
-
-    if (filters.length) {
-      return `filter:${filters.join(" ")}`;
+    // Black / white / color use pre-rendered pure assets from the app.
+    // Only muted dims opacity; no grayscale/invert filters (uneven ink intensity).
+    if (config.colorMode === "muted" || config.invertLogos) {
+      const opacity =
+        config.colorMode === "muted"
+          ? sanitizeCssSize(config.grayscaleOpacity, 70) / 100
+          : 1;
+      if (config.colorMode === "muted") {
+        return `opacity:${opacity}`;
+      }
     }
 
     return "";
   }
 
-  function shouldInvertLogos(config) {
-    if (config.colorMode === "color") {
-      return false;
-    }
-
-    const backgroundColor = String(config.backgroundColor ?? "")
-      .trim()
-      .toLowerCase();
-
-    if (backgroundColor === "transparent") {
-      return false;
-    }
-
-    return isDarkBackgroundColor(backgroundColor);
+  function shouldInvertLogos(_config) {
+    // Pure black/white assets — never invert via CSS.
+    return false;
   }
 
   function isDarkBackgroundColor(color) {

@@ -83,8 +83,10 @@ If Admin API calls fail after reinstall, have merchant **reload the embedded app
 
 ## Logo URLs (admin preview vs storefront)
 
-- **Admin preview / templates:** relative paths `/api/publishers/{id}/logo` via `bundledLogoPath()` in `lib/resolve-storefront-publishers.ts`.
-- **Storefront / app-proxy payloads:** absolute URLs via `absoluteLogoUrls: true` in `lib/build-storefront-payload.ts`.
+- Bundled assets live at `public/publishers/logos/{id}/{color,black,white}.png` (shared alpha for mono modes).
+- **Admin preview / templates:** relative paths `/api/publishers/{id}/logo?variant=…` via `bundledLogoPath()` in `lib/publisher-logo-path.ts` (variant from banner `colorMode`).
+- **Storefront / app-proxy payloads:** absolute URLs via `absoluteLogoUrls: true` + `colorMode` in `lib/build-storefront-payload.ts` / `resolve-storefront-publishers.ts`.
+- Merchant color modes: **colorful** (`color`), **black**, **white**, plus legacy **muted** (black + opacity). Legacy `mono` normalizes to `black`.
 - `components/presswall/publisher-logo.tsx` uses native `<img>` (not `next/image`) for embedded-admin reliability.
 
 ## Theme activation detection
@@ -167,7 +169,10 @@ ssh -i ~/.ssh/presswall-debian.pem admin@35.169.154.151 'sudo docker logs pressw
 
 ## Assets & scripts
 
-- Bulk logo prep (ImageMagick): `scripts/process-publisher-logos.sh /path/to/sources` → writes silhouettes to `public/publishers/logos/`.
+- Bulk logo prep (ImageMagick variants): `scripts/process-publisher-logo-variants.sh source.png outlet-id` → `public/publishers/logos/{id}/{color,black,white}.png`.
+- Catalog refresh from vhv.rs: `bun scripts/download-vhv-logos.ts` (optional `--ids forbes,cnbc`).
+- Dir bulk: `scripts/process-publisher-logos.sh /path/to/sources`.
+- Trim excess transparent / gray fringe and normalize ink height (Rust, black silhouettes): `scripts/trim-logo-padding.sh` (dry-run) or `--apply`. Source: `tools/trim-logos/`.
 - Custom merchant SVGs: sanitized in `lib/svg-sanitize.ts`; `components/presswall/svg-logo.tsx` uses `dangerouslySetInnerHTML` — Biome rule is explicitly off in `biome.jsonc` for that file only.
 
 ## Linting

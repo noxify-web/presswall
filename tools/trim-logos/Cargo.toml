@@ -1,0 +1,11 @@
+[package]
+name = "trim-logos"
+version = "0.1.0"
+edition = "2021"
+description = "Trim excess transparent padding from publisher logos and normalize ink height"
+publish = false
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+walkdir = "2"

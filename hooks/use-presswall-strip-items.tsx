@@ -14,6 +14,7 @@ import { resolveStorefrontPublishers } from "@/lib/resolve-storefront-publishers
 
 interface UsePresswallStripItemsOptions {
   catalog: PublisherCatalogItem[];
+  colorMode?: string;
   customLogos?: ShopCustomLogo[];
   logoHeight: number;
   logoMaxWidth: number;
@@ -23,6 +24,7 @@ interface UsePresswallStripItemsOptions {
 
 export function usePresswallStripItems({
   catalog,
+  colorMode,
   customLogos,
   logoHeight,
   logoMaxWidth,
@@ -36,8 +38,9 @@ export function usePresswallStripItems({
 
     return resolveStorefrontPublishers(catalog, hydratedSelections, {
       customLogos,
+      colorMode,
     });
-  }, [catalog, customLogos, selections]);
+  }, [catalog, colorMode, customLogos, selections]);
 
   const renderLogo = useMemo(
     () => (item: StorefrontPublisher) => (

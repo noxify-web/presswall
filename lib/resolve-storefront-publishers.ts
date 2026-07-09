@@ -1,4 +1,5 @@
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
+import { type LogoVariant, logoVariantForColorMode } from "@/lib/logo-variant";
 import type {
   PublisherCatalogItem,
   ShopCustomLogo,
@@ -27,12 +28,25 @@ function resolvePublisherUrl(
 export function resolveStorefrontPublishers(
   catalog: PublisherCatalogItem[],
   selections: ShopPublisherSelection[],
-  options?: { absoluteLogoUrls?: boolean; customLogos?: ShopCustomLogo[] }
+  options?: {
+    absoluteLogoUrls?: boolean;
+    colorMode?: string;
+    customLogos?: ShopCustomLogo[];
+    logoVariant?: LogoVariant;
+  }
 ): StorefrontPublisher[] {
   const catalogById = new Map(catalog.map((item) => [item.id, item]));
   const libraryById = new Map(
     (options?.customLogos ?? []).map((logo) => [logo.id, logo])
   );
+  const logoOptions = {
+    variant:
+      options?.logoVariant ??
+      (options?.colorMode
+        ? logoVariantForColorMode(options.colorMode)
+        : undefined),
+    colorMode: options?.colorMode,
+  };
 
   return selections
     .map((selection, index): StorefrontPublisher | null => {
@@ -42,15 +56,18 @@ export function resolveStorefrontPublishers(
           return null;
         }
 
+        let logoImageUrl: string | null = null;
+        if (isBundledPublisherId(publisher.id)) {
+          logoImageUrl = options?.absoluteLogoUrls
+            ? absoluteBundledLogoUrl(publisher.id, logoOptions)
+            : bundledLogoPath(publisher.id, logoOptions);
+        }
+
         return {
           id: publisher.id,
           isCustom: false,
           name: publisher.name,
-          logoImageUrl: isBundledPublisherId(publisher.id)
-            ? options?.absoluteLogoUrls
-              ? absoluteBundledLogoUrl(publisher.id)
-              : bundledLogoPath(publisher.id)
-            : null,
+          logoImageUrl,
           logoSvg: "",
           url: resolvePublisherUrl(selection.customUrl, publisher.websiteUrl),
         };

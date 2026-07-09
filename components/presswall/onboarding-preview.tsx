@@ -120,6 +120,7 @@ export function OnboardingPreview({
 
   const { items, renderLogo } = usePresswallStripItems({
     catalog,
+    colorMode: config.colorMode,
     customLogos,
     logoHeight,
     logoMaxWidth,

@@ -31,6 +31,7 @@ export function buildStorefrontPayload(
     publishers: resolveStorefrontPublishers(catalog, hydratedSelections, {
       ...options,
       absoluteLogoUrls: true,
+      colorMode: config.colorMode,
     }),
   };
 }

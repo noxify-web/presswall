@@ -44,7 +44,7 @@ export const shopConfigs = sqliteTable("shop_configs", {
     .default(true),
   headingFontSize: integer("heading_font_size").notNull().default(12),
   headingSpacing: integer("heading_spacing").notNull().default(40),
-  colorMode: text("color_mode").notNull().default("mono"),
+  colorMode: text("color_mode").notNull().default("black"),
   layout: text("layout").notNull().default("bar"),
   logoHeight: integer("logo_height").notNull().default(28),
   logosPerRowDesktop: integer("logos_per_row").notNull().default(4),

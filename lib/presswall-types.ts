@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  migrateLegacyColorMode,
+  rawColorModeSchema,
+} from "@/lib/logo-variant";
+import { isDarkBackgroundColor } from "@/lib/presswall-logo-contrast";
 import { normalizePresswallLayout } from "@/lib/normalize-presswall-layout";
 import {
   cssColorSchema,
@@ -6,7 +11,12 @@ import {
   safeHttpUrlSchema,
 } from "@/lib/presswall-validation";
 
-export const colorModeSchema = z.enum(["mono", "color", "muted"]);
+export type {
+  ColorMode,
+  LogoVariant,
+  PrimaryColorMode,
+} from "@/lib/logo-variant";
+
 export const layoutSchema = z
   .enum(["bar", "grid", "marquee", "slider"])
   .transform(normalizePresswallLayout);
@@ -16,29 +26,41 @@ export type PresswallAlignment = z.infer<typeof alignmentSchema>;
 export const logoSpacingSchema = z.enum(["gap", "space-between"]);
 export type PresswallLogoSpacing = z.infer<typeof logoSpacingSchema>;
 
-export const presswallConfigSchema = z.object({
-  headingText: z.string().min(0).max(80),
-  showHeading: z.boolean(),
-  headingFontSize: z.number().int().min(10).max(24),
-  headingSpacing: z.number().int().min(8).max(80),
-  colorMode: colorModeSchema,
-  layout: layoutSchema,
-  logoHeight: z.number().int().min(10).max(80),
-  logosPerRowDesktop: z.number().int().min(2).max(8),
-  logosPerRowMobile: z.number().int().min(1).max(4),
-  gap: z.number().int().min(8).max(64),
-  logoSpacing: logoSpacingSchema,
-  headingAlignment: alignmentSchema,
-  logoAlignment: alignmentSchema,
-  backgroundColor: cssColorSchema,
-  textColor: cssColorSchema,
-  borderRadius: z.number().int().min(0).max(32),
-  paddingY: z.number().int().min(0).max(80),
-  paddingX: z.number().int().min(0).max(80),
-  contentMaxWidth: z.number().int().min(360).max(1200),
-  marqueeSpeed: z.number().int().min(10).max(80),
-  grayscaleOpacity: z.number().int().min(20).max(100),
-});
+/**
+ * Full strip config. Legacy `mono` is migrated with background awareness:
+ * mono + dark band → white (replaces old CSS invert); mono + light → black.
+ */
+export const presswallConfigSchema = z
+  .object({
+    headingText: z.string().min(0).max(80),
+    showHeading: z.boolean(),
+    headingFontSize: z.number().int().min(10).max(24),
+    headingSpacing: z.number().int().min(8).max(80),
+    colorMode: rawColorModeSchema,
+    layout: layoutSchema,
+    logoHeight: z.number().int().min(10).max(80),
+    logosPerRowDesktop: z.number().int().min(2).max(8),
+    logosPerRowMobile: z.number().int().min(1).max(4),
+    gap: z.number().int().min(8).max(64),
+    logoSpacing: logoSpacingSchema,
+    headingAlignment: alignmentSchema,
+    logoAlignment: alignmentSchema,
+    backgroundColor: cssColorSchema,
+    textColor: cssColorSchema,
+    borderRadius: z.number().int().min(0).max(32),
+    paddingY: z.number().int().min(0).max(80),
+    paddingX: z.number().int().min(0).max(80),
+    contentMaxWidth: z.number().int().min(360).max(1200),
+    marqueeSpeed: z.number().int().min(10).max(80),
+    grayscaleOpacity: z.number().int().min(20).max(100),
+  })
+  .transform((config) => ({
+    ...config,
+    colorMode: migrateLegacyColorMode(
+      config.colorMode,
+      isDarkBackgroundColor(config.backgroundColor)
+    ),
+  }));
 
 export type PresswallConfig = z.infer<typeof presswallConfigSchema>;
 

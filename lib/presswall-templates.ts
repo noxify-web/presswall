@@ -15,7 +15,7 @@ export interface PresswallTemplate {
 const CLASSIC_BAR_TEMPLATE_BASE = {
   headingText: "As seen on",
   showHeading: true,
-  colorMode: "mono",
+  colorMode: "black",
   layout: "bar",
   headingAlignment: "center",
   logoAlignment: "center",
@@ -46,6 +46,7 @@ export const PRESSWALL_TEMPLATES: PresswallTemplate[] = [
       "Classic layout on a bold dark strip for light storefront pages.",
     config: {
       ...CLASSIC_BAR_TEMPLATE_BASE,
+      colorMode: "white",
       backgroundColor: "#0a0a0a",
       textColor: "#fafafa",
     },
@@ -57,7 +58,7 @@ export const PRESSWALL_TEMPLATES: PresswallTemplate[] = [
     config: {
       headingText: "Featured in",
       showHeading: true,
-      colorMode: "mono",
+      colorMode: "black",
       layout: "marquee",
       headingAlignment: "left",
       logoAlignment: "left",

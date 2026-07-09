@@ -30,7 +30,7 @@ describe("applyPresswallTemplate", () => {
       DEFAULT_PRESSWALL_CONFIG.grayscaleOpacity
     );
     expect(softCard.logoHeight).toBe(28);
-    expect(softCard.colorMode).toBe("mono");
+    expect(softCard.colorMode).toBe("black");
 
     const classic = applyPresswallTemplate("classic");
 

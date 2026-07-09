@@ -74,17 +74,16 @@ interface LogoContrastOptions {
   previewIsDark?: boolean;
 }
 
+/**
+ * Whether storefront should flip logos via CSS invert.
+ * With dedicated black/white assets, invert is never needed for normal modes.
+ * Kept only for rare clients that still force invertLogos via metafield.
+ */
 export function shouldInvertLogos(
-  config: PresswallConfig,
-  options: LogoContrastOptions = {}
+  _config: PresswallConfig,
+  _options: LogoContrastOptions = {}
 ): boolean {
-  if (config.colorMode === "color") {
-    return false;
-  }
-
-  if (isTransparentBackground(config.backgroundColor)) {
-    return options.previewIsDark ?? false;
-  }
-
-  return isDarkBackgroundColor(config.backgroundColor);
+  // Pure black/white assets — never invert via CSS.
+  // Merchants pick white vs black (or color) explicitly.
+  return false;
 }

@@ -27,9 +27,10 @@ const COLOR_MODE_OPTIONS: {
   label: string;
   value: PresswallConfig["colorMode"];
 }[] = [
-  { value: "mono", label: "Black & white" },
-  { value: "muted", label: "Muted grayscale" },
-  { value: "color", label: "Full color" },
+  { value: "color", label: "Colorful" },
+  { value: "black", label: "Black" },
+  { value: "white", label: "White" },
+  { value: "muted", label: "Muted" },
 ];
 
 const LOGO_SPACING_OPTIONS: {
@@ -261,9 +262,10 @@ export function OnboardingTemplateCustomControls({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mono">Black &amp; white</SelectItem>
-                  <SelectItem value="muted">Muted grayscale</SelectItem>
-                  <SelectItem value="color">Full color</SelectItem>
+                  <SelectItem value="color">Colorful</SelectItem>
+                  <SelectItem value="black">Black</SelectItem>
+                  <SelectItem value="white">White</SelectItem>
+                  <SelectItem value="muted">Muted</SelectItem>
                 </SelectContent>
               </Select>
             </div>

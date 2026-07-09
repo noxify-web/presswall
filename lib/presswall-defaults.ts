@@ -5,7 +5,7 @@ const BASE_PRESSWALL_CONFIG = {
   headingText: "As seen on",
   showHeading: true,
   headingFontSize: 12,
-  colorMode: "mono",
+  colorMode: "black",
   layout: "bar",
   logoHeight: 28,
   logosPerRowDesktop: 4,

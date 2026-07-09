@@ -1,25 +1,29 @@
-import { shouldInvertLogos } from "@/lib/presswall-logo-contrast";
+import { normalizeColorMode } from "@/lib/logo-variant";
 import type { PresswallConfig } from "@/lib/presswall-types";
 
 interface LogoImageStyleOptions {
   previewIsDark?: boolean;
 }
 
-function buildLogoFilter(
+/**
+ * CSS applied on top of pre-rendered variant assets.
+ * Black / white / color modes use pure assets — no invert/grayscale filters
+ * (those caused uneven ink intensity across outlets).
+ * Muted mode only dims opacity on black assets.
+ */
+export function getLogoImageStyle(
   config: PresswallConfig,
-  options: LogoImageStyleOptions = {}
-): string | undefined {
-  const filters: string[] = [];
+  _options: LogoImageStyleOptions = {}
+): React.CSSProperties | undefined {
+  const mode = normalizeColorMode(config.colorMode);
 
-  if (config.colorMode === "muted" || config.colorMode === "mono") {
-    filters.push("grayscale(100%)");
+  if (mode === "muted") {
+    return {
+      opacity: config.grayscaleOpacity / 100,
+    };
   }
 
-  if (shouldInvertLogos(config, options)) {
-    filters.push("invert(1)");
-  }
-
-  return filters.length > 0 ? filters.join(" ") : undefined;
+  return;
 }
 
 export function getLogoSlotStyle(
@@ -32,24 +36,4 @@ export function getLogoSlotStyle(
     "--logo-height": `${logoHeight}px`,
     "--logo-max-width": `${maxWidth}px`,
   } as React.CSSProperties;
-}
-
-export function getLogoImageStyle(
-  config: PresswallConfig,
-  options: LogoImageStyleOptions = {}
-): React.CSSProperties | undefined {
-  const filter = buildLogoFilter(config, options);
-
-  if (config.colorMode === "muted") {
-    return {
-      ...(filter ? { filter } : {}),
-      opacity: config.grayscaleOpacity / 100,
-    };
-  }
-
-  if (config.colorMode === "mono") {
-    return filter ? { filter } : undefined;
-  }
-
-  return;
 }
