@@ -264,7 +264,7 @@ function UploadLogoHint({
       type="button"
     >
       <span className="flex size-12 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border">
-        <IconPhotoUp className="size-6 text-foreground/70" stroke={1.5} />
+        <IconUpload className="size-6 text-foreground/70" stroke={1.5} />
       </span>
       <span className="space-y-0.5">
         <span className="block font-medium text-sm">
@@ -410,7 +410,7 @@ export function OutletLibraryPanel({
           size="sm"
           variant="secondary"
         >
-          <IconPhotoUp stroke={2} />
+          <IconUpload stroke={2} />
           Upload logo
         </Button>
       </div>
