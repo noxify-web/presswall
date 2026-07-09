@@ -4,7 +4,7 @@ Shopify app for **"As seen on"** press and media logo strips on your storefront.
 
 Forked from [shopify-nextjs-template](https://github.com/niiithish/shopify-nextjs-template) with **shadcn/ui** for the admin experience.
 
-**Repository:** [github.com/niiithish/presswall](https://github.com/niiithish/presswall) (target: `noxify/presswall` once org transfer is approved)
+**Repository:** [github.com/noxify-web/presswall](https://github.com/noxify-web/presswall)
 
 ## Features
 
