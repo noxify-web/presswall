@@ -39,6 +39,16 @@ export function BrandLogo({
   // Static id is fine — at most one brand mark is typically mounted.
   const gradientId = "presswall-brand-stroke";
 
+  let stroke: string | undefined;
+  let strokeWidth: number | undefined;
+  if (variant === "solid") {
+    stroke = `url(#${gradientId})`;
+    strokeWidth = 1.9;
+  } else if (variant === "outline") {
+    stroke = tile.stroke;
+    strokeWidth = 2;
+  }
+
   return (
     <svg
       aria-label="Presswall"
@@ -69,14 +79,8 @@ export function BrandLogo({
         fill={tile.fill}
         height={44}
         rx={9.5}
-        stroke={
-          variant === "solid"
-            ? `url(#${gradientId})`
-            : (tile.stroke ?? undefined)
-        }
-        strokeWidth={
-          variant === "outline" ? 2 : variant === "solid" ? 1.9 : undefined
-        }
+        stroke={stroke}
+        strokeWidth={strokeWidth}
         width={44}
         x={2}
         y={2}
