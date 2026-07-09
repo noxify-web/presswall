@@ -249,12 +249,42 @@ const CustomLogoTile = memo(function CustomLogoTile({
   );
 });
 
+function UploadLogoHint({
+  onUpload,
+  searchQuery,
+}: {
+  onUpload: () => void;
+  searchQuery?: string;
+}) {
+  const hasSearch = Boolean(searchQuery?.trim());
+  return (
+    <div className="flex flex-col items-center gap-2 px-3 py-4 text-center">
+      <p className="text-muted-foreground text-xs">
+        {hasSearch
+          ? `No match for “${searchQuery?.trim()}”. Upload a custom logo if you have one.`
+          : "Not seeing a logo you want?"}
+      </p>
+      <Button
+        className="h-7 px-2.5 text-xs"
+        onClick={onUpload}
+        size="sm"
+        type="button"
+        variant="secondary"
+      >
+        <IconPhotoUp stroke={2} />
+        Upload logo
+      </Button>
+    </div>
+  );
+}
+
 function OutletGrid({
   catalog,
   category,
   colorMode,
   columns,
   onToggle,
+  onUpload,
   search,
   selectionPositionByKey,
 }: {
@@ -263,6 +293,7 @@ function OutletGrid({
   colorMode?: string | null;
   columns: 2 | 3;
   onToggle: (publisher: PublisherCatalogItem) => void;
+  onUpload: () => void;
   search: string;
   selectionPositionByKey: Map<string, number>;
 }) {
@@ -285,9 +316,10 @@ function OutletGrid({
         <EmptyHeader>
           <EmptyTitle>No matches</EmptyTitle>
           <EmptyDescription>
-            Try a different search or category.
+            Try another search, or upload a custom logo with the button above.
           </EmptyDescription>
         </EmptyHeader>
+        <UploadLogoHint onUpload={onUpload} searchQuery={search} />
       </Empty>
     );
   }
@@ -310,6 +342,9 @@ function OutletGrid({
             publisherId={publisher.id}
           />
         ))}
+      </div>
+      <div className="mt-3 border-t pt-1">
+        <UploadLogoHint onUpload={onUpload} />
       </div>
     </div>
   );
@@ -422,6 +457,7 @@ export function OutletLibraryPanel({
             colorMode={colorMode}
             columns={columns}
             onToggle={onToggle}
+            onUpload={() => setUploadOpen(true)}
             search={search}
             selectionPositionByKey={selectionPositionByKey}
           />
