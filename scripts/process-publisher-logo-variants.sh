@@ -3,14 +3,14 @@
 #
 # Usage:
 #   ./scripts/process-publisher-logo-variants.sh /path/to/source.png outlet-id
-#   ./scripts/process-publisher-logo-variants.sh /path/to/sources-dir   # uses basename as id
+#   ./scripts/process-publisher-logo-variants.sh /path/to/sources-dir
 #
 # Writes:
 #   public/publishers/logos/{id}/color.png
 #   public/publishers/logos/{id}/black.png
 #   public/publishers/logos/{id}/white.png
 #
-# Black and white share the same alpha mask so mono strips have uniform ink intensity.
+# Black and white share the same alpha mask (pure #000 / #fff ink).
 
 set -euo pipefail
 
@@ -36,45 +36,41 @@ process_one() {
   # shellcheck disable=SC2064
   trap "rm -rf '$work'" RETURN
 
-  # Normalize: resize if huge, ensure alpha.
+  # Shape: clean alpha + trim + normalize height (preserve RGB).
+  # Use +clone in-stack compose (mpr write/delete path can zero alpha incorrectly).
+  # +compose after CopyOpacity is required — otherwise trim/resize keep
+  # composing and can zero RGB into solid black bars.
   magick "$src" -resize '1600x600>' -alpha on -colorspace sRGB \
-    PNG32:"$work/base.png"
-
-  # Alpha mask from opacity (drops near-transparent fringe).
-  magick "$work/base.png" -alpha extract -threshold "$ALPHA_THRESH" \
-    PNG32:"$work/mask.png"
-
-  # Apply mask — must be a separate convert; chaining compose + trim in one
-  # invocation can zero out RGB (ImageMagick compose state leak).
-  magick "$work/base.png" "$work/mask.png" -compose CopyOpacity -composite \
-    PNG32:"$work/masked.png"
-
-  magick "$work/masked.png" -alpha on -bordercolor none -border 2 \
+    \( +clone -alpha extract -threshold "$ALPHA_THRESH" \) \
+    -compose CopyOpacity -composite +compose \
+    -alpha on -bordercolor none -border 2 \
     -fuzz "$TRIM_FUZZ" -trim +repage \
     -resize "x${INK_HEIGHT}" \
-    PNG32:"$work/color-raw.png"
+    PNG32:"$work/shaped.png"
 
-  # Re-extract cleaned mask after trim+resize for pure mono colorize.
-  magick "$work/color-raw.png" -alpha extract -threshold 10% \
-    PNG32:"$work/mask2.png"
+  magick "$work/shaped.png" PNG32:"$dest_dir/color.png"
 
-  # Color: keep RGB, cleaned alpha
-  magick "$work/color-raw.png" "$work/mask2.png" -compose CopyOpacity -composite \
-    PNG32:"$dest_dir/color.png"
-
-  # Black: pure #000 + same mask
-  magick "$work/color-raw.png" -alpha off -fill black -colorize 100 \
-    "$work/mask2.png" -compose CopyOpacity -composite \
+  # Black: pure #000 + alpha from shaped (mpr:a +delete so colorize hits RGB only)
+  magick "$work/shaped.png" \
+    \( +clone -alpha extract -write mpr:a +delete \) \
+    -alpha off -fill black -colorize 100 \
+    mpr:a -compose CopyOpacity -composite +compose \
     PNG32:"$dest_dir/black.png"
 
-  # White: pure #fff + same mask
-  magick "$work/color-raw.png" -alpha off -fill white -colorize 100 \
-    "$work/mask2.png" -compose CopyOpacity -composite \
+  # White: pure #fff + same alpha
+  magick "$work/shaped.png" \
+    \( +clone -alpha extract -write mpr:a +delete \) \
+    -alpha off -fill white -colorize 100 \
+    mpr:a -compose CopyOpacity -composite +compose \
     PNG32:"$dest_dir/white.png"
 
-  local dims
+  local dims alpha_mean
   dims="$(magick identify -format '%wx%h' "$dest_dir/black.png")"
-  echo "OK $id → $dest_dir ({color,black,white}.png) $dims"
+  alpha_mean="$(magick "$dest_dir/black.png" -alpha extract -format '%[fx:mean]' info:)"
+  if awk "BEGIN { exit !($alpha_mean < 0.02 || $alpha_mean > 0.98) }"; then
+    echo "WARN $id black alpha_mean=$alpha_mean (expect partial transparency)" >&2
+  fi
+  echo "OK $id → $dest_dir ({color,black,white}.png) $dims alpha_mean=$alpha_mean"
 }
 
 SRC="$1"
