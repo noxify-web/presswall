@@ -1,12 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
-import {
-  listShopCustomTemplates,
-  type ShopCustomTemplate,
-} from "@/lib/custom-template-service";
-import { normalizePresswallLayout } from "@/lib/normalize-presswall-layout";
-import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
+import { listShopBanners, type ShopBanner } from "@/lib/banner-service";
+import { mapShopConfigRow } from "@/lib/map-shop-config-row";
 import type { ShopPublisherSelection } from "@/lib/presswall-types";
-import { presswallConfigSchema } from "@/lib/presswall-types";
 import type { BannerAssignmentTarget } from "@/lib/resolve-banner-for-context";
 import { db } from "@/src/db";
 import {
@@ -45,50 +40,8 @@ export interface ShopBannerAssignmentsState {
 export interface ShopBannerBootstrapResult {
   assignments: ShopBannerAssignmentRecord[];
   assignmentsState: ShopBannerAssignmentsState;
-  banners: ShopCustomTemplate[];
+  banners: ShopBanner[];
   defaultBannerId: string | null;
-}
-
-function mapLegacyConfig(row: typeof shopConfigs.$inferSelect | undefined) {
-  if (!row) {
-    return DEFAULT_PRESSWALL_CONFIG;
-  }
-
-  const layout = normalizePresswallLayout(row.layout);
-  const parsed = presswallConfigSchema.safeParse({
-    headingText: row.headingText,
-    showHeading: row.showHeading,
-    headingFontSize:
-      row.headingFontSize ?? DEFAULT_PRESSWALL_CONFIG.headingFontSize,
-    headingSpacing:
-      row.headingSpacing ?? DEFAULT_PRESSWALL_CONFIG.headingSpacing,
-    colorMode: row.colorMode,
-    layout,
-    logoHeight: row.logoHeight,
-    logosPerRowDesktop:
-      row.logosPerRowDesktop ?? DEFAULT_PRESSWALL_CONFIG.logosPerRowDesktop,
-    logosPerRowMobile:
-      row.logosPerRowMobile ?? DEFAULT_PRESSWALL_CONFIG.logosPerRowMobile,
-    gap: row.gap,
-    logoSpacing:
-      row.logoSpacing ??
-      (layout === "bar"
-        ? "space-between"
-        : DEFAULT_PRESSWALL_CONFIG.logoSpacing),
-    headingAlignment: row.headingAlignment,
-    logoAlignment: row.logoAlignment ?? row.headingAlignment,
-    backgroundColor: row.backgroundColor,
-    textColor: row.textColor,
-    borderRadius: row.borderRadius,
-    paddingY: row.paddingY,
-    paddingX: row.paddingX,
-    contentMaxWidth:
-      row.contentMaxWidth ?? DEFAULT_PRESSWALL_CONFIG.contentMaxWidth,
-    marqueeSpeed: row.marqueeSpeed,
-    grayscaleOpacity: row.grayscaleOpacity,
-  });
-
-  return parsed.success ? parsed.data : DEFAULT_PRESSWALL_CONFIG;
 }
 
 async function readLegacySelections(
@@ -173,6 +126,11 @@ async function backfillEmptyTemplateSelections(
   }
 }
 
+/**
+ * One-time migration path: copy legacy shop_configs + shop_publishers into
+ * a default banner and core assignments when the shop has no banners yet.
+ * After bootstrap, banners are the sole source of truth for strip content.
+ */
 async function ensureShopBannerBootstrap(shop: string): Promise<void> {
   await db.transaction(async (tx) => {
     const existingBanners = await tx
@@ -196,7 +154,7 @@ async function ensureShopBannerBootstrap(shop: string): Promise<void> {
         .where(eq(shopConfigs.shop, shop))
         .limit(1);
 
-      const config = mapLegacyConfig(configRows[0]);
+      const config = mapShopConfigRow(configRows[0]);
       const selections = await readLegacySelections(tx, shop);
       defaultBannerId = crypto.randomUUID();
 
@@ -267,7 +225,7 @@ async function loadBootstrapResult(
   shop: string
 ): Promise<ShopBannerBootstrapResult> {
   const [banners, assignmentRows] = await Promise.all([
-    listShopCustomTemplates(shop),
+    listShopBanners(shop),
     db
       .select()
       .from(shopBannerAssignments)

@@ -37,6 +37,8 @@ function setupHandoffMocks() {
   mock.module("@/lib/fetch-presswall-client-data", () => ({
     fetchPresswallClientData: () =>
       Promise.resolve({
+        bannerId: null,
+        banners: [],
         catalog: CATALOG_FIXTURE,
         config: DEFAULT_PRESSWALL_CONFIG,
         customLogos: [],

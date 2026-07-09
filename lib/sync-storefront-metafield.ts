@@ -79,8 +79,9 @@ export async function syncStorefrontMetafield(
   accessToken: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
+    // Same banner resolver as the app proxy (null context → homepage/default).
     const [payload, assignments] = await Promise.all([
-      getStorefrontPayload(shop),
+      getStorefrontPayload(shop, null),
       getShopBannerAssignmentsState(shop),
     ]);
     const shopIdResult = await adminGraphql<ShopIdResult>(

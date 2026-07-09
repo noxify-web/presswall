@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
+import { scrubCustomLogoFromShopBanners } from "@/lib/banner-service";
 import { isPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import type { ShopCustomLogo } from "@/lib/presswall-types";
 import { sanitizeSvg } from "@/lib/svg-sanitize";
@@ -56,22 +57,23 @@ export async function createShopCustomLogo(
   return logo;
 }
 
-export function deleteShopCustomLogo(
+export async function deleteShopCustomLogo(
   shop: string,
   logoId: string
 ): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const deleted = await tx
+  const deleted = await db.transaction(async (tx) => {
+    const removed = await tx
       .delete(shopCustomLogos)
       .where(
         and(eq(shopCustomLogos.id, logoId), eq(shopCustomLogos.shop, shop))
       )
       .returning({ id: shopCustomLogos.id });
 
-    if (deleted.length === 0) {
+    if (removed.length === 0) {
       return false;
     }
 
+    // Legacy table — still clean up if present after historical dual-write.
     await tx
       .delete(shopPublishers)
       .where(
@@ -83,6 +85,13 @@ export function deleteShopCustomLogo(
 
     return true;
   });
+
+  if (deleted) {
+    // Banners are SSOT for selections — scrub the logo from every banner.
+    await scrubCustomLogoFromShopBanners(shop, logoId);
+  }
+
+  return deleted;
 }
 
 export interface CustomLogoSyncInput {

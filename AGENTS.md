@@ -115,7 +115,8 @@ Use `bun run format` (`ultracite fix`) before commit if you touched formatting/l
 | Admin UI (embedded) | `app/page.tsx`, `components/presswall/`, `hooks/use-presswall-editor.ts` |
 | API routes | `app/api/` — `presswall`, `publishers`, `custom-templates`, `proxy/config`, `auth`, `webhooks`, `theme-activation` |
 | Shopify session / auth | `lib/authenticate-*.ts`, `lib/ensure-offline-session.ts`, `lib/session-storage.ts`, `lib/shopify.ts` |
-| Business logic | `lib/presswall-service.ts`, `lib/custom-template-service.ts`, `lib/resolve-storefront-publishers.ts`, `lib/publishers-seed.ts` |
+| Business logic | `lib/presswall-service.ts`, `lib/banner-service.ts`, `lib/shop-banner-bootstrap.ts`, `lib/resolve-storefront-publishers.ts`, `lib/publishers-seed.ts` |
+| Banners (SSOT) | `shop_custom_templates` + `shop_banner_assignments` — config/selections live on banners; editor saves one banner atomically. Legacy `shop_configs` style columns / `shop_publishers` are migration-only (bootstrap). |
 | Shop cleanup (GDPR/uninstall) | `lib/shop-cleanup.ts`, `app/api/webhooks/route.ts` |
 | DB (Drizzle) | `src/db/schema.ts`, `src/db/index.ts`, `src/db/constants.ts`; migrations in `drizzle/` |
 | Bundled outlet logos | `public/publishers/logos/`, catalog in `lib/bundled-publishers.ts` |

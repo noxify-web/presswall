@@ -180,32 +180,6 @@
   }
 }
 
-.presswall-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--lpr-m, 2), minmax(0, 1fr));
-  gap: var(--presswall-gap);
-  align-items: center;
-  width: 100%;
-}
-
-@media (min-width: 640px) {
-  .presswall-grid {
-    grid-template-columns: repeat(var(--lpr-d, 4), minmax(0, 1fr));
-  }
-}
-
-.presswall-grid.presswall-align-left {
-  justify-items: start;
-}
-
-.presswall-grid.presswall-align-center {
-  justify-items: center;
-}
-
-.presswall-grid.presswall-align-right {
-  justify-items: end;
-}
-
 .pw-gi {
   display: flex;
   align-items: center;

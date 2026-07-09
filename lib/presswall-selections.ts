@@ -3,6 +3,7 @@ import type {
   ShopPublisherSelection,
 } from "@/lib/presswall-types";
 
+/** Build storage-oriented selections (id references only when possible). */
 export function buildSelections(
   selected: SelectedPublisher[]
 ): ShopPublisherSelection[] {
@@ -15,8 +16,16 @@ export function buildSelections(
       };
     }
 
+    if (item.publisherId) {
+      return {
+        publisherId: item.publisherId,
+        customUrl: item.customUrl,
+        position: index,
+      };
+    }
+
+    // Legacy inline custom outlet
     return {
-      publisherId: item.publisherId,
       customName: item.customName,
       customLogoSvg: item.customLogoSvg,
       customUrl: item.customUrl,
@@ -40,6 +49,31 @@ export function selectedFromApi(
     customLogoSvg: selection.customLogoSvg,
     customUrl: selection.customUrl,
   }));
+}
+
+export function selectionsEqual(
+  left: ShopPublisherSelection[],
+  right: ShopPublisherSelection[]
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((selection, index) => {
+    const other = right[index];
+    if (!other) {
+      return false;
+    }
+
+    return (
+      selection.publisherId === other.publisherId &&
+      selection.customLogoId === other.customLogoId &&
+      selection.customName === other.customName &&
+      selection.customLogoSvg === other.customLogoSvg &&
+      (selection.customUrl || "") === (other.customUrl || "") &&
+      selection.position === other.position
+    );
+  });
 }
 
 export function countUnavailableSelections(

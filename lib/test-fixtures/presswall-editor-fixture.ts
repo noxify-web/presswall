@@ -5,8 +5,10 @@ export function createPresswallEditorFixture(
   overrides: Partial<PresswallEditor> = {}
 ): PresswallEditor {
   return {
+    activeBannerId: null,
     applyCustomBanner: () => undefined,
     applyTemplate: () => undefined,
+    banners: [],
     catalog: [],
     customTemplates: [],
     catalogById: new Map(),
@@ -23,6 +25,7 @@ export function createPresswallEditorFixture(
     matchedCustomTemplateId: null,
     matchedTemplateId: "classic",
     needsOnboarding: true,
+    refreshBanners: async () => undefined,
     refreshCustomTemplates: async () => undefined,
     reload: async () => undefined,
     save: async () => undefined,

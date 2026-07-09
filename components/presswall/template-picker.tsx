@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
-import type { ShopCustomTemplate } from "@/lib/custom-template-service";
+import type { ShopBanner } from "@/lib/banner-service";
 import {
   applyPresswallTemplate,
   getConfigPreviewTheme,
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 interface TemplatePickerProps {
   catalog: PresswallEditor["catalog"];
   customLogos: PresswallEditor["customLogos"];
-  customTemplates: ShopCustomTemplate[];
+  customTemplates?: ShopBanner[];
   matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   onApply: (templateId: PresswallTemplateId) => void;
@@ -165,7 +165,7 @@ function TemplateRow({
 export function TemplatePicker({
   catalog,
   customLogos,
-  customTemplates,
+  customTemplates = [],
   matchedCustomTemplateId,
   matchedTemplateId,
   onApply,

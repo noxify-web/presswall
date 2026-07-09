@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionForRequest } from "@/lib/auth-helpers";
 import {
+  getEditorBannerId,
   getShopConfig,
   getShopPublisherSelections,
   needsOnboarding,
@@ -29,10 +30,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [config, selections, showOnboarding] = await Promise.all([
+  const [config, selections, showOnboarding, bannerId] = await Promise.all([
     getShopConfig(session.shop),
     getShopPublisherSelections(session.shop),
     needsOnboarding(session.shop),
+    getEditorBannerId(session.shop),
   ]);
 
   const accessToken = session.accessToken;
@@ -47,6 +49,7 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({
+    bannerId,
     config,
     selections,
     needsOnboarding: showOnboarding,
@@ -97,6 +100,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      bannerId: result.bannerId,
       customLogos: result.customLogos,
       selections: result.selections,
       needsOnboarding: parsed.data.completeOnboarding ? false : undefined,

@@ -1,17 +1,16 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import type { BannerPageContext } from "@/lib/banner-page-context";
 import {
-  buildStorefrontPayload,
-  getResolvedStorefrontPayload,
-} from "@/lib/build-storefront-payload";
+  normalizeSelectionsForStorage,
+  updateShopBannerInTransaction,
+} from "@/lib/banner-service";
+import { getResolvedStorefrontPayload } from "@/lib/build-storefront-payload";
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
 import { isPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import {
   getShopCustomLogos,
   syncShopCustomLogosInTransaction,
 } from "@/lib/custom-logo-service";
-import { syncBannerFromEditor } from "@/lib/legacy-banner-migration";
-import { normalizePresswallLayout } from "@/lib/normalize-presswall-layout";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import type {
   CustomLogoSaveInput,
@@ -21,11 +20,11 @@ import type {
   ShopPublisherSelection,
   StorefrontPayload,
 } from "@/lib/presswall-types";
-import { presswallConfigSchema } from "@/lib/presswall-types";
 import { getSeedPublishers } from "@/lib/publishers-seed";
+import { bootstrapShopBanners } from "@/lib/shop-banner-bootstrap";
 import { sanitizeSvg } from "@/lib/svg-sanitize";
 import { db } from "@/src/db";
-import { publishers, shopConfigs, shopPublishers } from "@/src/db/schema";
+import { publishers, shopConfigs } from "@/src/db/schema";
 
 let seedPromise: Promise<void> | null = null;
 
@@ -57,79 +56,6 @@ export async function ensurePublisherCatalogSeeded(): Promise<void> {
   await seedPromise;
 }
 
-function mapConfigRow(
-  row: typeof shopConfigs.$inferSelect | undefined
-): PresswallConfig {
-  if (!row) {
-    return DEFAULT_PRESSWALL_CONFIG;
-  }
-
-  const layout = normalizePresswallLayout(row.layout);
-
-  const parsed = presswallConfigSchema.safeParse({
-    headingText: row.headingText,
-    showHeading: row.showHeading,
-    headingFontSize:
-      row.headingFontSize ?? DEFAULT_PRESSWALL_CONFIG.headingFontSize,
-    headingSpacing:
-      row.headingSpacing ?? DEFAULT_PRESSWALL_CONFIG.headingSpacing,
-    colorMode: row.colorMode,
-    layout,
-    logoHeight: row.logoHeight,
-    logosPerRowDesktop:
-      row.logosPerRowDesktop ?? DEFAULT_PRESSWALL_CONFIG.logosPerRowDesktop,
-    logosPerRowMobile:
-      row.logosPerRowMobile ?? DEFAULT_PRESSWALL_CONFIG.logosPerRowMobile,
-    gap: row.gap,
-    logoSpacing:
-      row.logoSpacing ??
-      (layout === "bar"
-        ? "space-between"
-        : DEFAULT_PRESSWALL_CONFIG.logoSpacing),
-    headingAlignment: row.headingAlignment,
-    logoAlignment: row.logoAlignment ?? row.headingAlignment,
-    backgroundColor: row.backgroundColor,
-    textColor: row.textColor,
-    borderRadius: row.borderRadius,
-    paddingY: row.paddingY,
-    paddingX: row.paddingX,
-    contentMaxWidth:
-      row.contentMaxWidth ?? DEFAULT_PRESSWALL_CONFIG.contentMaxWidth,
-    marqueeSpeed: row.marqueeSpeed,
-    grayscaleOpacity: row.grayscaleOpacity,
-  });
-
-  return parsed.success ? parsed.data : DEFAULT_PRESSWALL_CONFIG;
-}
-
-function buildConfigRow(shop: string, config: PresswallConfig, now: string) {
-  return {
-    shop,
-    headingText: config.headingText,
-    showHeading: config.showHeading,
-    headingFontSize: config.headingFontSize,
-    headingSpacing: config.headingSpacing,
-    colorMode: config.colorMode,
-    layout: normalizePresswallLayout(config.layout),
-    logoHeight: config.logoHeight,
-    logosPerRowDesktop: config.logosPerRowDesktop,
-    logosPerRowMobile: config.logosPerRowMobile,
-    gap: config.gap,
-    logoSpacing: config.logoSpacing,
-    headingAlignment: config.headingAlignment,
-    logoAlignment: config.logoAlignment,
-    backgroundColor: config.backgroundColor,
-    textColor: config.textColor,
-    borderRadius: config.borderRadius,
-    paddingY: config.paddingY,
-    paddingX: config.paddingX,
-    contentMaxWidth: config.contentMaxWidth,
-    marqueeSpeed: config.marqueeSpeed,
-    grayscaleOpacity: config.grayscaleOpacity,
-    updatedAt: now,
-  };
-}
-
 function remapSelectionLogoIds(
   selections: ShopPublisherSelection[],
   idMap: Map<string, string>
@@ -146,13 +72,21 @@ function remapSelectionLogoIds(
   });
 }
 
+/**
+ * Ensure every selection is resolvable against the logo library.
+ * Pending client ids must already be remapped. Inline custom SVG is sanitized.
+ */
 function assertResolvableCustomSelections(
   selections: ShopPublisherSelection[],
   libraryById: Map<string, ShopCustomLogo>
 ): ShopPublisherSelection[] {
   return selections.map((selection) => {
     if (selection.publisherId) {
-      return selection;
+      return {
+        publisherId: selection.publisherId,
+        customUrl: selection.customUrl,
+        position: selection.position,
+      };
     }
 
     if (selection.customLogoId) {
@@ -164,7 +98,11 @@ function assertResolvableCustomSelections(
         throw new Error("Custom outlet logo is missing from the library");
       }
 
-      return selection;
+      return {
+        customLogoId: selection.customLogoId,
+        customUrl: selection.customUrl,
+        position: selection.position,
+      };
     }
 
     const customName = selection.customName?.trim();
@@ -177,9 +115,10 @@ function assertResolvableCustomSelections(
     }
 
     return {
-      ...selection,
       customName,
       customLogoSvg,
+      customUrl: selection.customUrl,
+      position: selection.position,
     };
   });
 }
@@ -213,50 +152,66 @@ export async function getShopConfigRow(shop: string) {
   return rows[0];
 }
 
+/**
+ * Pick the banner the editor should open: most recently updated, else default.
+ */
+async function getEditorBanner(shop: string) {
+  const bootstrap = await bootstrapShopBanners(shop);
+  if (bootstrap.banners.length === 0) {
+    return { bootstrap, banner: null as null };
+  }
+
+  const sorted = [...bootstrap.banners].sort((left, right) =>
+    right.updatedAt.localeCompare(left.updatedAt)
+  );
+  const banner =
+    sorted[0] ??
+    bootstrap.banners.find((entry) => entry.id === bootstrap.defaultBannerId) ??
+    null;
+
+  return { bootstrap, banner };
+}
+
+/**
+ * Editor config comes from the shop's banners (SSOT).
+ * Falls back to defaults only when bootstrap cannot produce a banner.
+ */
 export async function getShopConfig(shop: string): Promise<PresswallConfig> {
-  return mapConfigRow(await getShopConfigRow(shop));
+  const { banner } = await getEditorBanner(shop);
+  return banner?.config ?? DEFAULT_PRESSWALL_CONFIG;
 }
 
 export async function needsOnboarding(shop: string): Promise<boolean> {
   const configRow = await getShopConfigRow(shop);
-
   return !configRow?.onboardingCompletedAt;
 }
 
+/**
+ * Outlet selections for the editor — from the most recently updated banner.
+ */
 export async function getShopPublisherSelections(
   shop: string
 ): Promise<ShopPublisherSelection[]> {
-  const [rows, library] = await Promise.all([
-    db
-      .select()
-      .from(shopPublishers)
-      .where(eq(shopPublishers.shop, shop))
-      .orderBy(asc(shopPublishers.position)),
-    getShopCustomLogos(shop),
-  ]);
-  const libraryById = new Map(library.map((logo) => [logo.id, logo]));
+  const { banner } = await getEditorBanner(shop);
+  return banner?.selections ?? [];
+}
 
-  return rows.map((row) => {
-    const libraryLogo = row.customLogoId
-      ? libraryById.get(row.customLogoId)
-      : undefined;
-
-    return {
-      publisherId: row.publisherId ?? undefined,
-      customLogoId: row.customLogoId ?? undefined,
-      customName: libraryLogo?.name ?? row.customName ?? undefined,
-      customLogoSvg: libraryLogo?.logoSvg ?? row.customLogoSvg ?? undefined,
-      customUrl: row.customUrl ?? undefined,
-      position: row.position,
-    };
-  });
+export async function getEditorBannerId(shop: string): Promise<string | null> {
+  const { bootstrap, banner } = await getEditorBanner(shop);
+  return banner?.id ?? bootstrap.defaultBannerId;
 }
 
 export interface SaveShopPresswallResult {
+  bannerId: string | null;
   customLogos: ShopCustomLogo[];
   selections: ShopPublisherSelection[];
 }
 
+/**
+ * Save editor state onto a banner (SSOT). Does not dual-write legacy
+ * shop_configs style columns or shop_publishers rows.
+ * shop_configs is only touched for onboarding completion metadata.
+ */
 export async function saveShopPresswall(
   shop: string,
   config: PresswallConfig,
@@ -268,10 +223,17 @@ export async function saveShopPresswall(
   }
 ): Promise<SaveShopPresswallResult> {
   const now = new Date().toISOString();
-  const configRow = {
-    ...buildConfigRow(shop, config, now),
-    ...(options?.completeOnboarding ? { onboardingCompletedAt: now } : {}),
-  };
+  const bootstrap = await bootstrapShopBanners(shop);
+
+  const targetBannerId =
+    options?.bannerId &&
+    bootstrap.banners.some((banner) => banner.id === options.bannerId)
+      ? options.bannerId
+      : bootstrap.defaultBannerId;
+
+  if (!targetBannerId) {
+    throw new Error("No banner available to save");
+  }
 
   let syncedLogos = await getShopCustomLogos(shop);
 
@@ -291,72 +253,83 @@ export async function saveShopPresswall(
       remappedSelections,
       libraryById
     );
+    const storedSelections = normalizeSelectionsForStorage(validatedSelections);
 
-    await tx
-      .insert(shopConfigs)
-      .values(configRow)
-      .onConflictDoUpdate({
-        target: shopConfigs.shop,
-        set: {
-          ...configRow,
-          ...(options?.completeOnboarding
-            ? { onboardingCompletedAt: now }
-            : {}),
-        },
-      });
+    await updateShopBannerInTransaction(
+      tx,
+      shop,
+      targetBannerId,
+      config,
+      storedSelections,
+      now
+    );
 
-    await tx.delete(shopPublishers).where(eq(shopPublishers.shop, shop));
-
-    if (validatedSelections.length > 0) {
-      await tx.insert(shopPublishers).values(
-        validatedSelections.map((selection, index) => ({
+    if (options?.completeOnboarding) {
+      await tx
+        .insert(shopConfigs)
+        .values({
           shop,
-          publisherId: selection.publisherId ?? null,
-          customLogoId: selection.customLogoId ?? null,
-          customName: selection.customLogoId
-            ? null
-            : (selection.customName ?? null),
-          customLogoSvg: selection.customLogoId
-            ? null
-            : (selection.customLogoSvg ?? null),
-          customUrl: selection.customUrl || null,
-          position: selection.position ?? index,
-        }))
-      );
+          updatedAt: now,
+          onboardingCompletedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: shopConfigs.shop,
+          set: {
+            onboardingCompletedAt: now,
+            updatedAt: now,
+          },
+        });
+    } else {
+      // Touch updated_at so the shop row exists without overwriting styles.
+      await tx
+        .insert(shopConfigs)
+        .values({
+          shop,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: shopConfigs.shop,
+          set: { updatedAt: now },
+        });
     }
   });
 
-  const hydratedSelections = await getShopPublisherSelections(shop);
+  const { banner: savedBanner } = await getEditorBanner(shop);
+  const hydratedSelections = savedBanner?.selections ?? [];
 
-  await syncBannerFromEditor(
-    shop,
-    JSON.stringify(config),
-    JSON.stringify(hydratedSelections),
-    options?.bannerId
-  );
+  // Re-hydrate custom names from library for the API response
+  const libraryById = new Map(syncedLogos.map((logo) => [logo.id, logo]));
+  const responseSelections = hydratedSelections.map((selection) => {
+    if (!selection.customLogoId) {
+      return selection;
+    }
+    const logo = libraryById.get(selection.customLogoId);
+    if (!logo) {
+      return selection;
+    }
+    return {
+      ...selection,
+      customName: logo.name,
+      customLogoSvg: logo.logoSvg,
+    };
+  });
 
   return {
+    bannerId: targetBannerId,
     customLogos: syncedLogos,
-    selections: hydratedSelections,
+    selections: responseSelections,
   };
 }
 
+/**
+ * Always resolves via banners + assignments. Pass `null` when page context
+ * is unknown (uses homepage → all_products → default fallback).
+ */
 export async function getStorefrontPayload(
   shop: string,
-  context?: BannerPageContext | null
+  context: BannerPageContext | null = null
 ): Promise<StorefrontPayload> {
   await ensurePublisherCatalogSeeded();
-
   const catalog = await getPublisherCatalog();
-
-  if (context === undefined) {
-    const [config, selections] = await Promise.all([
-      getShopConfig(shop),
-      getShopPublisherSelections(shop),
-    ]);
-
-    return buildStorefrontPayload(config, selections, catalog);
-  }
-
   return getResolvedStorefrontPayload(shop, catalog, context);
 }

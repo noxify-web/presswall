@@ -57,14 +57,14 @@ export function SaveTemplateDialog({
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      toast.error("Enter a template name");
+      toast.error("Enter a banner name");
       return;
     }
 
     setIsSaving(true);
 
     try {
-      const response = await adminFetch("/api/custom-templates", {
+      const response = await adminFetch("/api/banners", {
         method: "POST",
         body: JSON.stringify({
           name: trimmedName,
@@ -75,20 +75,20 @@ export function SaveTemplateDialog({
       });
 
       if (response.status === 409) {
-        toast.error("A template with this name already exists");
+        toast.error("A banner with this name already exists");
         return;
       }
 
       if (!response.ok) {
-        toast.error("Could not save template");
+        toast.error("Could not save banner");
         return;
       }
 
-      toast.success("Template saved");
+      toast.success("Banner saved");
       onSaved(trimmedName);
       handleOpenChange(false);
     } catch {
-      toast.error("Could not save template");
+      toast.error("Could not save banner");
     } finally {
       setIsSaving(false);
     }
@@ -98,7 +98,7 @@ export function SaveTemplateDialog({
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save template</DialogTitle>
+          <DialogTitle>Save banner</DialogTitle>
           <DialogDescription>
             {showPlacementHint
               ? "Save your design as a banner you can reload from Templates. Use the By page tab to choose where this banner appears on your store."
@@ -108,10 +108,10 @@ export function SaveTemplateDialog({
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="template-name">Template name</Label>
+            <Label htmlFor="banner-name">Banner name</Label>
             <Input
               autoFocus
-              id="template-name"
+              id="banner-name"
               maxLength={80}
               onChange={(event) => setName(event.target.value)}
               placeholder="My press strip"
@@ -120,14 +120,14 @@ export function SaveTemplateDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="template-description">
+            <Label htmlFor="banner-description">
               Description{" "}
               <span className="font-normal text-muted-foreground">
                 (optional)
               </span>
             </Label>
             <Textarea
-              id="template-description"
+              id="banner-description"
               maxLength={240}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="A short note about when to use this look."
@@ -147,7 +147,7 @@ export function SaveTemplateDialog({
           </Button>
           <Button disabled={isSaving} onClick={handleSave} type="button">
             <IconDeviceFloppy stroke={2} />
-            {isSaving ? "Saving..." : "Save template"}
+            {isSaving ? "Saving..." : "Save banner"}
           </Button>
         </DialogFooter>
       </DialogContent>

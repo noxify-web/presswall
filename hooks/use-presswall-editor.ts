@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/admin-fetch";
+import type { ShopBanner } from "@/lib/banner-service";
 import { createPendingCustomLogoId } from "@/lib/custom-logo-pending";
-import type { ShopCustomTemplate } from "@/lib/custom-template-service";
 import { fetchPresswallClientData } from "@/lib/fetch-presswall-client-data";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
 import {
   buildSelections,
   countUnavailableSelections,
   selectedFromApi,
+  selectionsEqual,
 } from "@/lib/presswall-selections";
 import { applyDerivedSpacingPatch } from "@/lib/presswall-spacing";
 import {
@@ -28,15 +29,18 @@ import type {
 } from "@/lib/presswall-types";
 
 export interface PresswallEditor {
-  applyCustomBanner: (templateId: string) => void;
+  activeBannerId: string | null;
+  applyCustomBanner: (bannerId: string) => void;
   applyTemplate: (templateId: PresswallTemplateId) => void;
+  banners: ShopBanner[];
   catalog: PublisherCatalogItem[];
   catalogById: Map<string, PublisherCatalogItem>;
   category: string;
   completeOnboarding: () => Promise<boolean>;
   config: PresswallConfig;
   customLogos: ShopCustomLogo[];
-  customTemplates: ShopCustomTemplate[];
+  /** @deprecated Use banners */
+  customTemplates: ShopBanner[];
   deleteCustomLogo: (logoId: string) => Promise<void>;
   discard: () => void;
   isDirty: boolean;
@@ -46,6 +50,8 @@ export interface PresswallEditor {
   matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   needsOnboarding: boolean;
+  refreshBanners: () => Promise<void>;
+  /** @deprecated Use refreshBanners */
   refreshCustomTemplates: () => Promise<void>;
   reload: () => Promise<void>;
   save: () => Promise<void>;
@@ -70,7 +76,19 @@ function customLogosEqual(
   left: ShopCustomLogo[],
   right: ShopCustomLogo[]
 ): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((logo, index) => {
+    const other = right[index];
+    return (
+      other &&
+      logo.id === other.id &&
+      logo.name === other.name &&
+      logo.logoSvg === other.logoSvg
+    );
+  });
 }
 
 export function usePresswallEditor(): PresswallEditor {
@@ -86,40 +104,53 @@ export function usePresswallEditor(): PresswallEditor {
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(true);
-  const [customTemplates, setCustomTemplates] = useState<ShopCustomTemplate[]>(
-    []
-  );
-  const [activeCustomTemplateId, setActiveCustomTemplateId] = useState<
-    string | null
-  >(null);
+  const [banners, setBanners] = useState<ShopBanner[]>([]);
+  const [activeBannerId, setActiveBannerId] = useState<string | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState<{
+    activeBannerId: string | null;
     config: PresswallConfig;
     customLogos: ShopCustomLogo[];
     selected: SelectedPublisher[];
   } | null>(null);
 
-  const matchedTemplateId = useMemo(() => {
-    if (activeCustomTemplateId) {
+  const matchedTemplateId = useMemo(
+    () => findMatchingPresswallTemplateId(config),
+    [config]
+  );
+
+  /** Highlight a saved banner only while the editor still matches it. */
+  const matchedCustomTemplateId = useMemo(() => {
+    if (!activeBannerId) {
       return null;
     }
 
-    return findMatchingPresswallTemplateId(config);
-  }, [activeCustomTemplateId, config]);
+    const banner = banners.find((entry) => entry.id === activeBannerId);
+    if (!banner) {
+      return activeBannerId;
+    }
 
-  const matchedCustomTemplateId = activeCustomTemplateId;
+    if (!presswallConfigsEqual(config, banner.config)) {
+      return null;
+    }
 
-  const loadCustomTemplates = useCallback(async () => {
+    return selectionsEqual(buildSelections(selected), banner.selections)
+      ? activeBannerId
+      : null;
+  }, [activeBannerId, banners, config, selected]);
+
+  const loadBanners = useCallback(async () => {
     try {
-      const response = await adminFetch("/api/custom-templates");
+      const response = await adminFetch("/api/banners");
       if (!response.ok) {
         return;
       }
 
       const data = (await response.json()) as {
-        templates?: ShopCustomTemplate[];
+        banners?: ShopBanner[];
+        templates?: ShopBanner[];
       };
 
-      setCustomTemplates(data.templates ?? []);
+      setBanners(data.banners ?? data.templates ?? []);
     } catch {
       // Non-blocking for the main editor flow.
     }
@@ -136,21 +167,22 @@ export function usePresswallEditor(): PresswallEditor {
       setCustomLogos(data.customLogos);
       setConfig(data.config);
       setSelected(data.selected);
+      setBanners(data.banners ?? []);
+      setActiveBannerId(data.bannerId ?? null);
       setSavedSnapshot({
+        activeBannerId: data.bannerId,
         config: data.config,
         customLogos: data.customLogos,
         selected: data.selected,
       });
       setNeedsOnboarding(data.needsOnboarding);
-      setActiveCustomTemplateId(null);
-      await loadCustomTemplates();
     } catch {
       setLoadError(true);
       toast.error("Failed to load Presswall settings");
     } finally {
       setIsLoading(false);
     }
-  }, [loadCustomTemplates]);
+  }, []);
 
   useEffect(() => {
     loadData().catch(() => {
@@ -185,6 +217,10 @@ export function usePresswallEditor(): PresswallEditor {
       return false;
     }
 
+    if (activeBannerId !== savedSnapshot.activeBannerId) {
+      return true;
+    }
+
     if (!presswallConfigsEqual(config, savedSnapshot.config)) {
       return true;
     }
@@ -193,11 +229,11 @@ export function usePresswallEditor(): PresswallEditor {
       return true;
     }
 
-    return (
-      JSON.stringify(buildSelections(selected)) !==
-      JSON.stringify(buildSelections(savedSnapshot.selected))
+    return !selectionsEqual(
+      buildSelections(selected),
+      buildSelections(savedSnapshot.selected)
     );
-  }, [config, customLogos, savedSnapshot, selected]);
+  }, [activeBannerId, config, customLogos, savedSnapshot, selected]);
 
   const togglePublisher = useCallback((publisher: PublisherCatalogItem) => {
     setSelected((current) => {
@@ -272,7 +308,7 @@ export function usePresswallEditor(): PresswallEditor {
         const response = await adminFetch("/api/presswall", {
           method: "PUT",
           body: JSON.stringify({
-            bannerId: activeCustomTemplateId,
+            bannerId: activeBannerId,
             config,
             selections,
             customLogos,
@@ -286,6 +322,7 @@ export function usePresswallEditor(): PresswallEditor {
         }
 
         const data = (await response.json()) as {
+          bannerId?: string | null;
           customLogos?: ShopCustomLogo[];
           selections?: ShopPublisherSelection[];
         };
@@ -294,6 +331,7 @@ export function usePresswallEditor(): PresswallEditor {
         const nextSelected = data.selections
           ? selectedFromApi(data.selections)
           : selected;
+        const nextBannerId = data.bannerId ?? activeBannerId;
 
         if (options?.completeOnboarding) {
           setNeedsOnboarding(false);
@@ -301,11 +339,15 @@ export function usePresswallEditor(): PresswallEditor {
 
         setCustomLogos(nextCustomLogos);
         setSelected(nextSelected);
+        setActiveBannerId(nextBannerId);
         setSavedSnapshot({
+          activeBannerId: nextBannerId,
           config,
           customLogos: nextCustomLogos.map((logo) => ({ ...logo })),
           selected: nextSelected.map((item) => ({ ...item })),
         });
+
+        await loadBanners();
 
         return true;
       } catch {
@@ -315,7 +357,7 @@ export function usePresswallEditor(): PresswallEditor {
         setIsSaving(false);
       }
     },
-    [activeCustomTemplateId, config, customLogos, selections, selected]
+    [activeBannerId, config, customLogos, loadBanners, selections, selected]
   );
 
   const save = useCallback(async () => {
@@ -330,6 +372,7 @@ export function usePresswallEditor(): PresswallEditor {
       return;
     }
 
+    setActiveBannerId(savedSnapshot.activeBannerId);
     setConfig(savedSnapshot.config);
     setCustomLogos(savedSnapshot.customLogos.map((logo) => ({ ...logo })));
     setSelected(savedSnapshot.selected.map((item) => ({ ...item })));
@@ -342,23 +385,23 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   const applyTemplate = useCallback((templateId: PresswallTemplateId) => {
-    setActiveCustomTemplateId(null);
+    // Built-in presets edit the current active banner (or default on next save).
     setConfig(applyPresswallTemplate(templateId));
   }, []);
 
   const applyCustomBanner = useCallback(
-    (templateId: string) => {
-      const template = customTemplates.find((entry) => entry.id === templateId);
-      if (!template) {
+    (bannerId: string) => {
+      const banner = banners.find((entry) => entry.id === bannerId);
+      if (!banner) {
         toast.error("Saved banner not found");
         return;
       }
 
-      setActiveCustomTemplateId(template.id);
-      setConfig(template.config);
-      setSelected(selectedFromApi(template.selections));
+      setActiveBannerId(banner.id);
+      setConfig(banner.config);
+      setSelected(selectedFromApi(banner.selections));
     },
-    [customTemplates]
+    [banners]
   );
 
   const updateConfig = useCallback(
@@ -376,13 +419,15 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   return {
+    activeBannerId,
     catalog,
     catalogById,
     category,
     completeOnboarding,
     config,
     customLogos,
-    customTemplates,
+    banners,
+    customTemplates: banners,
     discard,
     isDirty,
     isLoading,
@@ -390,7 +435,8 @@ export function usePresswallEditor(): PresswallEditor {
     loadError,
     needsOnboarding,
     reload: loadData,
-    refreshCustomTemplates: loadCustomTemplates,
+    refreshBanners: loadBanners,
+    refreshCustomTemplates: loadBanners,
     search,
     selected,
     selectedIds,
