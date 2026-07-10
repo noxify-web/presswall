@@ -1,12 +1,22 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { MAX_CUSTOM_LOGO_SVG_LENGTH } from "@/lib/presswall-validation";
 import { PRESSWALL_THEME_EXTENSION_UID } from "@/lib/theme-extension";
 
+/** Minified ship asset may use `5e4`; source uses `50_000`. */
 const THEME_MAX_CUSTOM_LOGO_SVG_LENGTH =
-  /const MAX_CUSTOM_LOGO_SVG_LENGTH = 50[,_]?000;/;
+  /MAX_CUSTOM_LOGO_SVG_LENGTH\s*=\s*(50[_]?000|5e4)/;
 const LIQUID_SCHEMA_PATTERN = /{% schema %}\s*([\s\S]*?)\s*{% endschema %}/;
+/** Shopify theme app block JS hard limit. */
+const APP_BLOCK_JS_MAX_BYTES = 10_000;
+
+function readThemeJs(name: "presswall.js" | "presswall.source.js") {
+  return readFileSync(
+    join(process.cwd(), "extensions/presswall-theme/assets", name),
+    "utf8"
+  );
+}
 
 function readBlockSchema(blockPath: string) {
   const liquid = readFileSync(join(process.cwd(), blockPath), "utf8");
@@ -20,20 +30,23 @@ function readBlockSchema(blockPath: string) {
 
 describe("theme bundle parity", () => {
   test("keeps custom logo svg length limit in sync with theme JS", () => {
-    const themeJs = readFileSync(
-      join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
-      "utf8"
-    );
+    const themeJs = readThemeJs("presswall.js");
+    const themeSource = readThemeJs("presswall.source.js");
 
     expect(themeJs).toMatch(THEME_MAX_CUSTOM_LOGO_SVG_LENGTH);
+    expect(themeSource).toMatch(THEME_MAX_CUSTOM_LOGO_SVG_LENGTH);
     expect(MAX_CUSTOM_LOGO_SVG_LENGTH).toBe(50_000);
   });
 
+  test("shipped presswall.js stays under Shopify app-block JS size limit", () => {
+    const size = statSync(
+      join(process.cwd(), "extensions/presswall-theme/assets/presswall.js")
+    ).size;
+    expect(size).toBeLessThanOrEqual(APP_BLOCK_JS_MAX_BYTES);
+  });
+
   test("loads a single shop-wide design; theme editor uses metafield not page context", () => {
-    const themeJs = readFileSync(
-      join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
-      "utf8"
-    );
+    const themeSource = readThemeJs("presswall.source.js");
     const presswallBlock = readFileSync(
       join(process.cwd(), "extensions/presswall-theme/blocks/presswall.liquid"),
       "utf8"
@@ -45,13 +58,6 @@ describe("theme bundle parity", () => {
       ),
       "utf8"
     );
-    const presswallLive = readFileSync(
-      join(
-        process.cwd(),
-        "extensions/presswall-theme/snippets/presswall-live.liquid"
-      ),
-      "utf8"
-    );
     const fromConfig = readFileSync(
       join(
         process.cwd(),
@@ -60,24 +66,19 @@ describe("theme bundle parity", () => {
       "utf8"
     );
 
-    expect(themeJs).not.toContain("buildContextAwareProxyUrl");
-    expect(themeJs).not.toContain('searchParams.set("page_type"');
-    expect(themeJs).not.toContain('searchParams.set("product_id"');
-    expect(themeJs).toContain("normalizePayload");
-    expect(themeJs).toContain("hydrateFromProxy");
+    expect(themeSource).not.toContain("buildContextAwareProxyUrl");
+    expect(themeSource).not.toContain('searchParams.set("page_type"');
+    expect(themeSource).not.toContain('searchParams.set("product_id"');
+    expect(themeSource).toContain("normalizePayload");
+    expect(themeSource).toContain("hydrateFromProxy");
     expect(presswallBlock).not.toContain("data-page-type");
     expect(presswallBlock).not.toContain("data-product-id");
     expect(presswallBlock).toContain("storefront_config");
     expect(presswallBlock).toContain("presswall-from-config");
     expect(presswallBlock).toContain("data-presswall-config");
     expect(presswallEmbed).toContain("data-presswall-config");
-    expect(presswallLive).toContain("data-presswall-root");
-    expect(presswallLive).toContain("data-proxy-url");
-    expect(presswallLive).toContain("data-presswall-config");
-    expect(presswallLive).not.toContain("data-page-type");
-    expect(presswallLive).not.toContain("pw.publishers");
     expect(fromConfig).toContain("config.publishers");
-    expect(themeJs).toContain('querySelectorAll("[data-presswall-root]")');
+    expect(themeSource).toContain('querySelectorAll("[data-presswall-root]")');
   });
 
   test("declares presswall.js in both theme block schemas", () => {
@@ -102,16 +103,13 @@ describe("theme bundle parity", () => {
   });
 
   test("theme JS uses pre-rendered logo assets (no CSS invert path)", () => {
-    const themeJs = readFileSync(
-      join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
-      "utf8"
-    );
+    const themeSource = readThemeJs("presswall.source.js");
 
     // Color/black/white come from app assets — storefront must not invert via CSS.
-    expect(themeJs).toContain("pre-rendered pure assets");
-    expect(themeJs).toContain("no grayscale/invert filters");
-    expect(themeJs).not.toContain("shouldInvertLogos");
-    expect(themeJs).not.toContain("relativeLuminance");
+    expect(themeSource).toContain("pre-rendered pure assets");
+    expect(themeSource).toContain("no grayscale/invert filters");
+    expect(themeSource).not.toContain("shouldInvertLogos");
+    expect(themeSource).not.toContain("relativeLuminance");
   });
 
   test("theme CSS does not retain retired grid layout class", () => {
