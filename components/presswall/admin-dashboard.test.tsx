@@ -44,7 +44,8 @@ describe("AdminDashboard render routing", () => {
       />
     );
 
-    expect(view.container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(view.container.querySelector(".presswall-skeleton")).toBeTruthy();
+    expect(view.getByRole("status", { name: "Loading home" })).toBeTruthy();
     expect(view.queryByText("Quick actions")).toBeNull();
   });
 });

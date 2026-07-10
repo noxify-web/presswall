@@ -56,6 +56,45 @@
   }
 }
 
+/* Admin loading shells — soft sweep, not a harsh full-block pulse */
+@keyframes presswall-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.presswall-skeleton {
+  background-color: oklch(0.9 0 0);
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.9 0 0) 0%,
+    oklch(0.96 0 0) 45%,
+    oklch(0.9 0 0) 90%
+  );
+  background-size: 200% 100%;
+  animation: presswall-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .presswall-skeleton {
+  background-color: oklch(0.28 0 0);
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.28 0 0) 0%,
+    oklch(0.36 0 0) 45%,
+    oklch(0.28 0 0) 90%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presswall-skeleton {
+    animation: none;
+    background-image: none;
+  }
+}
+
 .pw-mq-track {
   display: flex;
   flex-flow: row nowrap;
