@@ -1,38 +1,21 @@
 # Shopify dev vs prod URLs (Presswall)
 
-Canonical rules: `/AGENTS.md` → **Protect live merchants**.
+**Canonical locations (use these; do not re-research):**
 
-## Why “Server Not Found” on trycloudflare happens
+| Kind | Path |
+|------|------|
+| Always-on rule | `.grok/rules/shopify-dev-prod-urls.md` |
+| Skill | `.grok/skills/presswall-shopify-urls/SKILL.md` |
+| Full narrative | `AGENTS.md` → Protect live merchants |
+| Scripts | `package.json` → `shopify:dev-clean`, `shopify:restore-urls`, `shopify:deploy:prod` |
 
-`shopify app dev` does two things:
-
-1. May rewrite **Partner app URLs** to the tunnel (all installs).
-2. Always pins a **dev preview on the development store** that keeps using the tunnel until cleared.
-
-`shopify app deploy -c prod` fixes (1) but **not** (2). Hard refresh does nothing.
-
-## Safe resting state (not developing)
+## Instant end-of-dev / “Server Not Found”
 
 ```bash
 bun run shopify:dev-clean
 bun run shopify:restore-urls
 ```
 
-Active host must be `https://presswall.noxify.io`.
-
-## Developing
-
-```bash
-bun run dev:shopify
-# or: shopify app dev
-```
-
-When finished → end-of-dev checklist above.
-
-## Shipping extensions/config to merchants
-
-```bash
-bun run shopify:deploy:prod
-```
-
-Never deploy production intent with only default `shopify.app.toml`.
+- Production host: `https://presswall.noxify.io`
+- Deploy to merchants: `bun run shopify:deploy:prod` (always `-c prod`)
+- Deploy alone does **not** clear store tunnel preview; hard refresh does not either

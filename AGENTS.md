@@ -8,6 +8,8 @@ Shopify embedded app (Next.js App Router) for merchant “as seen on” press lo
 
 ## Protect live merchants (hard rules)
 
+> **Agents: do not re-research this.** Always-on rule: `.grok/rules/shopify-dev-prod-urls.md`. Full procedure skill: `presswall-shopify-urls` (`.grok/skills/presswall-shopify-urls/`). Scripts: `bun run shopify:dev-clean` + `bun run shopify:restore-urls` + `bun run shopify:deploy:prod`.
+
 **One Partner app.** Presswall is a single Shopify app. Local development has **two** ways of leaving the product on a dead tunnel — both matter:
 
 1. **Released app config** — `shopify app dev` can rewrite Partner Dashboard Application URL / redirects / app proxy to the current tunnel (`*.trycloudflare.com`, ngrok, etc.) when `automatically_update_urls_on_dev = true`. That affects **all installs** until you re-release prod config.
