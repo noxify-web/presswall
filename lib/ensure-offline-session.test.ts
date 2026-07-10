@@ -44,13 +44,51 @@ mock.module("@/lib/shopify", () => ({
   },
 }));
 
-const { ensureOfflineSession } = await import("@/lib/ensure-offline-session");
+const { ensureOfflineSession, isNonExpiringOfflineSession } = await import(
+  "@/lib/ensure-offline-session"
+);
 
 describe("ensureOfflineSession", () => {
   beforeEach(() => {
     migrateToExpiringToken.mockClear();
     refreshToken.mockClear();
     storeSession.mockClear();
+  });
+
+  test("isNonExpiringOfflineSession detects missing refresh and expiry", () => {
+    expect(
+      isNonExpiringOfflineSession({
+        id: "offline_test.myshopify.com",
+        shop: "test.myshopify.com",
+        state: "",
+        isOnline: false,
+        accessToken: "shpat_legacy",
+      } as Session)
+    ).toBe(true);
+
+    expect(
+      isNonExpiringOfflineSession({
+        id: "offline_test.myshopify.com",
+        shop: "test.myshopify.com",
+        state: "",
+        isOnline: false,
+        accessToken: "shpat_partial",
+        refreshToken: "shprt",
+        // missing expires → still non-expiring for our purposes
+      } as Session)
+    ).toBe(true);
+
+    expect(
+      isNonExpiringOfflineSession({
+        id: "offline_test.myshopify.com",
+        shop: "test.myshopify.com",
+        state: "",
+        isOnline: false,
+        accessToken: "shpat_ok",
+        refreshToken: "shprt_ok",
+        expires: new Date(Date.now() + 60_000),
+      } as Session)
+    ).toBe(false);
   });
 
   test("migrates non-expiring offline tokens", async () => {
@@ -90,6 +128,23 @@ describe("ensureOfflineSession", () => {
       shop: "test.myshopify.com",
       refreshToken: "shprt_old",
     });
+    expect(result.accessToken).toBe("shpat_refreshed");
+  });
+
+  test("refreshes near-expiry expiring offline tokens", async () => {
+    const session = {
+      id: "offline_test.myshopify.com",
+      shop: "test.myshopify.com",
+      state: "",
+      isOnline: false,
+      accessToken: "shpat_old",
+      refreshToken: "shprt_old",
+      expires: new Date(Date.now() + 30_000),
+    } as Session;
+
+    const result = await ensureOfflineSession(session);
+
+    expect(refreshToken).toHaveBeenCalled();
     expect(result.accessToken).toBe("shpat_refreshed");
   });
 

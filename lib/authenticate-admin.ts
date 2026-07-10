@@ -2,7 +2,10 @@ import { RequestedTokenType, type Session } from "@shopify/shopify-api";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { ensureOfflineSession } from "@/lib/ensure-offline-session";
+import {
+  ensureOfflineSession,
+  isNonExpiringOfflineSession,
+} from "@/lib/ensure-offline-session";
 import { sessionStorage } from "@/lib/session-storage";
 import { shopify } from "@/lib/shopify";
 
@@ -62,6 +65,43 @@ async function exchangeOfflineSession(shop: string, sessionToken: string) {
   return exchangedSession;
 }
 
+/**
+ * Load/migrate/refresh offline session so Admin API never sees a non-expiring token.
+ * Prefer migrate/refresh; if that fails or still non-expiring, re-mint via token exchange.
+ */
+async function resolveOfflineSession(
+  shop: string,
+  sessionToken: string
+): Promise<Session> {
+  const offlineId = shopify.session.getOfflineId(shop);
+  let session = await sessionStorage.loadSession(offlineId);
+
+  if (!session?.accessToken) {
+    return exchangeOfflineSession(shop, sessionToken);
+  }
+
+  try {
+    session = await ensureOfflineSession(session);
+  } catch (error) {
+    console.error(
+      "Presswall ensureOfflineSession failed; re-exchanging offline token",
+      { shop, error }
+    );
+    return exchangeOfflineSession(shop, sessionToken);
+  }
+
+  // Safety net: never hand a deprecated non-expiring token to Admin API callers.
+  if (isNonExpiringOfflineSession(session)) {
+    console.warn(
+      "Presswall session still non-expiring after ensure; re-exchanging",
+      { shop }
+    );
+    return exchangeOfflineSession(shop, sessionToken);
+  }
+
+  return session;
+}
+
 async function resolveAuthenticatedAdmin(
   searchParams: URLSearchParams
 ): Promise<AuthenticatedAdmin> {
@@ -79,20 +119,16 @@ async function resolveAuthenticatedAdmin(
     const decoded = await shopify.session.decodeSessionToken(sessionToken);
     const dest = new URL(decoded.dest);
     const shop = dest.hostname;
-    const offlineId = shopify.session.getOfflineId(shop);
-    let session = await sessionStorage.loadSession(offlineId);
-
-    if (!session?.accessToken) {
-      session = await exchangeOfflineSession(shop, sessionToken);
-    }
-
-    session = await ensureOfflineSession(session as Session);
+    const session = await resolveOfflineSession(shop, sessionToken);
 
     return {
       shop,
-      session: session as Session,
+      session,
     };
   } catch (error) {
+    if (error instanceof AdminAuthenticationError) {
+      throw error;
+    }
     console.error("Presswall authenticateAdmin failed", error);
     throw new AdminAuthenticationError();
   }
