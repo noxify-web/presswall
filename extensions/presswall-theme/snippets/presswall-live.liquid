@@ -1,19 +1,7 @@
-{%- if template.name == 'index' -%}
-  {%- assign presswall_page_type = 'homepage' -%}
-{%- elsif template.name == 'product' -%}
-  {%- assign presswall_page_type = 'product' -%}
-{%- endif -%}
-
 <div
   class="presswall-root"
   data-presswall-root
   data-proxy-url="{{ shop.url }}/apps/presswall/config"
-  {% if presswall_page_type != blank %}
-    data-page-type="{{ presswall_page_type }}"
-  {% endif %}
-  {% if product %}
-    data-product-id="{{ product.id }}"
-  {% endif %}
 >
   <div class="presswall-loading presswall-live-loader">
     Loading press strip…

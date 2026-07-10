@@ -2,7 +2,6 @@ import { and, asc, eq } from "drizzle-orm";
 import { listShopBanners, type ShopBanner } from "@/lib/banner-service";
 import { mapShopConfigRow } from "@/lib/map-shop-config-row";
 import type { ShopPublisherSelection } from "@/lib/presswall-types";
-import type { BannerAssignmentTarget } from "@/lib/resolve-banner-for-context";
 import { db } from "@/src/db";
 import {
   shopBannerAssignments,
@@ -10,6 +9,9 @@ import {
   shopCustomTemplates,
   shopPublishers,
 } from "@/src/db/schema";
+
+/** Legacy assignment target strings (rows may still exist; not used for resolution). */
+type BannerAssignmentTarget = "homepage" | "all_products" | `product:${string}`;
 
 const DEFAULT_BANNER_NAME = "Default";
 const CORE_ASSIGNMENT_TARGETS = ["homepage", "all_products"] as const;

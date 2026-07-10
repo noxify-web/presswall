@@ -1,19 +1,21 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { createClient } from "@libsql/client";
-import { saveShopBannerAssignments } from "@/lib/banner-assignment-service";
+import { eq } from "drizzle-orm";
 import {
   buildStorefrontPayload,
   getResolvedStorefrontPayload,
 } from "@/lib/build-storefront-payload";
-import { saveShopCustomTemplate } from "@/lib/custom-template-service";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
+import { bootstrapShopBanners } from "@/lib/shop-banner-bootstrap";
+import { db } from "@/src/db";
+import { shopCustomTemplates } from "@/src/db/schema";
 
 const CUSTOM_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
 
 const RESOLVED_TEST_SHOP = `resolved-banner-${Date.now()}.myshopify.com`;
+const MULTI_BANNER_SHOP = `multi-banner-${Date.now()}.myshopify.com`;
 const CUSTOM_LOGO_ID = crypto.randomUUID();
-let resolvedBannerId = "";
 
 beforeAll(async () => {
   const client = createClient({ url: "file:data/dev.db" });
@@ -29,21 +31,27 @@ beforeAll(async () => {
     ],
   });
 
-  const saved = await saveShopCustomTemplate(RESOLVED_TEST_SHOP, {
-    name: "Custom Logo Resolved Banner",
-    config: {
-      ...DEFAULT_PRESSWALL_CONFIG,
-      headingText: "Press picks",
-    },
-    selections: [{ customLogoId: CUSTOM_LOGO_ID, position: 0 }],
-  });
+  await bootstrapShopBanners(RESOLVED_TEST_SHOP);
+  const bootstrap = await bootstrapShopBanners(RESOLVED_TEST_SHOP);
+  const defaultId = bootstrap.defaultBannerId;
+  if (!defaultId) {
+    throw new Error("expected default banner");
+  }
 
-  resolvedBannerId = saved.id;
-
-  await saveShopBannerAssignments(RESOLVED_TEST_SHOP, {
-    homepageBannerId: resolvedBannerId,
-    allProductsBannerId: resolvedBannerId,
-  });
+  const now = new Date().toISOString();
+  await db
+    .update(shopCustomTemplates)
+    .set({
+      configJson: JSON.stringify({
+        ...DEFAULT_PRESSWALL_CONFIG,
+        headingText: "Press picks",
+      }),
+      selectionsJson: JSON.stringify([
+        { customLogoId: CUSTOM_LOGO_ID, position: 0 },
+      ]),
+      updatedAt: now,
+    })
+    .where(eq(shopCustomTemplates.id, defaultId));
 });
 
 describe("buildStorefrontPayload", () => {
@@ -79,10 +87,8 @@ describe("buildStorefrontPayload", () => {
 });
 
 describe("getResolvedStorefrontPayload", () => {
-  test("loads custom logos from the shop library for assigned banners", async () => {
-    const payload = await getResolvedStorefrontPayload(RESOLVED_TEST_SHOP, [], {
-      pageType: "homepage",
-    });
+  test("loads the canonical banner and hydrates custom logos", async () => {
+    const payload = await getResolvedStorefrontPayload(RESOLVED_TEST_SHOP, []);
 
     expect(payload.headingText).toBe("Press picks");
     expect(payload.publishers).toHaveLength(1);
@@ -92,5 +98,103 @@ describe("getResolvedStorefrontPayload", () => {
       name: "Local Podcast",
       logoSvg: CUSTOM_SVG,
     });
+  });
+
+  test("returns the same design regardless of page context arguments", async () => {
+    const client = createClient({ url: "file:data/dev.db" });
+    const now = new Date().toISOString();
+    const defaultId = crypto.randomUUID();
+    const productBannerId = crypto.randomUUID();
+
+    await client.execute({
+      sql: `INSERT INTO shop_custom_templates
+        (id, shop, name, description, config_json, selections_json, is_default, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        defaultId,
+        MULTI_BANNER_SHOP,
+        "Default",
+        null,
+        JSON.stringify({
+          ...DEFAULT_PRESSWALL_CONFIG,
+          headingText: "Canonical home",
+        }),
+        JSON.stringify([{ publisherId: "forbes", position: 0 }]),
+        1,
+        now,
+        now,
+      ],
+    });
+
+    await client.execute({
+      sql: `INSERT INTO shop_custom_templates
+        (id, shop, name, description, config_json, selections_json, is_default, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        productBannerId,
+        MULTI_BANNER_SHOP,
+        "Product only",
+        null,
+        JSON.stringify({
+          ...DEFAULT_PRESSWALL_CONFIG,
+          headingText: "Product strip",
+        }),
+        JSON.stringify([{ publisherId: "wired", position: 0 }]),
+        0,
+        now,
+        "2026-12-01T00:00:00.000Z",
+      ],
+    });
+
+    // Legacy assignments that previously made product pages show a different banner.
+    await client.execute({
+      sql: `INSERT INTO shop_banner_assignments (id, shop, target, banner_id, updated_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        MULTI_BANNER_SHOP,
+        "homepage",
+        defaultId,
+        now,
+      ],
+    });
+    await client.execute({
+      sql: `INSERT INTO shop_banner_assignments (id, shop, target, banner_id, updated_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        MULTI_BANNER_SHOP,
+        "all_products",
+        productBannerId,
+        now,
+      ],
+    });
+    await client.execute({
+      sql: `INSERT INTO shop_banner_assignments (id, shop, target, banner_id, updated_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        MULTI_BANNER_SHOP,
+        "product:4242",
+        productBannerId,
+        now,
+      ],
+    });
+
+    const noContext = await getResolvedStorefrontPayload(MULTI_BANNER_SHOP, []);
+    const homepage = await getResolvedStorefrontPayload(MULTI_BANNER_SHOP, [], {
+      pageType: "homepage",
+    });
+    const product = await getResolvedStorefrontPayload(MULTI_BANNER_SHOP, [], {
+      pageType: "product",
+      productId: "4242",
+    });
+
+    expect(noContext.headingText).toBe("Canonical home");
+    expect(homepage.headingText).toBe("Canonical home");
+    expect(product.headingText).toBe("Canonical home");
+    expect(noContext.headingText).toBe(homepage.headingText);
+    expect(homepage.headingText).toBe(product.headingText);
+    expect(product.headingText).not.toBe("Product strip");
   });
 });

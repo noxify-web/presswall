@@ -29,7 +29,7 @@ describe("theme bundle parity", () => {
     expect(MAX_CUSTOM_LOGO_SVG_LENGTH).toBe(50_000);
   });
 
-  test("forwards storefront page context to the app-proxy config URL", () => {
+  test("loads a single shop-wide design from the app-proxy (no page-context params)", () => {
     const themeJs = readFileSync(
       join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
       "utf8"
@@ -53,19 +53,20 @@ describe("theme bundle parity", () => {
       "utf8"
     );
 
-    expect(themeJs).toContain("buildContextAwareProxyUrl");
-    expect(themeJs).toContain('searchParams.set("page_type"');
-    expect(themeJs).toContain('searchParams.set("product_id"');
-    expect(presswallBlock).toContain("data-page-type");
-    expect(presswallBlock).toContain("data-product-id");
-    expect(presswallEmbed).toContain("data-page-type");
-    expect(presswallEmbed).toContain("data-product-id");
+    expect(themeJs).not.toContain("buildContextAwareProxyUrl");
+    expect(themeJs).not.toContain('searchParams.set("page_type"');
+    expect(themeJs).not.toContain('searchParams.set("product_id"');
+    expect(presswallBlock).not.toContain("data-page-type");
+    expect(presswallBlock).not.toContain("data-product-id");
+    expect(presswallEmbed).not.toContain("data-page-type");
+    expect(presswallEmbed).not.toContain("data-product-id");
     expect(presswallLive).toContain("data-presswall-root");
     expect(presswallLive).toContain("data-proxy-url");
-    expect(presswallLive).toContain("data-page-type");
-    expect(presswallLive).toContain("data-product-id");
+    expect(presswallLive).not.toContain("data-page-type");
+    expect(presswallLive).not.toContain("data-product-id");
     expect(presswallLive).not.toContain("pw.publishers");
     expect(themeJs).toContain('querySelectorAll("[data-presswall-root]")');
+    expect(themeJs).toContain("root.dataset.proxyUrl");
   });
 
   test("declares presswall.js in both theme block schemas", () => {

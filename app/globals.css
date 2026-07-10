@@ -90,8 +90,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .presswall-skeleton {
-    animation: none;
     background-image: none;
+    animation: none;
   }
 }
 

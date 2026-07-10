@@ -1,11 +1,11 @@
 import { asc, eq, inArray } from "drizzle-orm";
-import type { BannerPageContext } from "@/lib/banner-page-context";
 import {
   normalizeSelectionsForStorage,
   updateShopBannerInTransaction,
 } from "@/lib/banner-service";
 import { getResolvedStorefrontPayload } from "@/lib/build-storefront-payload";
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
+import { pickCanonicalShopBanner } from "@/lib/canonical-shop-banner";
 import { isPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import {
   getShopCustomLogos,
@@ -153,22 +153,11 @@ export async function getShopConfigRow(shop: string) {
 }
 
 /**
- * Pick the banner the editor should open: most recently updated, else default.
+ * Pick the shop's single live banner (same rule as storefront).
  */
 async function getEditorBanner(shop: string) {
   const bootstrap = await bootstrapShopBanners(shop);
-  if (bootstrap.banners.length === 0) {
-    return { bootstrap, banner: null as null };
-  }
-
-  const sorted = [...bootstrap.banners].sort((left, right) =>
-    right.updatedAt.localeCompare(left.updatedAt)
-  );
-  const banner =
-    sorted[0] ??
-    bootstrap.banners.find((entry) => entry.id === bootstrap.defaultBannerId) ??
-    null;
-
+  const banner = pickCanonicalShopBanner(bootstrap.banners);
   return { bootstrap, banner };
 }
 
@@ -208,15 +197,17 @@ export interface SaveShopPresswallResult {
 }
 
 /**
- * Save editor state onto a banner (SSOT). Does not dual-write legacy
- * shop_configs style columns or shop_publishers rows.
+ * Save editor state onto the shop's single canonical banner (SSOT).
+ * Does not dual-write legacy shop_configs style columns or shop_publishers.
  * shop_configs is only touched for onboarding completion metadata.
+ * `bannerId` in options is ignored — only the canonical design is updated.
  */
 export async function saveShopPresswall(
   shop: string,
   config: PresswallConfig,
   selections: ShopPublisherSelection[],
   options?: {
+    /** @deprecated Ignored — always saves the canonical shop banner. */
     bannerId?: string | null;
     completeOnboarding?: boolean;
     customLogos?: CustomLogoSaveInput[];
@@ -226,10 +217,7 @@ export async function saveShopPresswall(
   const bootstrap = await bootstrapShopBanners(shop);
 
   const targetBannerId =
-    options?.bannerId &&
-    bootstrap.banners.some((banner) => banner.id === options.bannerId)
-      ? options.bannerId
-      : bootstrap.defaultBannerId;
+    pickCanonicalShopBanner(bootstrap.banners)?.id ?? bootstrap.defaultBannerId;
 
   if (!targetBannerId) {
     throw new Error("No banner available to save");
@@ -322,12 +310,12 @@ export async function saveShopPresswall(
 }
 
 /**
- * Always resolves via banners + assignments. Pass `null` when page context
- * is unknown (uses homepage → all_products → default fallback).
+ * Always returns the shop's single canonical banner design.
+ * Page context is ignored (kept as an optional arg for call-site compatibility).
  */
 export async function getStorefrontPayload(
   shop: string,
-  context: BannerPageContext | null = null
+  context: unknown = null
 ): Promise<StorefrontPayload> {
   await ensurePublisherCatalogSeeded();
   const catalog = await getPublisherCatalog();

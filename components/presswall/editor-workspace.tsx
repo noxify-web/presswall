@@ -1,28 +1,19 @@
 "use client";
 
-import {
-  IconBookmark,
-  IconDeviceFloppy,
-  IconLoader2,
-} from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import { useState } from "react";
 import { DeviceToggle } from "@/components/presswall/device-toggle";
 import { OnboardingPreviewCanvas } from "@/components/presswall/onboarding-preview-canvas";
 import { OnboardingTemplateCustomControls } from "@/components/presswall/onboarding-template-custom-controls";
 import { OutletLibraryPanel } from "@/components/presswall/outlet-library-panel";
 import { ReplaceLogoDialog } from "@/components/presswall/replace-logo-dialog";
-import { SaveTemplateDialog } from "@/components/presswall/save-template-dialog";
 import { TemplatePicker } from "@/components/presswall/template-picker";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
 import type { PresswallViewport } from "@/lib/presswall-layout-style";
-import {
-  getPresswallTemplate,
-  presswallConfigsEqual,
-} from "@/lib/presswall-templates";
-import type { PresswallConfig } from "@/lib/presswall-types";
+import { getPresswallTemplate } from "@/lib/presswall-templates";
 
 interface EditorWorkspaceProps {
   editor: PresswallEditor;
@@ -38,22 +29,11 @@ export function EditorWorkspace({
 }: EditorWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<EditorTab>("custom");
   const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [lastSavedConfig, setLastSavedConfig] =
-    useState<PresswallConfig | null>(null);
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
-
-  const canSaveTemplate = useMemo(
-    () =>
-      lastSavedConfig === null ||
-      !presswallConfigsEqual(editor.config, lastSavedConfig) ||
-      editor.isDirty,
-    [editor.config, editor.isDirty, lastSavedConfig]
-  );
 
   const saveDisabled = !editor.isDirty || editor.isLoading || editor.isSaving;
 
-  const replaceCurrentLabel = useMemo(() => {
+  const replaceCurrentLabel = (() => {
     if (replaceIndex === null) {
       return "this outlet";
     }
@@ -65,7 +45,7 @@ export function EditorWorkspace({
       return editor.catalogById.get(item.publisherId)?.name ?? item.publisherId;
     }
     return item.customName ?? "custom logo";
-  }, [editor.catalogById, editor.selected, replaceIndex]);
+  })();
 
   return (
     <div
@@ -193,48 +173,18 @@ export function EditorWorkspace({
               className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
               value="templates"
             >
-              <div className="flex min-h-0 flex-1 flex-col">
-                {canSaveTemplate ? (
-                  <div className="shrink-0 border-b p-3">
-                    <Button
-                      className="w-full"
-                      onClick={() => setSaveDialogOpen(true)}
-                      size="sm"
-                      type="button"
-                      variant="secondary"
-                    >
-                      <IconBookmark stroke={2} />
-                      Save as template
-                    </Button>
-                  </div>
-                ) : null}
-                <TemplatePicker
-                  catalog={editor.catalog}
-                  customLogos={editor.customLogos}
-                  customTemplates={editor.customTemplates}
-                  matchedCustomTemplateId={editor.matchedCustomTemplateId}
-                  matchedTemplateId={editor.matchedTemplateId}
-                  onApply={editor.applyTemplate}
-                  onApplyCustom={editor.applyCustomBanner}
-                  onCustomize={() => setActiveTab("custom")}
-                  selections={editor.selections}
-                />
-              </div>
+              <TemplatePicker
+                catalog={editor.catalog}
+                customLogos={editor.customLogos}
+                matchedTemplateId={editor.matchedTemplateId}
+                onApply={editor.applyTemplate}
+                onCustomize={() => setActiveTab("custom")}
+                selections={editor.selections}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </div>
-
-      <SaveTemplateDialog
-        config={editor.config}
-        onOpenChange={setSaveDialogOpen}
-        onSaved={() => {
-          setLastSavedConfig(editor.config);
-          editor.refreshCustomTemplates().catch(() => undefined);
-        }}
-        open={saveDialogOpen}
-        selections={editor.selections}
-      />
 
       <ReplaceLogoDialog
         catalog={editor.catalog}

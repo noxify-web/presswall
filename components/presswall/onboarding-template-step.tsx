@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { DeviceToggle } from "@/components/presswall/device-toggle";
 import { OnboardingActions } from "@/components/presswall/onboarding-actions";
 import { OnboardingPreviewCanvas } from "@/components/presswall/onboarding-preview-canvas";
@@ -17,47 +17,6 @@ interface OnboardingTemplateStepProps {
   onNext: () => void;
 }
 
-/**
- * When the merchant leaves a built-in template (custom design), silently
- * create a `Custom banner N` once for this custom session. Resets if they
- * re-apply a built-in so a later customize can create the next N.
- */
-export function useOnboardingAutoCustomBanner(editor: PresswallEditor): void {
-  const creatingRef = useRef(false);
-  const createdForCustomSessionRef = useRef(false);
-
-  useEffect(() => {
-    if (editor.matchedTemplateId !== null) {
-      createdForCustomSessionRef.current = false;
-      return;
-    }
-
-    // Already on a merchant banner that still matches — no new create.
-    if (editor.matchedCustomTemplateId !== null) {
-      createdForCustomSessionRef.current = true;
-      return;
-    }
-
-    if (createdForCustomSessionRef.current || creatingRef.current) {
-      return;
-    }
-
-    creatingRef.current = true;
-    createdForCustomSessionRef.current = true;
-
-    editor
-      .createOnboardingCustomBanner()
-      .catch(() => null)
-      .finally(() => {
-        creatingRef.current = false;
-      });
-  }, [
-    editor.createOnboardingCustomBanner,
-    editor.matchedCustomTemplateId,
-    editor.matchedTemplateId,
-  ]);
-}
-
 export function OnboardingTemplateStep({
   editor,
   onBack,
@@ -67,8 +26,6 @@ export function OnboardingTemplateStep({
     "templates"
   );
   const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
-
-  useOnboardingAutoCustomBanner(editor);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3">
@@ -116,12 +73,8 @@ export function OnboardingTemplateStep({
               <TemplatePicker
                 catalog={editor.catalog}
                 customLogos={editor.customLogos}
-                customTemplates={editor.customTemplates}
-                hideSavedBanners
-                matchedCustomTemplateId={editor.matchedCustomTemplateId}
                 matchedTemplateId={editor.matchedTemplateId}
                 onApply={editor.applyTemplate}
-                onApplyCustom={editor.applyCustomBanner}
                 onCustomize={() => setActiveTab("custom")}
                 selections={editor.selections}
               />

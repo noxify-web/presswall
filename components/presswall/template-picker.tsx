@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
-import type { ShopBanner } from "@/lib/banner-service";
 import {
   applyPresswallTemplate,
-  getConfigPreviewTheme,
   getTemplatePreviewTheme,
   PRESSWALL_TEMPLATES,
   type PresswallTemplate,
@@ -21,13 +19,8 @@ import { cn } from "@/lib/utils";
 interface TemplatePickerProps {
   catalog: PresswallEditor["catalog"];
   customLogos: PresswallEditor["customLogos"];
-  customTemplates?: ShopBanner[];
-  /** When true, hide merchant Saved banners (onboarding step 2). */
-  hideSavedBanners?: boolean;
-  matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   onApply: (templateId: PresswallTemplateId) => void;
-  onApplyCustom: (templateId: string) => void;
   onCustomize?: () => void;
   selections: PresswallEditor["selections"];
 }
@@ -60,14 +53,14 @@ function templateLayoutLabel(layout: PresswallTemplate["config"]["layout"]) {
   if (layout === "marquee") {
     return "Marquee";
   }
-
-  return "Static grid";
+  return "Bar";
 }
 
 function TemplateRow({
   catalog,
   customLogos,
   isSelected,
+  layoutLabel,
   onApply,
   onCustomize,
   previewConfig,
@@ -75,7 +68,6 @@ function TemplateRow({
   previewTheme,
   subtitle,
   templateName,
-  layoutLabel,
 }: {
   catalog: PresswallEditor["catalog"];
   customLogos: PresswallEditor["customLogos"];
@@ -83,81 +75,74 @@ function TemplateRow({
   layoutLabel: string;
   onApply: () => void;
   onCustomize?: () => void;
-  previewConfig: PresswallEditor["config"];
+  previewConfig: ReturnType<typeof applyPresswallTemplate>;
   previewSelections: PresswallEditor["selections"];
-  previewTheme: "light" | "dark";
+  previewTheme: ReturnType<typeof getTemplatePreviewTheme>;
   subtitle: string;
   templateName: string;
 }) {
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-2.5 rounded-lg border p-2.5 transition-all",
+        "rounded-xl border p-3 transition-colors",
         isSelected
-          ? "border-foreground/50 bg-muted/50 ring-1 ring-foreground/25"
-          : "hover:border-foreground/20 hover:bg-muted/30"
+          ? "border-primary/40 bg-primary/5 shadow-sm"
+          : "border-border bg-card hover:border-border/80"
       )}
     >
-      <button
-        aria-pressed={isSelected}
-        className="relative w-full text-left"
-        onClick={onApply}
-        type="button"
-      >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0 space-y-0.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="font-medium text-sm">{templateName}</p>
+            <Badge className="font-normal text-[0.65rem]" variant="secondary">
+              {layoutLabel}
+            </Badge>
+            {isSelected ? (
+              <Badge
+                className="gap-0.5 font-normal text-[0.65rem]"
+                variant="default"
+              >
+                <IconCircleCheck className="size-3" stroke={2} />
+                Active
+              </Badge>
+            ) : null}
+          </div>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-2 overflow-hidden rounded-lg border bg-muted/30">
         <OnboardingPreview
           catalog={catalog}
-          className="pointer-events-none w-full border-black/5 shadow-none"
           config={previewConfig}
           customLogos={customLogos}
           previewTheme={previewTheme}
-          scale="sm"
           selections={previewSelections}
         />
+      </div>
 
-        {isSelected ? (
-          <span className="absolute top-2 right-2 inline-flex size-5 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
-            <IconCircleCheck className="size-3.5" stroke={2.5} />
-          </span>
-        ) : null}
-      </button>
-
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <button
-            aria-pressed={isSelected}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-            onClick={onApply}
-            type="button"
-          >
-            <p className="truncate font-medium text-sm">{templateName}</p>
-            <Badge className="shrink-0 text-[0.625rem]" variant="secondary">
-              {layoutLabel}
-            </Badge>
-          </button>
-
-          {isSelected && onCustomize ? (
-            <Button
-              className="h-7 shrink-0 px-2.5 text-xs"
-              onClick={onCustomize}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              Edit
-            </Button>
-          ) : null}
-        </div>
-
-        <button
-          aria-pressed={isSelected}
-          className="w-full text-left"
+      <div className="flex gap-2">
+        <Button
+          className="flex-1"
           onClick={onApply}
+          size="sm"
           type="button"
+          variant={isSelected ? "secondary" : "default"}
         >
-          <p className="line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-            {subtitle}
-          </p>
-        </button>
+          {isSelected ? "Selected" : "Apply"}
+        </Button>
+        {onCustomize ? (
+          <Button
+            onClick={onCustomize}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Customize
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -166,64 +151,17 @@ function TemplateRow({
 export function TemplatePicker({
   catalog,
   customLogos,
-  customTemplates = [],
-  hideSavedBanners = false,
-  matchedCustomTemplateId,
   matchedTemplateId,
   onApply,
-  onApplyCustom,
   onCustomize,
   selections,
 }: TemplatePickerProps) {
-  const visibleCustomTemplates = hideSavedBanners ? [] : customTemplates;
-  const showSavedBanners = visibleCustomTemplates.length > 0;
-
-  let builtInTemplatesDescription =
-    "Pick a starting look, then customize outlets and styling. Use Save as template to keep your design for later.";
-  if (hideSavedBanners) {
-    builtInTemplatesDescription =
-      "Pick a starting look, then customize outlets and styling.";
-  } else if (showSavedBanners) {
-    builtInTemplatesDescription =
-      "Starting points from Presswall. Apply one, then customize outlets and styling.";
-  }
-
   return (
     <ScrollArea className="min-h-0 flex-1">
       <div className="space-y-3 p-3">
-        {showSavedBanners ? (
-          <section className="space-y-2">
-            <TemplateSectionHeader
-              description="Banners you saved from the editor. Apply one anytime to restore its styling and outlets."
-              title="Saved banners"
-            />
-            {visibleCustomTemplates.map((template) => (
-              <TemplateRow
-                catalog={catalog}
-                customLogos={customLogos}
-                isSelected={matchedCustomTemplateId === template.id}
-                key={template.id}
-                layoutLabel={templateLayoutLabel(template.config.layout)}
-                onApply={() => onApplyCustom(template.id)}
-                onCustomize={onCustomize}
-                previewConfig={template.config}
-                previewSelections={template.selections}
-                previewTheme={getConfigPreviewTheme(template.config)}
-                subtitle={
-                  template.description ??
-                  "Your saved banner with styling and outlets."
-                }
-                templateName={template.name}
-              />
-            ))}
-          </section>
-        ) : null}
-
-        <section
-          className={showSavedBanners ? "space-y-2 border-t pt-4" : "space-y-2"}
-        >
+        <section className="space-y-2">
           <TemplateSectionHeader
-            description={builtInTemplatesDescription}
+            description="Pick a starting look, then customize outlets and styling. Your design saves as the single live press strip for this shop."
             title="Built-in templates"
           />
           {PRESSWALL_TEMPLATES.map((template) => (

@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getShopFromRequest } from "@/lib/auth-helpers";
-import { parseBannerPageContext } from "@/lib/banner-page-context";
 import { getStorefrontPayload } from "@/lib/presswall-service";
 import { validateAppProxyRequest } from "@/lib/validate-app-proxy";
 
@@ -17,8 +16,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing shop" }, { status: 400 });
   }
 
-  const context = parseBannerPageContext(request.nextUrl.searchParams);
-  const payload = await getStorefrontPayload(shop, context);
+  // Single shop-wide design — page_type / product_id query params are ignored.
+  const payload = await getStorefrontPayload(shop);
 
   return NextResponse.json(payload, {
     headers: {

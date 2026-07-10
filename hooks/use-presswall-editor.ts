@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminFetch } from "@/lib/admin-fetch";
-import type { ShopBanner } from "@/lib/banner-service";
-import { nextCustomBannerName } from "@/lib/custom-banner-name";
 import { createPendingCustomLogoId } from "@/lib/custom-logo-pending";
 import { fetchPresswallClientData } from "@/lib/fetch-presswall-client-data";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
@@ -34,10 +32,7 @@ import {
 } from "@/lib/replace-selection";
 
 export interface PresswallEditor {
-  activeBannerId: string | null;
-  applyCustomBanner: (bannerId: string) => void;
   applyTemplate: (templateId: PresswallTemplateId) => void;
-  banners: ShopBanner[];
   catalog: PublisherCatalogItem[];
   catalogById: Map<string, PublisherCatalogItem>;
   category: string;
@@ -51,27 +46,15 @@ export interface PresswallEditor {
     name: string,
     svg: string
   ) => Promise<ShopCustomLogo | null>;
-  /**
-   * Silently create a merchant banner named `Custom banner N` from the current
-   * config + selections (onboarding step 2 only). Returns the created banner
-   * name, or null if create was skipped/failed.
-   */
-  createOnboardingCustomBanner: () => Promise<string | null>;
   customLogos: ShopCustomLogo[];
-  /** @deprecated Use banners */
-  customTemplates: ShopBanner[];
   deleteCustomLogo: (logoId: string) => Promise<void>;
   discard: () => void;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
   loadError: boolean;
-  matchedCustomTemplateId: string | null;
   matchedTemplateId: PresswallTemplateId | null;
   needsOnboarding: boolean;
-  refreshBanners: () => Promise<void>;
-  /** @deprecated Use refreshBanners */
-  refreshCustomTemplates: () => Promise<void>;
   reload: () => Promise<void>;
   /** Replace the logo at a selection index (live preview change control). */
   replaceCustomLogoAt: (index: number, logo: ShopCustomLogo) => void;
@@ -126,10 +109,7 @@ export function usePresswallEditor(): PresswallEditor {
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(true);
-  const [banners, setBanners] = useState<ShopBanner[]>([]);
-  const [activeBannerId, setActiveBannerId] = useState<string | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState<{
-    activeBannerId: string | null;
     config: PresswallConfig;
     customLogos: ShopCustomLogo[];
     selected: SelectedPublisher[];
@@ -139,44 +119,6 @@ export function usePresswallEditor(): PresswallEditor {
     () => findMatchingPresswallTemplateId(config),
     [config]
   );
-
-  /** Highlight a saved banner only while the editor still matches it. */
-  const matchedCustomTemplateId = useMemo(() => {
-    if (!activeBannerId) {
-      return null;
-    }
-
-    const banner = banners.find((entry) => entry.id === activeBannerId);
-    if (!banner) {
-      return activeBannerId;
-    }
-
-    if (!presswallConfigsEqual(config, banner.config)) {
-      return null;
-    }
-
-    return selectionsEqual(buildSelections(selected), banner.selections)
-      ? activeBannerId
-      : null;
-  }, [activeBannerId, banners, config, selected]);
-
-  const loadBanners = useCallback(async () => {
-    try {
-      const response = await adminFetch("/api/banners");
-      if (!response.ok) {
-        return;
-      }
-
-      const data = (await response.json()) as {
-        banners?: ShopBanner[];
-        templates?: ShopBanner[];
-      };
-
-      setBanners(data.banners ?? data.templates ?? []);
-    } catch {
-      // Non-blocking for the main editor flow.
-    }
-  }, []);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -189,10 +131,7 @@ export function usePresswallEditor(): PresswallEditor {
       setCustomLogos(data.customLogos);
       setConfig(data.config);
       setSelected(data.selected);
-      setBanners(data.banners ?? []);
-      setActiveBannerId(data.bannerId ?? null);
       setSavedSnapshot({
-        activeBannerId: data.bannerId,
         config: data.config,
         customLogos: data.customLogos,
         selected: data.selected,
@@ -239,10 +178,6 @@ export function usePresswallEditor(): PresswallEditor {
       return false;
     }
 
-    if (activeBannerId !== savedSnapshot.activeBannerId) {
-      return true;
-    }
-
     if (!presswallConfigsEqual(config, savedSnapshot.config)) {
       return true;
     }
@@ -255,7 +190,7 @@ export function usePresswallEditor(): PresswallEditor {
       buildSelections(selected),
       buildSelections(savedSnapshot.selected)
     );
-  }, [activeBannerId, config, customLogos, savedSnapshot, selected]);
+  }, [config, customLogos, savedSnapshot, selected]);
 
   const togglePublisher = useCallback((publisher: PublisherCatalogItem) => {
     setSelected((current) => {
@@ -360,7 +295,6 @@ export function usePresswallEditor(): PresswallEditor {
         const response = await adminFetch("/api/presswall", {
           method: "PUT",
           body: JSON.stringify({
-            bannerId: activeBannerId,
             config,
             selections,
             customLogos,
@@ -374,7 +308,6 @@ export function usePresswallEditor(): PresswallEditor {
         }
 
         const data = (await response.json()) as {
-          bannerId?: string | null;
           customLogos?: ShopCustomLogo[];
           selections?: ShopPublisherSelection[];
         };
@@ -383,7 +316,6 @@ export function usePresswallEditor(): PresswallEditor {
         const nextSelected = data.selections
           ? selectedFromApi(data.selections)
           : selected;
-        const nextBannerId = data.bannerId ?? activeBannerId;
 
         if (options?.completeOnboarding) {
           setNeedsOnboarding(false);
@@ -391,15 +323,11 @@ export function usePresswallEditor(): PresswallEditor {
 
         setCustomLogos(nextCustomLogos);
         setSelected(nextSelected);
-        setActiveBannerId(nextBannerId);
         setSavedSnapshot({
-          activeBannerId: nextBannerId,
           config,
           customLogos: nextCustomLogos.map((logo) => ({ ...logo })),
           selected: nextSelected.map((item) => ({ ...item })),
         });
-
-        await loadBanners();
 
         return true;
       } catch {
@@ -409,7 +337,7 @@ export function usePresswallEditor(): PresswallEditor {
         setIsSaving(false);
       }
     },
-    [activeBannerId, config, customLogos, loadBanners, selections, selected]
+    [config, customLogos, selections, selected]
   );
 
   const save = useCallback(async () => {
@@ -424,7 +352,6 @@ export function usePresswallEditor(): PresswallEditor {
       return;
     }
 
-    setActiveBannerId(savedSnapshot.activeBannerId);
     setConfig(savedSnapshot.config);
     setCustomLogos(savedSnapshot.customLogos.map((logo) => ({ ...logo })));
     setSelected(savedSnapshot.selected.map((item) => ({ ...item })));
@@ -437,66 +364,8 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   const applyTemplate = useCallback((templateId: PresswallTemplateId) => {
-    // Built-in presets edit the current active banner (or default on next save).
     setConfig(applyPresswallTemplate(templateId));
   }, []);
-
-  const applyCustomBanner = useCallback(
-    (bannerId: string) => {
-      const banner = banners.find((entry) => entry.id === bannerId);
-      if (!banner) {
-        toast.error("Saved banner not found");
-        return;
-      }
-
-      setActiveBannerId(banner.id);
-      setConfig(banner.config);
-      setSelected(selectedFromApi(banner.selections));
-    },
-    [banners]
-  );
-
-  const createOnboardingCustomBanner = useCallback(async () => {
-    const name = nextCustomBannerName(banners.map((banner) => banner.name));
-
-    try {
-      const response = await adminFetch("/api/banners", {
-        method: "POST",
-        body: JSON.stringify({
-          name,
-          config,
-          selections,
-        }),
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as {
-        banner?: ShopBanner;
-        template?: ShopBanner;
-      };
-      const banner = data.banner ?? data.template;
-      if (!banner) {
-        return null;
-      }
-
-      setBanners((current) => {
-        if (current.some((entry) => entry.id === banner.id)) {
-          return current;
-        }
-        return [...current, banner].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        );
-      });
-      setActiveBannerId(banner.id);
-
-      return banner.name;
-    } catch {
-      return null;
-    }
-  }, [banners, config, selections]);
 
   const updateConfig = useCallback(
     <K extends keyof PresswallConfig>(key: K, value: PresswallConfig[K]) => {
@@ -513,17 +382,13 @@ export function usePresswallEditor(): PresswallEditor {
   );
 
   return {
-    activeBannerId,
     catalog,
     catalogById,
     category,
     completeOnboarding,
     config,
     createCustomLogo,
-    createOnboardingCustomBanner,
     customLogos,
-    banners,
-    customTemplates: banners,
     discard,
     isDirty,
     isLoading,
@@ -531,16 +396,12 @@ export function usePresswallEditor(): PresswallEditor {
     loadError,
     needsOnboarding,
     reload: loadData,
-    refreshBanners: loadBanners,
-    refreshCustomTemplates: loadBanners,
     search,
     selected,
     selectedIds,
-    matchedCustomTemplateId,
     matchedTemplateId,
     selections,
     unavailableCount,
-    applyCustomBanner,
     applyTemplate,
     deleteCustomLogo,
     replaceCustomLogoAt,

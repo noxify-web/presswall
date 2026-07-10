@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { createClient } from "@libsql/client";
-import { saveShopBannerAssignments } from "@/lib/banner-assignment-service";
+import { updateShopBanner } from "@/lib/banner-service";
 import { getResolvedStorefrontPayload } from "@/lib/build-storefront-payload";
 import {
   listShopCustomTemplates,
   saveShopCustomTemplate,
 } from "@/lib/custom-template-service";
 import { DEFAULT_PRESSWALL_CONFIG } from "@/lib/presswall-defaults";
+import { bootstrapShopBanners } from "@/lib/shop-banner-bootstrap";
 
 const CUSTOM_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
@@ -29,64 +30,70 @@ beforeAll(async () => {
   });
 });
 
-describe("save/list shop banners", () => {
-  test("persists two distinct banners with config and selections", async () => {
-    const bannerAConfig = {
-      ...DEFAULT_PRESSWALL_CONFIG,
-      headingText: "Banner A",
-    };
-    const bannerBConfig = {
-      ...DEFAULT_PRESSWALL_CONFIG,
-      headingText: "Banner B",
-    };
+describe("save/list shop banners (legacy create path)", () => {
+  test("list still returns rows; storefront only serves the default/canonical banner", async () => {
+    // Ensure a default exists first so bootstrap does not steal the first custom row.
+    await bootstrapShopBanners(TEST_SHOP);
+    const bootstrap = await bootstrapShopBanners(TEST_SHOP);
+    expect(bootstrap.defaultBannerId).not.toBeNull();
 
-    const savedA = await saveShopCustomTemplate(TEST_SHOP, {
+    await saveShopCustomTemplate(TEST_SHOP, {
       name: "Banner A",
-      config: bannerAConfig,
+      config: {
+        ...DEFAULT_PRESSWALL_CONFIG,
+        headingText: "Banner A",
+      },
       selections: [{ publisherId: "forbes", position: 0 }],
     });
 
-    const savedB = await saveShopCustomTemplate(TEST_SHOP, {
+    await saveShopCustomTemplate(TEST_SHOP, {
       name: "Banner B",
-      config: bannerBConfig,
+      config: {
+        ...DEFAULT_PRESSWALL_CONFIG,
+        headingText: "Banner B",
+      },
       selections: [{ publisherId: "wired", position: 0 }],
     });
 
-    const listed = await listShopCustomTemplates(TEST_SHOP);
-    const byName = new Map(listed.map((banner) => [banner.name, banner]));
+    // Point the default/canonical design at a known config.
+    await updateShopBanner(
+      TEST_SHOP,
+      bootstrap.defaultBannerId as string,
+      {
+        ...DEFAULT_PRESSWALL_CONFIG,
+        headingText: "Live design",
+      },
+      [{ publisherId: "techcrunch", position: 0 }]
+    );
 
-    expect(byName.get("Banner A")?.config.headingText).toBe("Banner A");
-    expect(byName.get("Banner A")?.selections[0]?.publisherId).toBe("forbes");
-    expect(byName.get("Banner B")?.config.headingText).toBe("Banner B");
-    expect(byName.get("Banner B")?.selections[0]?.publisherId).toBe("wired");
-    expect(savedA.id).not.toBe(savedB.id);
-    expect(listed.length).toBeGreaterThanOrEqual(2);
+    const listed = await listShopCustomTemplates(TEST_SHOP);
+    expect(listed.length).toBeGreaterThanOrEqual(3);
+    expect(listed.some((b) => b.name === "Banner A")).toBe(true);
+    expect(listed.some((b) => b.name === "Banner B")).toBe(true);
+
+    const payload = await getResolvedStorefrontPayload(TEST_SHOP, []);
+    expect(payload.headingText).toBe("Live design");
+    expect(payload.headingText).not.toBe("Banner A");
+    expect(payload.headingText).not.toBe("Banner B");
   });
 
-  test("persists custom logo id selections and resolves them via getResolvedStorefrontPayload", async () => {
-    const saved = await saveShopCustomTemplate(TEST_SHOP, {
-      name: "Custom Logo Banner",
-      config: {
+  test("custom logo id selections resolve on the canonical banner", async () => {
+    await bootstrapShopBanners(TEST_SHOP);
+    const bootstrap = await bootstrapShopBanners(TEST_SHOP);
+    const defaultId = bootstrap.defaultBannerId;
+    expect(defaultId).not.toBeNull();
+
+    await updateShopBanner(
+      TEST_SHOP,
+      defaultId as string,
+      {
         ...DEFAULT_PRESSWALL_CONFIG,
         headingText: "Press picks",
       },
-      selections: [{ customLogoId: CUSTOM_LOGO_ID, position: 0 }],
-    });
+      [{ customLogoId: CUSTOM_LOGO_ID, position: 0 }]
+    );
 
-    await saveShopBannerAssignments(TEST_SHOP, {
-      homepageBannerId: saved.id,
-      allProductsBannerId: saved.id,
-    });
-
-    const listed = await listShopCustomTemplates(TEST_SHOP);
-    const banner = listed.find((entry) => entry.id === saved.id);
-
-    expect(banner).toBeDefined();
-    expect(banner?.selections[0]?.customLogoId).toBe(CUSTOM_LOGO_ID);
-
-    const payload = await getResolvedStorefrontPayload(TEST_SHOP, [], {
-      pageType: "homepage",
-    });
+    const payload = await getResolvedStorefrontPayload(TEST_SHOP, []);
 
     expect(payload.headingText).toBe("Press picks");
     expect(payload.publishers[0]?.name).toBe("Local Podcast");

@@ -1,5 +1,4 @@
 import { getAppUrl } from "@/lib/app-url";
-import { getShopBannerAssignmentsState } from "@/lib/banner-assignment-service";
 import { shouldInvertLogos } from "@/lib/presswall-logo-contrast";
 import { getStorefrontPayload } from "@/lib/presswall-service";
 import type { StorefrontPayload } from "@/lib/presswall-types";
@@ -79,11 +78,7 @@ export async function syncStorefrontMetafield(
   accessToken: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    // Same banner resolver as the app proxy (null context → homepage/default).
-    const [payload, assignments] = await Promise.all([
-      getStorefrontPayload(shop, null),
-      getShopBannerAssignmentsState(shop),
-    ]);
+    const payload = await getStorefrontPayload(shop);
     const shopIdResult = await adminGraphql<ShopIdResult>(
       shop,
       accessToken,
@@ -107,9 +102,7 @@ export async function syncStorefrontMetafield(
             ownerId: shopId,
             key: STOREFRONT_CONFIG_KEY,
             type: "json",
-            value: JSON.stringify(
-              serializeStorefrontManifest(shop, payload, assignments)
-            ),
+            value: JSON.stringify(serializeStorefrontManifest(shop, payload)),
           },
         ],
       }
@@ -154,18 +147,11 @@ function serializeStorefrontPayload(shop: string, payload: StorefrontPayload) {
   };
 }
 
-function serializeStorefrontManifest(
-  shop: string,
-  payload: StorefrontPayload,
-  assignments: Awaited<ReturnType<typeof getShopBannerAssignmentsState>>
-) {
+/** Single-banner manifest — no per-page assignment map. */
+function serializeStorefrontManifest(shop: string, payload: StorefrontPayload) {
   return {
-    version: 2,
+    version: 3,
     resolveViaProxy: true,
-    defaultBannerId: assignments.defaultBannerId,
-    homepageBannerId: assignments.homepageBannerId,
-    allProductsBannerId: assignments.allProductsBannerId,
-    productAssignments: assignments.productAssignments,
     fallback: serializeStorefrontPayload(shop, payload),
   };
 }

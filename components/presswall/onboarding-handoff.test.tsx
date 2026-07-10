@@ -38,7 +38,6 @@ function setupHandoffMocks() {
     fetchPresswallClientData: () =>
       Promise.resolve({
         bannerId: null,
-        banners: [],
         catalog: CATALOG_FIXTURE,
         config: DEFAULT_PRESSWALL_CONFIG,
         customLogos: [],

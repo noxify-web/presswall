@@ -22,7 +22,7 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
   }
 
   for (const root of roots) {
-    const proxyUrl = buildContextAwareProxyUrl(root);
+    const proxyUrl = root.dataset.proxyUrl;
     if (!proxyUrl) {
       continue;
     }
@@ -81,33 +81,6 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
         root.innerHTML =
           '<div class="presswall-loading">Not configured yet.</div>';
       });
-  }
-
-  function buildContextAwareProxyUrl(root) {
-    const baseUrl = root.dataset.proxyUrl;
-    if (!baseUrl) {
-      return null;
-    }
-
-    const url = new URL(baseUrl, window.location.origin);
-    const contextNode =
-      root.querySelector("[data-page-type], [data-product-id]") ?? root;
-    const pageType = (root.dataset.pageType ?? contextNode.dataset.pageType)
-      ?.trim()
-      .toLowerCase();
-    const productId = (
-      root.dataset.productId ?? contextNode.dataset.productId
-    )?.trim();
-
-    if (pageType) {
-      url.searchParams.set("page_type", pageType);
-    }
-
-    if (productId) {
-      url.searchParams.set("product_id", productId);
-    }
-
-    return url.toString();
   }
 
   function renderPresswall(config) {

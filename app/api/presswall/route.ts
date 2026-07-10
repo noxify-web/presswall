@@ -17,6 +17,7 @@ import {
 import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 const saveSchema = z.object({
+  /** @deprecated Ignored — always updates the shop's single live design. */
   bannerId: z.string().uuid().nullable().optional(),
   config: presswallConfigSchema,
   selections: z.array(shopPublisherSelectionSchema),

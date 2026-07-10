@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import type { BannerAssignmentTarget } from "@/lib/resolve-banner-for-context";
 import {
   bootstrapShopBanners,
   type ProductBannerAssignmentRecord,
@@ -8,6 +7,9 @@ import {
 } from "@/lib/shop-banner-bootstrap";
 import { db } from "@/src/db";
 import { shopBannerAssignments } from "@/src/db/schema";
+
+/** @deprecated Legacy assignment targets — not used for storefront resolution. */
+type BannerAssignmentTarget = "homepage" | "all_products" | `product:${string}`;
 
 export type ShopBannerAssignment = ShopBannerAssignmentRecord;
 export type ProductBannerAssignment = ProductBannerAssignmentRecord;
