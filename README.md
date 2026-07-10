@@ -53,10 +53,14 @@ Without Turso env vars, the app falls back to a local `file:data/dev.db` SQLite 
 
 Live at **https://presswall.noxify.io** (Debian VPS on AWS EC2, Docker + Caddy, Turso DB).
 
-- **Dev Shopify config:** `shopify.app.toml` (ngrok tunnel)
-- **Prod Shopify config:** `shopify.app.prod.toml` — use `shopify app config use prod` before deploy
+- **Dev Shopify config:** `shopify.app.toml` (tunnel; `automatically_update_urls_on_dev = true`)
+- **Prod Shopify config:** `shopify.app.prod.toml` → always deploy with **`-c prod`**
+- **After local `shopify app dev`:** clear the store tunnel preview **and** restore Partner URLs:
+  `bun run shopify:dev-clean && bun run shopify:restore-urls`
+  (deploy alone is not enough — the dev store keeps the tunnel until `shopify app dev clean`)
+- **Ship extension/config to merchants:** `bun run shopify:deploy:prod`
 - **Redeploy container:** `VPS_IP=35.169.154.151 SHOPIFY_APP_URL=https://presswall.noxify.io bash scripts/update-vps-container.sh`
-- **Agent/deploy details:** see [`AGENTS.md`](./AGENTS.md) (architecture, auth tokens, troubleshooting)
+- **Agent/deploy details:** see [`AGENTS.md`](./AGENTS.md) (protect live merchants, architecture, auth, troubleshooting)
 
 Copy `.env.production.example` for production env var names.
 

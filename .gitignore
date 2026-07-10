@@ -52,3 +52,4 @@ public/video/*.mp4
 
 # local scratch (logo compare dumps, etc.)
 /tmp/
+.env.prod
