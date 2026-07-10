@@ -1,8 +1,8 @@
 import { getAppUrl } from "@/lib/app-url";
+import { resolveMetafieldLogoUrl } from "@/lib/metafield-logo-url";
 import { shouldInvertLogos } from "@/lib/presswall-logo-contrast";
 import { getStorefrontPayload } from "@/lib/presswall-service";
 import type { StorefrontPayload } from "@/lib/presswall-types";
-import { absoluteBundledLogoUrl } from "@/lib/publisher-logo-path";
 
 const STOREFRONT_CONFIG_KEY = "storefront_config";
 /** App-owned shop metafield namespace (matches shopify.app.toml `shop.metafields.app.*`). */
@@ -133,6 +133,7 @@ export async function syncStorefrontMetafield(
 }
 
 function serializeStorefrontPayload(shop: string, payload: StorefrontPayload) {
+  const appUrl = getAppUrl();
   return {
     ...payload,
     invertLogos: shouldInvertLogos(payload),
@@ -143,7 +144,8 @@ function serializeStorefrontPayload(shop: string, payload: StorefrontPayload) {
       logoImageUrl: resolveMetafieldLogoUrl(
         shop,
         publisher.id,
-        publisher.logoImageUrl
+        publisher.logoImageUrl,
+        { appUrl, colorMode: payload.colorMode }
       ),
       logoSvg: publisher.logoSvg,
     })),
@@ -157,21 +159,4 @@ function serializeStorefrontManifest(shop: string, payload: StorefrontPayload) {
     resolveViaProxy: true,
     fallback: serializeStorefrontPayload(shop, payload),
   };
-}
-
-function resolveMetafieldLogoUrl(
-  shop: string,
-  publisherId: string,
-  logoImageUrl: string | null
-): string | null {
-  if (!logoImageUrl) {
-    return null;
-  }
-
-  const appUrl = getAppUrl();
-  if (appUrl.startsWith("https://")) {
-    return absoluteBundledLogoUrl(publisherId);
-  }
-
-  return `https://${shop}/apps/presswall/publishers/${publisherId}/logo`;
 }
