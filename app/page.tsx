@@ -2,8 +2,6 @@ import { AdminDashboard } from "@/components/presswall/admin-dashboard";
 import { AppEmptyState } from "@/components/presswall/app-empty-state";
 import { authenticatePage } from "@/lib/authenticate-page";
 import { hasEmbeddedEntryParams } from "@/lib/embedded-entry";
-import { ensurePublisherCatalogSeeded } from "@/lib/presswall-service";
-import { syncStorefrontMetafield } from "@/lib/sync-storefront-metafield";
 
 export const dynamic = "force-dynamic";
 
@@ -23,21 +21,8 @@ export default async function Page({ searchParams }: PageProps) {
     );
   }
 
-  const { session } = await authenticatePage(searchParams);
-  await ensurePublisherCatalogSeeded();
-
-  if (session.accessToken) {
-    syncStorefrontMetafield(session.shop, session.accessToken).then(
-      (result) => {
-        if (!result.ok) {
-          console.error(
-            "Presswall storefront metafield sync failed",
-            result.error
-          );
-        }
-      }
-    );
-  }
+  // Auth only — catalog seed + metafield sync happen on API load / save.
+  await authenticatePage(searchParams);
 
   return <AdminDashboard />;
 }

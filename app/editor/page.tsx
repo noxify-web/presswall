@@ -4,7 +4,6 @@ import { EditorShellSkeleton } from "@/components/presswall/editor-shell-skeleto
 import { EditorView } from "@/components/presswall/editor-view";
 import { authenticatePage } from "@/lib/authenticate-page";
 import { hasEmbeddedEntryParams } from "@/lib/embedded-entry";
-import { ensurePublisherCatalogSeeded } from "@/lib/presswall-service";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +24,6 @@ export default async function EditorPage({ searchParams }: PageProps) {
   }
 
   await authenticatePage(searchParams, "/editor");
-  await ensurePublisherCatalogSeeded();
 
   return (
     <Suspense fallback={<EditorShellSkeleton />}>

@@ -19,10 +19,10 @@ export async function GET(request: NextRequest) {
   // Single shop-wide design — page_type / product_id query params are ignored.
   const payload = await getStorefrontPayload(shop);
 
+  // Same-origin via Shopify app proxy — no public CORS needed.
   return NextResponse.json(payload, {
     headers: {
-      "Cache-Control": "no-store",
-      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "private, no-store",
     },
   });
 }

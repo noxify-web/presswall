@@ -5,8 +5,9 @@ REGION="${AWS_REGION:-us-east-1}"
 ECR_REPO="${ECR_REPO_NAME:-presswall}"
 VPS_IP="${VPS_IP:?Set VPS_IP to your server Elastic IP}"
 KEY_PATH="${EC2_KEY_PATH:-$HOME/.ssh/presswall-debian.pem}"
-PROD_URL="${SHOPIFY_APP_URL:-https://presswall.noxify.io}"
-SCOPES="${SCOPES:-write_app_proxy,read_themes}"
+# Never inherit tunnel URLs or incomplete scopes from a local .env.
+PROD_URL="https://presswall.noxify.io"
+SCOPES="write_app_proxy,read_themes"
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO}:latest"

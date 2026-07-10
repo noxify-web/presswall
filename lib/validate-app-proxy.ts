@@ -9,13 +9,17 @@ function getProxyQuery(request: NextRequest): Record<string, string> {
   return query;
 }
 
+/**
+ * Validate Shopify app-proxy HMAC.
+ * Unsigned local testing only when ALLOW_UNSIGNED_APP_PROXY=1 (never rely on NODE_ENV alone).
+ */
 export async function validateAppProxyRequest(
   request: NextRequest
 ): Promise<boolean> {
   const query = getProxyQuery(request);
 
   if (!query.signature) {
-    return process.env.NODE_ENV === "development";
+    return process.env.ALLOW_UNSIGNED_APP_PROXY === "1";
   }
 
   try {

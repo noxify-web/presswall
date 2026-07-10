@@ -38,17 +38,7 @@ export async function GET(request: NextRequest) {
     getEditorBannerId(session.shop),
   ]);
 
-  const accessToken = session.accessToken;
-  if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  syncStorefrontMetafield(session.shop, accessToken).then((result) => {
-    if (!result.ok) {
-      console.error("Presswall storefront metafield sync failed", result.error);
-    }
-  });
-
+  // Metafield sync only on save (PUT) — not on every load (hurts LCP / monitoring).
   return NextResponse.json({
     bannerId,
     config,

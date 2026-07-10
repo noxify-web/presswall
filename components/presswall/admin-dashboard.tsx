@@ -31,8 +31,8 @@ export function AdminDashboardView({ editor }: { editor: PresswallEditor }) {
           <EmptyHeader>
             <EmptyTitle>Could not load Presswall</EmptyTitle>
             <EmptyDescription>
-              Settings failed to load. This can happen after a schema change —
-              retry after migrations are applied.
+              Settings failed to load. Reload the app from Shopify admin, or
+              email support@noxify.io if it keeps happening.
             </EmptyDescription>
           </EmptyHeader>
           <Button

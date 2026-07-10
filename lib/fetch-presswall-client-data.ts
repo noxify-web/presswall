@@ -19,6 +19,26 @@ export interface PresswallClientData {
 }
 
 export async function fetchPresswallClientData(): Promise<PresswallClientData> {
+  const bootstrapRes = await adminFetch("/api/presswall/bootstrap");
+
+  if (bootstrapRes.ok) {
+    const data = await bootstrapRes.json();
+    const needsOnboarding = Boolean(data.needsOnboarding);
+    const config = needsOnboarding
+      ? resolveOnboardingDesignConfig(data.config)
+      : data.config;
+
+    return {
+      bannerId: data.bannerId ?? null,
+      catalog: (data.publishers ?? []) as PublisherCatalogItem[],
+      config: config ?? DEFAULT_PRESSWALL_CONFIG,
+      customLogos: (data.logos ?? []) as ShopCustomLogo[],
+      needsOnboarding,
+      selected: selectedFromApi(data.selections),
+    };
+  }
+
+  // Fallback for older deploys: three parallel requests.
   const [publishersRes, presswallRes, customLogosRes] = await Promise.all([
     adminFetch("/api/publishers"),
     adminFetch("/api/presswall"),
