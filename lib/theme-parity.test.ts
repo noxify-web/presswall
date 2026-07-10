@@ -29,7 +29,7 @@ describe("theme bundle parity", () => {
     expect(MAX_CUSTOM_LOGO_SVG_LENGTH).toBe(50_000);
   });
 
-  test("loads a single shop-wide design from the app-proxy (no page-context params)", () => {
+  test("loads a single shop-wide design; theme editor uses metafield not page context", () => {
     const themeJs = readFileSync(
       join(process.cwd(), "extensions/presswall-theme/assets/presswall.js"),
       "utf8"
@@ -52,21 +52,32 @@ describe("theme bundle parity", () => {
       ),
       "utf8"
     );
+    const fromConfig = readFileSync(
+      join(
+        process.cwd(),
+        "extensions/presswall-theme/snippets/presswall-from-config.liquid"
+      ),
+      "utf8"
+    );
 
     expect(themeJs).not.toContain("buildContextAwareProxyUrl");
     expect(themeJs).not.toContain('searchParams.set("page_type"');
     expect(themeJs).not.toContain('searchParams.set("product_id"');
+    expect(themeJs).toContain("normalizePayload");
+    expect(themeJs).toContain("hydrateFromProxy");
     expect(presswallBlock).not.toContain("data-page-type");
     expect(presswallBlock).not.toContain("data-product-id");
-    expect(presswallEmbed).not.toContain("data-page-type");
-    expect(presswallEmbed).not.toContain("data-product-id");
+    expect(presswallBlock).toContain("storefront_config");
+    expect(presswallBlock).toContain("presswall-from-config");
+    expect(presswallBlock).toContain("data-presswall-config");
+    expect(presswallEmbed).toContain("data-presswall-config");
     expect(presswallLive).toContain("data-presswall-root");
     expect(presswallLive).toContain("data-proxy-url");
+    expect(presswallLive).toContain("data-presswall-config");
     expect(presswallLive).not.toContain("data-page-type");
-    expect(presswallLive).not.toContain("data-product-id");
     expect(presswallLive).not.toContain("pw.publishers");
+    expect(fromConfig).toContain("config.publishers");
     expect(themeJs).toContain('querySelectorAll("[data-presswall-root]")');
-    expect(themeJs).toContain("root.dataset.proxyUrl");
   });
 
   test("declares presswall.js in both theme block schemas", () => {

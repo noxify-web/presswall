@@ -5,6 +5,8 @@ import type { StorefrontPayload } from "@/lib/presswall-types";
 import { absoluteBundledLogoUrl } from "@/lib/publisher-logo-path";
 
 const STOREFRONT_CONFIG_KEY = "storefront_config";
+/** App-owned shop metafield namespace (matches shopify.app.toml `shop.metafields.app.*`). */
+const STOREFRONT_CONFIG_NAMESPACE = "$app";
 const ADMIN_API_VERSION = "2025-01";
 
 const SHOP_ID_QUERY = `
@@ -100,6 +102,7 @@ export async function syncStorefrontMetafield(
         metafields: [
           {
             ownerId: shopId,
+            namespace: STOREFRONT_CONFIG_NAMESPACE,
             key: STOREFRONT_CONFIG_KEY,
             type: "json",
             value: JSON.stringify(serializeStorefrontManifest(shop, payload)),

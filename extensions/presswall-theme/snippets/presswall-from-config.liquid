@@ -1,0 +1,173 @@
+{%- comment -%}
+  Server-render the live shop design from storefront config (metafield).
+  Used in the theme editor where JS may not run (visualPreviewMode).
+  Expects `config` with the same shape as the app-proxy payload / metafield fallback.
+{%- endcomment -%}
+{%- if config == blank or config.publishers == blank or config.publishers.size == 0 -%}
+  {%- render 'presswall-static-preview' -%}
+{%- else -%}
+  {%- assign bg = config.backgroundColor | default: 'transparent' -%}
+  {%- assign tx = config.textColor | default: '#111111' -%}
+  {%- assign pad_y = config.paddingY | default: 16 -%}
+  {%- assign pad_x = config.paddingX | default: 16 -%}
+  {%- assign logo_h = config.logoHeight | default: 28 -%}
+  {%- assign max_w = config.contentMaxWidth | default: 840 -%}
+  {%- assign gap = config.gap | default: 12 -%}
+  {%- assign h_size = config.headingFontSize | default: 12 -%}
+  {%- assign h_space = config.headingSpacing | default: 40 -%}
+  {%- assign lpr_d = config.logosPerRowDesktop | default: config.logosPerRow | default: 4 -%}
+  {%- assign lpr_m = config.logosPerRowMobile | default: 2 -%}
+  {%- assign mq_speed = config.marqueeSpeed | default: 30 -%}
+  {%- assign h_align = config.headingAlignment | default: config.alignment | default: 'center' -%}
+  {%- if h_align != 'left' and h_align != 'right' -%}
+    {%- assign h_align = 'center' -%}
+  {%- endif -%}
+  {%- assign l_align = config.logoAlignment | default: h_align -%}
+  {%- if l_align != 'left' and l_align != 'right' -%}
+    {%- assign l_align = 'center' -%}
+  {%- endif -%}
+  {%- assign layout = config.layout | default: 'bar' -%}
+  {%- assign logo_spacing = 'gap' -%}
+  {%- if layout == 'bar' and config.logoSpacing != 'gap' -%}
+    {%- assign logo_spacing = 'space-between' -%}
+  {%- endif -%}
+  {%- assign logo_style = '' -%}
+  {%- if config.colorMode == 'muted' -%}
+    {%- assign muted_opacity = config.grayscaleOpacity | default: 70 | times: 0.01 -%}
+    {%- assign logo_style = 'opacity:' | append: muted_opacity -%}
+  {%- endif -%}
+
+  <div
+    class="presswall-shell"
+    data-presswall-static-preview
+    style="
+      background:{{ bg }};
+      color:{{ tx }};
+      --presswall-padding-y:{{ pad_y }}px;
+      --presswall-padding-x:{{ pad_x }}px;
+      --presswall-logo-height:{{ logo_h }}px;
+      --presswall-content-max-width:{{ max_w }}px;
+      --presswall-gap:{{ gap }}px;
+      --presswall-heading-size:{{ h_size }}px;
+      --presswall-heading-spacing:{{ h_space }}px;
+    "
+  >
+    <div class="presswall-content">
+      {%- if layout == 'marquee' -%}
+        {%- assign inline_heading = false -%}
+        {%- if config.showHeading and config.headingText != blank and h_align == 'left' -%}
+          {%- assign inline_heading = true -%}
+        {%- endif -%}
+        {%- if config.showHeading and config.headingText != blank and inline_heading == false -%}
+          <p
+            class="presswall-heading presswall-heading-align-{{ h_align }}"
+            style="color:{{ tx }}"
+          >
+            {{ config.headingText | escape }}
+          </p>
+        {%- endif -%}
+        {%- assign fade = bg -%}
+        {%- if bg == 'transparent' or bg == blank -%}
+          {%- assign fade = '#fff' -%}
+        {%- endif -%}
+        {%- assign pub_count = config.publishers.size -%}
+        {%- if pub_count < 1 -%}
+          {%- assign pub_count = 1 -%}
+        {%- endif -%}
+        {%- assign mq_n = 2 -%}
+        {%- if pub_count < 4 -%}
+          {%- assign mq_n = 4 -%}
+        {%- elsif pub_count < 6 -%}
+          {%- assign mq_n = 3 -%}
+        {%- endif -%}
+        <div class="pw-mq-row">
+          {%- if inline_heading -%}
+            <div class="pw-mq-lead">
+              <p class="pw-mq-label" style="color:{{ tx }};font-size:{{ h_size }}px">
+                {{ config.headingText | escape }}
+              </p>
+              <span class="pw-mq-div"></span>
+            </div>
+          {%- endif -%}
+          <div class="pw-mq-scroll" style="--pw-mq-fade:{{ fade }}">
+            <div class="pw-mq-wrap">
+              <div
+                class="pw-mq-track"
+                style="animation-duration:{{ mq_speed }}s;--pw-mq-n:{{ mq_n }}"
+              >
+                {%- for i in (1..mq_n) -%}
+                  {%- for publisher in config.publishers -%}
+                    <div class="presswall-logo" style="height:{{ logo_h }}px;{{ logo_style }}">
+                      {%- if publisher.logoImageUrl != blank -%}
+                        <img
+                          alt=""
+                          class="presswall-logo-img"
+                          height="{{ logo_h }}"
+                          loading="lazy"
+                          src="{{ publisher.logoImageUrl | escape }}"
+                          width="{{ logo_h | times: 4 }}"
+                        >
+                      {%- elsif publisher.logoSvg != blank -%}
+                        <img
+                          alt=""
+                          class="presswall-logo-img"
+                          height="{{ logo_h }}"
+                          loading="lazy"
+                          src="data:image/svg+xml,{{ publisher.logoSvg | url_encode }}"
+                          width="{{ logo_h | times: 4 }}"
+                        >
+                      {%- else -%}
+                        <span>{{ publisher.name | escape }}</span>
+                      {%- endif -%}
+                    </div>
+                  {%- endfor -%}
+                {%- endfor -%}
+              </div>
+            </div>
+            <span class="pw-mq-fade pw-mq-fade-left" aria-hidden="true"></span>
+            <span class="pw-mq-fade pw-mq-fade-right" aria-hidden="true"></span>
+          </div>
+        </div>
+      {%- else -%}
+        {%- if config.showHeading and config.headingText != blank -%}
+          <p
+            class="presswall-heading presswall-heading-align-{{ h_align }}"
+            style="color:{{ tx }}"
+          >
+            {{ config.headingText | escape }}
+          </p>
+        {%- endif -%}
+        <div
+          class="presswall-bar presswall-spacing-{{ logo_spacing }} presswall-align-{{ l_align }}"
+          style="--lpr-d:{{ lpr_d }};--lpr-m:{{ lpr_m }}"
+        >
+          {%- for publisher in config.publishers -%}
+            <div class="presswall-logo" style="height:{{ logo_h }}px;{{ logo_style }}">
+              {%- if publisher.logoImageUrl != blank -%}
+                <img
+                  alt=""
+                  class="presswall-logo-img"
+                  height="{{ logo_h }}"
+                  loading="lazy"
+                  src="{{ publisher.logoImageUrl | escape }}"
+                  width="{{ logo_h | times: 4 }}"
+                >
+              {%- elsif publisher.logoSvg != blank -%}
+                <img
+                  alt=""
+                  class="presswall-logo-img"
+                  height="{{ logo_h }}"
+                  loading="lazy"
+                  src="data:image/svg+xml,{{ publisher.logoSvg | url_encode }}"
+                  width="{{ logo_h | times: 4 }}"
+                >
+              {%- else -%}
+                <span>{{ publisher.name | escape }}</span>
+              {%- endif -%}
+            </div>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+{%- endif -%}

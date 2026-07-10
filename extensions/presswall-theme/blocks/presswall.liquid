@@ -1,3 +1,17 @@
+{%- comment -%}
+  Prefer the shop metafield (synced from admin) so the theme editor matches the app.
+  Live storefront still hydrates via app proxy for freshness.
+{%- endcomment -%}
+{%- assign pw_meta = shop.metafields.app.storefront_config.value -%}
+{%- if pw_meta == blank -%}
+  {%- assign pw_meta = shop.metafields['$app'].storefront_config.value -%}
+{%- endif -%}
+{%- if pw_meta.fallback != blank -%}
+  {%- assign pw_config = pw_meta.fallback -%}
+{%- else -%}
+  {%- assign pw_config = pw_meta -%}
+{%- endif -%}
+
 <div
   class="presswall-root"
   data-presswall-root
@@ -6,8 +20,18 @@
     data-presswall-design-mode
   {% endif %}
 >
+  {%- if pw_config != blank and pw_config.publishers != blank -%}
+    <script type="application/json" data-presswall-config>
+      {{ pw_config | json }}
+    </script>
+  {%- endif -%}
+
   {% if request.design_mode %}
-    {% render 'presswall-static-preview' %}
+    {% if pw_config != blank and pw_config.publishers != blank %}
+      {% render 'presswall-from-config', config: pw_config %}
+    {% else %}
+      {% render 'presswall-static-preview' %}
+    {% endif %}
   {% else %}
     <div class="presswall-loading">Loading press strip…</div>
   {% endif %}

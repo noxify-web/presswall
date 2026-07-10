@@ -9,12 +9,9 @@ const JAVASCRIPT_URI = /javascript:/gi;
 const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
 
 (function presswallInit() {
-  if (
+  const isVisualPreview =
     typeof globalThis.Shopify !== "undefined" &&
-    globalThis.Shopify.visualPreviewMode
-  ) {
-    return;
-  }
+    globalThis.Shopify.visualPreviewMode;
 
   const roots = document.querySelectorAll("[data-presswall-root]");
   if (!roots.length) {
@@ -22,28 +19,57 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
   }
 
   for (const root of roots) {
-    const proxyUrl = root.dataset.proxyUrl;
-    if (!proxyUrl) {
-      continue;
-    }
-
     const isDesignMode = root.hasAttribute("data-presswall-design-mode");
     const hasStaticPreview = Boolean(
       root.querySelector("[data-presswall-static-preview]")
     );
     const inlineConfig = root.querySelector("[data-presswall-config]");
 
+    // Prefer embedded metafield payload (matches admin; works in theme editor).
     if (inlineConfig?.textContent) {
       try {
-        const payload = JSON.parse(inlineConfig.textContent);
+        const payload = normalizePayload(JSON.parse(inlineConfig.textContent));
         const rendered = renderPresswall(payload);
         if (rendered) {
           root.innerHTML = rendered;
+          // Still refresh from proxy when not in visual-preview / when online.
+          if (!isVisualPreview && root.dataset.proxyUrl) {
+            hydrateFromProxy(root, isDesignMode, hasStaticPreview);
+          }
           continue;
         }
       } catch {
         // Fall back to app proxy fetch below.
       }
+    }
+
+    // Theme editor visual preview often blocks network — keep liquid SSR.
+    if (isVisualPreview) {
+      continue;
+    }
+
+    if (!root.dataset.proxyUrl) {
+      continue;
+    }
+
+    hydrateFromProxy(root, isDesignMode, hasStaticPreview);
+  }
+
+  function normalizePayload(payload) {
+    if (!payload || typeof payload !== "object") {
+      return payload;
+    }
+    // Metafield manifest v2/v3 wraps the strip config in `fallback`.
+    if (payload.fallback && Array.isArray(payload.fallback.publishers)) {
+      return payload.fallback;
+    }
+    return payload;
+  }
+
+  function hydrateFromProxy(root, isDesignMode, hasStaticPreview) {
+    const proxyUrl = root.dataset.proxyUrl;
+    if (!proxyUrl) {
+      return;
     }
 
     fetch(proxyUrl, { credentials: "same-origin", cache: "no-store" })
@@ -60,7 +86,7 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
         return response.json();
       })
       .then((payload) => {
-        const rendered = renderPresswall(payload);
+        const rendered = renderPresswall(normalizePayload(payload));
         if (!rendered) {
           if (isDesignMode && hasStaticPreview) {
             return;
@@ -75,6 +101,11 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
       })
       .catch(() => {
         if (isDesignMode && hasStaticPreview) {
+          return;
+        }
+
+        // Keep any liquid-rendered design if proxy fails.
+        if (root.querySelector(".presswall-shell")) {
           return;
         }
 
