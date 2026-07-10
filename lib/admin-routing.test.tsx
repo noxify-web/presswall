@@ -59,11 +59,15 @@ describe("editor sub-page", () => {
     const editorView = readSource("components/presswall/editor-view.tsx");
     const appWindow = readSource("lib/editor-app-window.ts");
     const host = readSource("components/presswall/editor-app-window-host.tsx");
+    const appNav = readSource("components/presswall/app-nav.tsx");
+    const navContract = readSource("lib/presswall-app-nav-contract.ts");
 
+    // Max modal only from Home button (2.2.7) — not from sidebar Editor
     expect(overview).toContain("openEditorAppWindow");
-    // Sidebar /editor deep links also promote into App Window
-    expect(editorView).toContain("openEditorAppWindow");
-    expect(editorView).toContain('router.replace(buildAdminPath("/"))');
+    expect(editorView).not.toContain("openEditorAppWindow");
+    expect(appNav).not.toContain('href="/editor"');
+    expect(appNav).not.toContain(">Editor<");
+    expect(navContract).not.toContain('label: "Editor"');
     expect(appWindow).toContain("EDITOR_APP_WINDOW_ID");
     expect(appWindow).toContain("openEditorAppWindow");
     expect(appWindow).toContain("presswall-editor-window");

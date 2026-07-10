@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { EditorShellSkeleton } from "@/components/presswall/editor-shell-skeleton";
 import { EditorUnsavedGuard } from "@/components/presswall/editor-unsaved-guard";
 import { EditorWorkspace } from "@/components/presswall/editor-workspace";
@@ -16,71 +16,26 @@ import {
 } from "@/components/ui/empty";
 import { usePresswallEditor } from "@/hooks/use-presswall-editor";
 import { navigateAdminPath } from "@/lib/admin-navigation";
-import { buildAdminPath } from "@/lib/admin-path";
-import {
-  isAppWindowRequest,
-  openEditorAppWindow,
-} from "@/lib/editor-app-window";
+import { isAppWindowRequest } from "@/lib/editor-app-window";
 
+/**
+ * Full editor workspace. Primary entry is Home → “Open editor” (App Window).
+ * `/editor` is also used as App Window `src` and as an in-iframe fallback when
+ * App Window is unavailable — never auto-launched from sidebar (2.2.7).
+ */
 export function EditorView() {
   const editor = usePresswallEditor();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const inAppWindow = useMemo(
     () => isAppWindowRequest(searchParams),
     [searchParams]
   );
-  /**
-   * Sidebar / deep-link hits `/editor` inside the admin iframe. Promote that
-   * navigation into Shopify App Window (same as Home → Open editor). Until
-   * promotion finishes we show a shell; if App Window is unavailable we stay
-   * on the in-iframe editor.
-   */
-  const [iframeFallback, setIframeFallback] = useState(false);
-
-  useEffect(() => {
-    if (inAppWindow) {
-      return;
-    }
-
-    let cancelled = false;
-
-    openEditorAppWindow()
-      .then((opened) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (opened) {
-          // Soft-navigate the host frame to Home so closing the overlay
-          // returns to the overview (root layout keeps <s-app-window> mounted).
-          router.replace(buildAdminPath("/"));
-          return;
-        }
-
-        setIframeFallback(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setIframeFallback(true);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [inAppWindow, router]);
 
   useEffect(() => {
     if (!editor.isLoading && editor.needsOnboarding) {
       navigateAdminPath("/").catch(() => undefined);
     }
   }, [editor.isLoading, editor.needsOnboarding]);
-
-  // Sidebar entry: wait for App Window promotion (or fallback) before painting.
-  if (!(inAppWindow || iframeFallback)) {
-    return <EditorShellSkeleton />;
-  }
 
   if (editor.isLoading || editor.needsOnboarding) {
     return <EditorShellSkeleton />;

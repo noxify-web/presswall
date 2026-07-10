@@ -91,7 +91,7 @@ export async function openEditorAppWindow(): Promise<boolean> {
     | null;
 
   if (!element || typeof element.show !== "function") {
-    // Avoid a navigation loop when the sidebar already landed us on /editor.
+    // In-iframe fallback when App Window is unavailable (still merchant-initiated).
     if (
       typeof window !== "undefined" &&
       window.location.pathname.startsWith("/editor")

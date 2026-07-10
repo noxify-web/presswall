@@ -3,9 +3,11 @@
  * (see shopify.dev/docs/api/app-home/app-bridge-web-components/app-nav).
  * Use native `<a>` children with static app-relative hrefs for Next.js apps.
  * App Bridge preserves embedded context on navigation; avoid window.search in hrefs.
+ *
+ * Editor is intentionally omitted from sidebar nav. Max modal / App Window must
+ * open only after explicit merchant interaction on Home (App Store 2.2.7).
  */
 export interface PresswallNavPaths {
-  editor: string;
   home: string;
 }
 
@@ -17,10 +19,7 @@ export interface PresswallAppNavLinkSpec {
 export function getPresswallAppNavLinks(
   paths: PresswallNavPaths
 ): PresswallAppNavLinkSpec[] {
-  return [
-    { href: paths.home, label: "Home" },
-    { href: paths.editor, label: "Editor" },
-  ];
+  return [{ href: paths.home, label: "Home" }];
 }
 
 export function assertPresswallAppNavContract(
@@ -42,8 +41,8 @@ export function assertPresswallAppNavContract(
   }
 
   const links = [...host.querySelectorAll("s-app-nav a[href]")];
-  if (links.length !== 2) {
-    throw new Error("Expected exactly Home + Editor sidebar links");
+  if (links.length !== 1) {
+    throw new Error("Expected exactly one Home sidebar link");
   }
 
   const homeLink = links.find((link) => link.textContent?.trim() === "Home");
@@ -59,17 +58,6 @@ export function assertPresswallAppNavContract(
     throw new Error(
       "Home must be a visible sidebar item — do not set rel=home"
     );
-  }
-
-  const editorLink = links.find(
-    (link) => link.textContent?.trim() === "Editor"
-  );
-  if (!editorLink) {
-    throw new Error("Expected visible Editor sub-page link");
-  }
-
-  if (editorLink.getAttribute("href") !== paths.editor) {
-    throw new Error(`Editor href mismatch: ${editorLink.getAttribute("href")}`);
   }
 
   for (const link of links) {

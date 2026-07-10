@@ -5,15 +5,13 @@ import {
 } from "@/lib/presswall-app-nav-contract";
 
 describe("presswall app nav contract", () => {
-  test("declares Home and Editor as visible sidebar sub-pages", () => {
+  test("declares Home only as the visible sidebar sub-page", () => {
     const paths = {
       home: "/",
-      editor: "/editor",
     };
 
     expect(getPresswallAppNavLinks(paths)).toEqual([
       { href: paths.home, label: "Home" },
-      { href: paths.editor, label: "Editor" },
     ]);
   });
 
@@ -23,7 +21,6 @@ describe("presswall app nav contract", () => {
       <div aria-hidden="true" class="presswall-app-nav-host">
         <s-app-nav>
           <a href="/">Home</a>
-          <a href="/editor">Editor</a>
         </s-app-nav>
       </div>
     `;
@@ -32,7 +29,6 @@ describe("presswall app nav contract", () => {
       expect(() =>
         assertPresswallAppNavContract(document.body, {
           home: "/",
-          editor: "/editor",
         })
       ).not.toThrow();
     } finally {

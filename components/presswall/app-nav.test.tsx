@@ -37,7 +37,6 @@ describe("PresswallAppNav", () => {
 
     assertPresswallAppNavContract(view.container, {
       home: "/",
-      editor: "/editor",
     });
 
     const host = view.container.querySelector(

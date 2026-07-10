@@ -2,10 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { getPresswallNavPaths } from "@/lib/presswall-nav-paths";
 
 describe("getPresswallNavPaths", () => {
-  test("returns stable app-relative paths for App Bridge sidebar links", () => {
+  test("returns stable app-relative path for Home sidebar only", () => {
     expect(getPresswallNavPaths()).toEqual({
       home: "/",
-      editor: "/editor",
     });
   });
 });
