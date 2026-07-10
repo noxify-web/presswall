@@ -75,7 +75,6 @@ export function OnboardingTemplateStep({
                 customLogos={editor.customLogos}
                 matchedTemplateId={editor.matchedTemplateId}
                 onApply={editor.applyTemplate}
-                onCustomize={() => setActiveTab("custom")}
                 selections={editor.selections}
               />
             </TabsContent>

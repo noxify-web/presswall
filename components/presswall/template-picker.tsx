@@ -21,7 +21,6 @@ interface TemplatePickerProps {
   customLogos: PresswallEditor["customLogos"];
   matchedTemplateId: PresswallTemplateId | null;
   onApply: (templateId: PresswallTemplateId) => void;
-  onCustomize?: () => void;
   selections: PresswallEditor["selections"];
 }
 
@@ -62,7 +61,6 @@ function TemplateRow({
   isSelected,
   layoutLabel,
   onApply,
-  onCustomize,
   previewConfig,
   previewSelections,
   previewTheme,
@@ -74,7 +72,6 @@ function TemplateRow({
   isSelected: boolean;
   layoutLabel: string;
   onApply: () => void;
-  onCustomize?: () => void;
   previewConfig: ReturnType<typeof applyPresswallTemplate>;
   previewSelections: PresswallEditor["selections"];
   previewTheme: ReturnType<typeof getTemplatePreviewTheme>;
@@ -123,9 +120,8 @@ function TemplateRow({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex justify-end">
         <Button
-          className="flex-1"
           onClick={onApply}
           size="sm"
           type="button"
@@ -133,16 +129,6 @@ function TemplateRow({
         >
           {isSelected ? "Selected" : "Apply"}
         </Button>
-        {onCustomize ? (
-          <Button
-            onClick={onCustomize}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            Customize
-          </Button>
-        ) : null}
       </div>
     </div>
   );
@@ -153,7 +139,6 @@ export function TemplatePicker({
   customLogos,
   matchedTemplateId,
   onApply,
-  onCustomize,
   selections,
 }: TemplatePickerProps) {
   return (
@@ -172,7 +157,6 @@ export function TemplatePicker({
               key={template.id}
               layoutLabel={templateLayoutLabel(template.config.layout)}
               onApply={() => onApply(template.id)}
-              onCustomize={onCustomize}
               previewConfig={applyPresswallTemplate(template.id)}
               previewSelections={selections}
               previewTheme={getTemplatePreviewTheme(template.id)}
