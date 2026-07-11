@@ -67,7 +67,6 @@ describe("bar grid columns", () => {
 
   test("uses row gap and a half-gap column breathing room for space-between bars", () => {
     expect(getLogosBarConstrainedStyle(2, 24, "space-between")).toEqual({
-      gap: "24px",
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
       width: "100%",
       columnGap: "12px",
@@ -76,5 +75,17 @@ describe("bar grid columns", () => {
     expect(getLogosBarConstrainedStyle(2, 32, "space-between").columnGap).toBe(
       "16px"
     );
+  });
+
+  test("does not mix gap shorthand with columnGap/rowGap", () => {
+    const spaced = getLogosBarConstrainedStyle(4, 32, "space-between");
+    const gapped = getLogosBarConstrainedStyle(4, 32, "gap");
+
+    expect(spaced).not.toHaveProperty("gap");
+    expect(gapped).not.toHaveProperty("gap");
+    expect(gapped).toMatchObject({
+      columnGap: "32px",
+      rowGap: "32px",
+    });
   });
 });

@@ -21,7 +21,7 @@ const CLASSIC_BAR_TEMPLATE_BASE = {
   logoAlignment: "center",
   paddingY: 40,
   paddingX: 24,
-  contentMaxWidth: 840,
+  contentMaxWidth: 900,
   logoHeight: 28,
   headingFontSize: 12,
   logoSpacing: "space-between",

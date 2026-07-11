@@ -70,8 +70,8 @@ export function EditorView() {
     <div className="flex h-svh flex-col overflow-hidden bg-background">
       {/*
         Title only — App Window action slots only accept Shopify `s-button`
-        chrome (Polaris), not our custom Button. Save / Discard live in the
-        live-preview toolbar via components/ui/button.
+        chrome (Polaris), not our custom Button. Save / Discard use the
+        in-editor floating chip (and App Bridge ui-save-bar when available).
       */}
       <s-page heading="Edit press logos" />
 

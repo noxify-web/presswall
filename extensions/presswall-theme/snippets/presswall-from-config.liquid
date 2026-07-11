@@ -11,11 +11,11 @@
   {%- assign pad_y = config.paddingY | default: 16 -%}
   {%- assign pad_x = config.paddingX | default: 16 -%}
   {%- assign logo_h = config.logoHeight | default: 28 -%}
-  {%- assign max_w = config.contentMaxWidth | default: 840 -%}
+  {%- assign max_w = config.contentMaxWidth | default: 900 -%}
   {%- assign gap = config.gap | default: 12 -%}
   {%- assign h_size = config.headingFontSize | default: 12 -%}
   {%- assign h_space = config.headingSpacing | default: 40 -%}
-  {%- assign lpr_d = config.logosPerRowDesktop | default: config.logosPerRow | default: 4 -%}
+  {%- assign lpr_d = config.logosPerRowDesktop | default: config.logosPerRow | default: 6 -%}
   {%- assign lpr_m = config.logosPerRowMobile | default: 2 -%}
   {%- comment -%} Equal columns: never more than the logo count so 2 logos still span full width. {%- endcomment -%}
   {%- assign pub_count = config.publishers.size -%}

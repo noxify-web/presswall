@@ -54,8 +54,10 @@ export function getLogosRowGridStyle(
   logosPerRow: number,
   gap: number
 ): React.CSSProperties {
+  // Use longhand only — React warns if `gap` is mixed with columnGap/rowGap.
   return {
-    gap: `${gap}px`,
+    columnGap: `${gap}px`,
+    rowGap: `${gap}px`,
     gridTemplateColumns: `repeat(${logosPerRow}, minmax(0, 1fr))`,
     width: "100%",
   };
@@ -122,17 +124,16 @@ export function getLogosBarConstrainedStyle(
   gap: number,
   logoSpacing: PresswallConfig["logoSpacing"]
 ): React.CSSProperties {
-  const style = getLogosRowGridStyle(logosPerRow, gap);
-
   if (logoSpacing === "space-between") {
     return {
-      ...style,
       columnGap: `${getMobileSpaceBetweenColumnGap(gap)}px`,
       rowGap: `${gap}px`,
+      gridTemplateColumns: `repeat(${logosPerRow}, minmax(0, 1fr))`,
+      width: "100%",
     };
   }
 
-  return style;
+  return getLogosRowGridStyle(logosPerRow, gap);
 }
 
 export function getMarqueeAlignmentClassName(

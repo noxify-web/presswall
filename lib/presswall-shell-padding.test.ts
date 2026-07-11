@@ -8,7 +8,8 @@ import {
 
 describe("formatContentMaxWidth", () => {
   test("formats pixel widths for CSS max-width", () => {
-    expect(formatContentMaxWidth(840)).toBe("840px");
+    expect(formatContentMaxWidth(900)).toBe("900px");
+    expect(DEFAULT_PRESSWALL_CONTENT_MAX_WIDTH).toBe(900);
     expect(formatContentMaxWidth()).toBe(
       `${DEFAULT_PRESSWALL_CONTENT_MAX_WIDTH}px`
     );

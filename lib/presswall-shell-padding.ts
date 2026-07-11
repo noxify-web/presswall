@@ -4,7 +4,7 @@ import type { PresswallViewport } from "@/lib/presswall-layout-style";
 export const DESKTOP_SHELL_PADDING_X_BOOST = 20;
 
 /** Default max width of the heading + logo row in pixels. */
-export const DEFAULT_PRESSWALL_CONTENT_MAX_WIDTH = 840;
+export const DEFAULT_PRESSWALL_CONTENT_MAX_WIDTH = 900;
 
 export function formatContentMaxWidth(
   contentMaxWidth = DEFAULT_PRESSWALL_CONTENT_MAX_WIDTH

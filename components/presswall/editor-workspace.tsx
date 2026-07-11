@@ -1,14 +1,13 @@
 "use client";
 
-import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { useState } from "react";
 import { DeviceToggle } from "@/components/presswall/device-toggle";
+import { EditorFloatingSaveBar } from "@/components/presswall/editor-floating-save-bar";
 import { OnboardingPreviewCanvas } from "@/components/presswall/onboarding-preview-canvas";
 import { OnboardingTemplateCustomControls } from "@/components/presswall/onboarding-template-custom-controls";
 import { OutletLibraryPanel } from "@/components/presswall/outlet-library-panel";
 import { ReplaceLogoDialog } from "@/components/presswall/replace-logo-dialog";
 import { TemplatePicker } from "@/components/presswall/template-picker";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
@@ -30,8 +29,6 @@ export function EditorWorkspace({
   const [activeTab, setActiveTab] = useState<EditorTab>("custom");
   const [deviceMode, setDeviceMode] = useState<PresswallViewport>("desktop");
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
-
-  const saveDisabled = !editor.isDirty || editor.isLoading || editor.isSaving;
 
   const replaceCurrentLabel = (() => {
     if (replaceIndex === null) {
@@ -56,8 +53,8 @@ export function EditorWorkspace({
       }
     >
       <div className="flex min-h-0 flex-1 gap-4">
-        {/* Live preview — primary canvas + save / logo style */}
-        <div className="flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+        {/* Live preview — primary canvas; Save/Discard float centered here */}
+        <div className="relative flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-2">
               <p className="font-medium text-sm">Live preview</p>
@@ -68,33 +65,7 @@ export function EditorWorkspace({
               ) : null}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />
-              <Button
-                disabled={saveDisabled}
-                onClick={editor.discard}
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                Discard
-              </Button>
-              <Button
-                disabled={saveDisabled}
-                onClick={() => {
-                  editor.save().catch(() => undefined);
-                }}
-                size="sm"
-                type="button"
-              >
-                {editor.isSaving ? (
-                  <IconLoader2 className="size-4 animate-spin" stroke={2} />
-                ) : (
-                  <IconDeviceFloppy stroke={2} />
-                )}
-                {editor.isSaving ? "Saving..." : "Save"}
-              </Button>
-            </div>
+            <DeviceToggle mode={deviceMode} onChange={setDeviceMode} />
           </div>
 
           <div className="min-h-0 flex-1">
@@ -110,6 +81,13 @@ export function EditorWorkspace({
               selections={editor.selections}
             />
           </div>
+
+          <EditorFloatingSaveBar
+            isDirty={editor.isDirty}
+            isSaving={editor.isSaving}
+            onDiscard={editor.discard}
+            onSave={editor.save}
+          />
         </div>
 
         {/* Side panel — style / outlets / templates */}

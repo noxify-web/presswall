@@ -81,7 +81,7 @@
   --presswall-logo-height: 28px;
   /* 12× height so long wordmarks keep equal strip height (see admin ratio). */
   --presswall-logo-max-width: calc(var(--presswall-logo-height) * 12);
-  --presswall-content-max-width: 840px;
+  --presswall-content-max-width: 900px;
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;

@@ -126,7 +126,7 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
     const textColor = sanitizeCssColor(config.textColor, "#111111");
     const paddingY = sanitizeCssSize(config.paddingY, 16);
     const paddingX = sanitizeCssSize(config.paddingX, 16);
-    const contentMaxWidth = sanitizeCssSize(config.contentMaxWidth, 840);
+    const contentMaxWidth = sanitizeCssSize(config.contentMaxWidth, 900);
     const gap = sanitizeCssSize(config.gap, 12);
     const headingFontSize = sanitizeCssSize(config.headingFontSize, 12);
     const headingSpacing = sanitizeCssSize(config.headingSpacing, 40);
@@ -135,7 +135,7 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
       : 0;
     const logosPerRowDesktopConfig = clampInt(
       config.logosPerRowDesktop ?? config.logosPerRow,
-      4,
+      6,
       2,
       8
     );
