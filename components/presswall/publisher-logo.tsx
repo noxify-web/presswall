@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { isBundledPublisherId } from "@/lib/bundled-publishers";
 import { customLogoSvgDataUrl } from "@/lib/custom-logo-render";
+import {
+  LOGO_IMG_HEIGHT_HINT,
+  LOGO_IMG_WIDTH_HINT,
+} from "@/lib/presswall-logo-style";
 import { bundledLogoPath } from "@/lib/publisher-logo-path";
 import { cn } from "@/lib/utils";
 
@@ -60,9 +64,9 @@ export function PublisherLogo({
           <img
             alt=""
             className="presswall-logo-img"
-            height={28}
+            height={LOGO_IMG_HEIGHT_HINT}
             src={dataUrl}
-            width={336}
+            width={LOGO_IMG_WIDTH_HINT}
           />
         ) : (
           <span className="font-semibold text-[0.625rem] text-muted-foreground uppercase">
@@ -96,10 +100,10 @@ export function PublisherLogo({
       <img
         alt={`${name} logo`}
         className="presswall-logo-img"
-        height={28}
+        height={LOGO_IMG_HEIGHT_HINT}
         onError={() => setFailed(true)}
         src={logoUrl}
-        width={336}
+        width={LOGO_IMG_WIDTH_HINT}
       />
     </LogoSlot>
   );

@@ -33,6 +33,23 @@ export function getLogosPerRow(
     : config.logosPerRowDesktop;
 }
 
+/**
+ * How many equal columns the bar grid should use.
+ * Caps at logosPerRow so extras wrap; when there are fewer logos than the
+ * configured row size, columns shrink so 2 logos still span the full width.
+ */
+export function getBarColumnCount(
+  itemCount: number,
+  logosPerRow: number
+): number {
+  const perRow = Math.max(1, Math.floor(logosPerRow));
+  if (itemCount <= 0) {
+    return perRow;
+  }
+
+  return Math.min(itemCount, perRow);
+}
+
 export function getLogosRowGridStyle(
   logosPerRow: number,
   gap: number
@@ -79,10 +96,14 @@ export function getLogosBarStyle(
   return { gap: `${gap}px` };
 }
 
+/**
+ * Bar layouts always use an equal-column grid so long wordmarks are clipped
+ * to their cell instead of overflowing onto neighbors (desktop + mobile).
+ */
 export function shouldConstrainBarRows(
-  viewport: PresswallViewport = "desktop"
+  _viewport: PresswallViewport = "desktop"
 ): boolean {
-  return viewport === "mobile";
+  return true;
 }
 
 export function getLogosBarConstrainedClassName(

@@ -128,81 +128,48 @@
   text-align: right;
 }
 
+/*
+ * Bar is always an equal-column grid (desktop + mobile). Long wordmarks scale
+ * down inside their cell instead of overflowing onto neighbors.
+ */
 .presswall-bar {
-  display: flex;
-  flex-flow: row wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--lpr-d, 4), minmax(0, 1fr));
   gap: var(--presswall-gap);
   align-items: center;
   width: 100%;
 }
 
 .presswall-bar.presswall-align-left {
-  justify-content: flex-start;
+  justify-items: start;
 }
 
 .presswall-bar.presswall-align-center {
-  justify-content: center;
+  justify-items: center;
 }
 
 .presswall-bar.presswall-align-right {
-  justify-content: flex-end;
+  justify-items: end;
 }
 
 .presswall-bar.presswall-spacing-space-between {
-  gap: 0;
-  justify-content: space-between;
+  row-gap: var(--presswall-gap);
+  /* Half-gap between columns so wide marks don't kiss; rows keep full gap */
+  column-gap: max(12px, calc(var(--presswall-gap) * 0.5));
 }
 
 @media (max-width: 639px) {
   .presswall-bar {
-    display: grid;
     grid-template-columns: repeat(var(--lpr-m, 2), minmax(0, 1fr));
-    gap: var(--presswall-gap);
-    align-items: center;
-    justify-content: initial;
   }
+}
 
-  .presswall-bar.presswall-align-left {
-    justify-items: start;
-  }
-
-  .presswall-bar.presswall-align-center {
-    justify-items: center;
-  }
-
-  .presswall-bar.presswall-align-right {
-    justify-items: end;
-  }
-
-  .presswall-bar.presswall-spacing-space-between {
-    row-gap: var(--presswall-gap);
-    /* Half-gap between columns so wide marks don't kiss; rows keep full gap */
-    column-gap: max(12px, calc(var(--presswall-gap) * 0.5));
-    justify-content: initial;
-  }
-
-  /* Cell + logo must respect the grid track so wide wordmarks don't overflow */
-  .pw-gi {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .presswall-logo {
-    flex-shrink: 1;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .presswall-logo svg,
-  .presswall-logo-img {
-    width: auto;
-    max-width: 100%;
-    height: auto;
-    max-height: var(--presswall-logo-height);
-    object-fit: contain;
-  }
+/* Cell + logo must respect the grid track so wide wordmarks don't overflow */
+.presswall-bar > .pw-gi,
+.presswall-bar > .presswall-logo {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .pw-gi {
@@ -213,24 +180,37 @@
 
 .presswall-logo {
   display: inline-flex;
-  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: auto;
+  max-width: var(--presswall-logo-max-width);
   height: var(--presswall-logo-height);
   max-height: var(--presswall-logo-height);
+}
+
+.presswall-bar .presswall-logo {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .presswall-logo svg,
 .presswall-logo-img {
   display: block;
+  /* Use the real asset ratio — not the HTML width/height CLS hint. */
+  aspect-ratio: auto;
   width: auto;
-  max-width: var(--presswall-logo-max-width);
-  /* Equal height across outlets; width varies by wordmark aspect */
-  height: 100%;
+  height: auto;
+  max-width: min(100%, var(--presswall-logo-max-width));
   max-height: var(--presswall-logo-height);
   object-fit: contain;
   object-position: center;
+}
+
+.presswall-bar .presswall-logo svg,
+.presswall-bar .presswall-logo-img {
+  max-width: 100%;
+  max-height: var(--presswall-logo-height);
 }
 
 .pw-mq-row {
@@ -304,8 +284,10 @@
   will-change: transform;
 }
 
+/* Marquee logos keep full natural width while the track scrolls. */
 .pw-mq-track .presswall-logo {
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 @keyframes presswall-scroll {

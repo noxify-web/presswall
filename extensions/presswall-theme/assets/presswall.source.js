@@ -130,13 +130,25 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
     const gap = sanitizeCssSize(config.gap, 12);
     const headingFontSize = sanitizeCssSize(config.headingFontSize, 12);
     const headingSpacing = sanitizeCssSize(config.headingSpacing, 40);
-    const logosPerRowDesktop = clampInt(
+    const publisherCount = Array.isArray(config.publishers)
+      ? config.publishers.length
+      : 0;
+    const logosPerRowDesktopConfig = clampInt(
       config.logosPerRowDesktop ?? config.logosPerRow,
       4,
       2,
       8
     );
-    const logosPerRowMobile = clampInt(config.logosPerRowMobile, 2, 1, 4);
+    const logosPerRowMobileConfig = clampInt(config.logosPerRowMobile, 2, 1, 4);
+    // Equal columns: never more than the logo count so 2 logos still span full width.
+    const logosPerRowDesktop =
+      publisherCount > 0
+        ? Math.min(publisherCount, logosPerRowDesktopConfig)
+        : logosPerRowDesktopConfig;
+    const logosPerRowMobile =
+      publisherCount > 0
+        ? Math.min(publisherCount, logosPerRowMobileConfig)
+        : logosPerRowMobileConfig;
     const marqueeSpeed = sanitizeCssSize(config.marqueeSpeed, 30);
     const headingAlignment = sanitizeAlignment(
       config.headingAlignment ?? config.alignment

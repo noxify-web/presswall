@@ -23,7 +23,7 @@ export function EditablePreviewLogo({
   return (
     <div
       className={cn(
-        "nodrag nopan group/logo pointer-events-auto relative inline-flex max-w-full items-center justify-center",
+        "nodrag nopan group/logo pointer-events-auto relative inline-flex min-w-0 max-w-full shrink items-center justify-center",
         className
       )}
     >

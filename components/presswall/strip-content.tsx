@@ -11,12 +11,10 @@ import {
   getHeadingStyle,
 } from "@/lib/presswall-heading-style";
 import {
-  getLogosBarClassName,
+  getBarColumnCount,
   getLogosBarConstrainedClassName,
   getLogosBarConstrainedStyle,
-  getLogosBarStyle,
   type PresswallViewport,
-  shouldConstrainBarRows,
 } from "@/lib/presswall-layout-style";
 import {
   getMarqueeRepeatCount,
@@ -96,7 +94,6 @@ function StaticHeading({
 }
 
 function LogoBar({
-  constrainRows,
   gap,
   items,
   logoAlignment,
@@ -105,7 +102,6 @@ function LogoBar({
   renderLogo,
   selectionIndexOffset = 0,
 }: {
-  constrainRows: boolean;
   gap: number;
   items: StorefrontPublisher[];
   logoAlignment: PresswallStripConfig["logoAlignment"];
@@ -117,31 +113,18 @@ function LogoBar({
   ) => React.ReactNode;
   selectionIndexOffset?: number;
 }) {
-  if (constrainRows) {
-    return (
-      <div
-        className={getLogosBarConstrainedClassName(logoAlignment)}
-        style={getLogosBarConstrainedStyle(logosPerRow, gap, logoSpacing)}
-      >
-        {items.map((item, index) => (
-          <div
-            className="flex w-full min-w-0 max-w-full items-center justify-center"
-            key={item.id}
-          >
-            {renderLogo(item, selectionIndexOffset + index)}
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const columns = getBarColumnCount(items.length, logosPerRow);
 
   return (
     <div
-      className={getLogosBarClassName(logoAlignment, logoSpacing)}
-      style={getLogosBarStyle(gap, logoSpacing)}
+      className={getLogosBarConstrainedClassName(logoAlignment)}
+      style={getLogosBarConstrainedStyle(columns, gap, logoSpacing)}
     >
       {items.map((item, index) => (
-        <div className="flex min-w-0 items-center" key={item.id}>
+        <div
+          className="flex w-full min-w-0 max-w-full items-center justify-center"
+          key={item.id}
+        >
           {renderLogo(item, selectionIndexOffset + index)}
         </div>
       ))}
@@ -159,7 +142,8 @@ export const PresswallStrip = memo(function PresswallStrip({
   renderLogo,
   staticLayoutItemLimit,
   textColor,
-  viewport = "desktop",
+  // logosPerRow is already resolved for the active viewport by the caller
+  viewport: _viewport = "desktop",
 }: PresswallStripProps) {
   if (items.length === 0) {
     return <>{emptyState}</>;
@@ -225,7 +209,6 @@ export const PresswallStrip = memo(function PresswallStrip({
         textColor={textColor}
       />
       <LogoBar
-        constrainRows={shouldConstrainBarRows(viewport)}
         gap={config.gap}
         items={displayItems}
         logoAlignment={config.logoAlignment}

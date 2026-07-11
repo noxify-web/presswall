@@ -16,6 +16,16 @@ interface LogoImageStyleOptions {
 export const STOREFRONT_LOGO_MAX_WIDTH_RATIO = 12;
 
 /**
+ * HTML width/height hints only (CLS). Must not encode the max-width ratio —
+ * browsers map img width/height attributes to aspect-ratio and that forced
+ * every logo (even short ones like Forbes) into a 12:1 layout box, which
+ * made bar/template previews overflow and stack. 4:1 matches the storefront
+ * liquid hint; CSS uses the real asset ratio via `aspect-ratio: auto`.
+ */
+export const LOGO_IMG_HEIGHT_HINT = 28;
+export const LOGO_IMG_WIDTH_HINT = LOGO_IMG_HEIGHT_HINT * 4;
+
+/**
  * Cap logo width relative to rendered height — same rule as theme CSS
  * (`max-width: calc(var(--presswall-logo-height) * N)`).
  */

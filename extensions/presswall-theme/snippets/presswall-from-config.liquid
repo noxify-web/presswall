@@ -17,6 +17,14 @@
   {%- assign h_space = config.headingSpacing | default: 40 -%}
   {%- assign lpr_d = config.logosPerRowDesktop | default: config.logosPerRow | default: 4 -%}
   {%- assign lpr_m = config.logosPerRowMobile | default: 2 -%}
+  {%- comment -%} Equal columns: never more than the logo count so 2 logos still span full width. {%- endcomment -%}
+  {%- assign pub_count = config.publishers.size -%}
+  {%- if pub_count > 0 and pub_count < lpr_d -%}
+    {%- assign lpr_d = pub_count -%}
+  {%- endif -%}
+  {%- if pub_count > 0 and pub_count < lpr_m -%}
+    {%- assign lpr_m = pub_count -%}
+  {%- endif -%}
   {%- assign mq_speed = config.marqueeSpeed | default: 30 -%}
   {%- assign h_align = config.headingAlignment | default: config.alignment | default: 'center' -%}
   {%- if h_align != 'left' and h_align != 'right' -%}

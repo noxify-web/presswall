@@ -277,10 +277,12 @@
   background-image: radial-gradient(oklch(0.3 0 0) 1px, transparent 1px);
 }
 
-/* Match storefront: every logo fills the shared slot height; width varies. */
+/*
+ * Shared strip height; width follows the real wordmark (capped).
+ * Prefer natural asset aspect ratio (not the HTML width/height CLS hint).
+ */
 .presswall-logo-slot {
   display: inline-flex;
-  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: auto;
@@ -292,21 +294,21 @@
 .presswall-logo-slot > img,
 .presswall-logo-slot .presswall-logo-img {
   display: block;
+  /* Override img width/height attribute aspect-ratio mapping. */
+  aspect-ratio: auto;
   width: auto;
-  max-width: var(--logo-max-width, 21rem);
-  /* Force equal visual height; object-fit keeps aspect without crop */
-  height: 100%;
+  height: auto;
+  max-width: min(100%, var(--logo-max-width, 21rem));
   max-height: 100%;
   object-fit: contain;
   object-position: center;
 }
 
 /*
- * Mobile bar uses a 2-col grid. Wide wordmarks must shrink to the cell —
- * otherwise max-width (12× height) overflows and logos overlap (CNBC/Economist).
+ * Bar layout is always an equal-column grid. Each logo must fit its cell —
+ * never overflow into neighbors (Forbes + Economist + long wordmarks).
  */
 .presswall-logo-row.grid .presswall-logo-slot {
-  flex-shrink: 1;
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -315,10 +317,26 @@
 .presswall-logo-row.grid .presswall-logo-slot > img,
 .presswall-logo-row.grid .presswall-logo-slot .presswall-logo-img {
   width: auto;
-  max-width: 100%;
   height: auto;
+  max-width: 100%;
   max-height: 100%;
+  aspect-ratio: auto;
   object-fit: contain;
+}
+
+/* Marquee track items keep full natural width (they scroll, not squeeze). */
+.pw-mq-item .presswall-logo-slot {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: var(--logo-max-width, 21rem);
+}
+
+.pw-mq-item .presswall-logo-slot > img,
+.pw-mq-item .presswall-logo-slot .presswall-logo-img {
+  height: 100%;
+  max-height: 100%;
+  width: auto;
+  max-width: var(--logo-max-width, 21rem);
 }
 
 .presswall-svg-logo {
