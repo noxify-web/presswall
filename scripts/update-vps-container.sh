@@ -9,6 +9,21 @@ KEY_PATH="${EC2_KEY_PATH:-$HOME/.ssh/presswall-debian.pem}"
 PROD_URL="https://presswall.noxify.io"
 SCOPES="write_app_proxy,read_themes"
 
+# Crisp Website ID is public client config but must be present at *build* time
+# (Next inlines NEXT_PUBLIC_*). Prefer explicit env; else read from .env.local.
+if [[ -z "${NEXT_PUBLIC_CRISP_WEBSITE_ID:-}" && -f .env.local ]]; then
+  NEXT_PUBLIC_CRISP_WEBSITE_ID="$(
+    grep -E '^[[:space:]]*NEXT_PUBLIC_CRISP_WEBSITE_ID=' .env.local \
+      | tail -n1 \
+      | cut -d= -f2- \
+      | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
+  )"
+  export NEXT_PUBLIC_CRISP_WEBSITE_ID
+fi
+if [[ -z "${NEXT_PUBLIC_CRISP_WEBSITE_ID:-}" ]]; then
+  echo "warning: NEXT_PUBLIC_CRISP_WEBSITE_ID unset — prod admin chat will be disabled" >&2
+fi
+
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO}:latest"
 
@@ -16,6 +31,7 @@ aws ecr get-login-password --region "$REGION" | docker login --username AWS --pa
 docker build \
   --build-arg SHOPIFY_APP_URL="${PROD_URL}" \
   --build-arg SCOPES="${SCOPES}" \
+  --build-arg NEXT_PUBLIC_CRISP_WEBSITE_ID="${NEXT_PUBLIC_CRISP_WEBSITE_ID:-}" \
   -t "$IMAGE_URI" .
 
 docker push "$IMAGE_URI"

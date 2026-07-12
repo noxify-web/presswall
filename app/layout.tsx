@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 
 import "./globals.css";
+import { CrispChat } from "@/components/crisp-chat";
 import { PresswallAppNav } from "@/components/presswall/app-nav";
 import { EditorAppWindowHost } from "@/components/presswall/editor-app-window-host";
 import { SessionBootstrap } from "@/components/session-bootstrap";
@@ -60,6 +61,7 @@ export default function RootLayout({
         </Suspense>
         <EditorAppWindowHost />
         <SessionBootstrap />
+        <CrispChat />
         <TooltipProvider delay={400}>
           {children}
           <Toaster richColors />

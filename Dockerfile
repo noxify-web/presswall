@@ -9,10 +9,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG SHOPIFY_APP_URL=https://presswall.noxify.io
 ARG SCOPES=write_app_proxy,read_themes
+# Public Crisp Website ID is inlined into the client bundle at build time.
+ARG NEXT_PUBLIC_CRISP_WEBSITE_ID=
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PHASE=phase-production-build
 ENV SHOPIFY_APP_URL=$SHOPIFY_APP_URL
 ENV SCOPES=$SCOPES
+ENV NEXT_PUBLIC_CRISP_WEBSITE_ID=$NEXT_PUBLIC_CRISP_WEBSITE_ID
 RUN bun run build
 
 FROM oven/bun:1.3.14-slim AS runner
