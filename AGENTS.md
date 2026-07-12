@@ -8,79 +8,71 @@ Shopify embedded app (Next.js App Router) for merchant “as seen on” press lo
 
 ## Protect live merchants (hard rules)
 
-> **Agents: do not re-research this.** Always-on rule: `.grok/rules/shopify-dev-prod-urls.md`. Full procedure skill: `presswall-shopify-urls` (`.grok/skills/presswall-shopify-urls/`). Scripts: `bun run shopify:dev-clean` + `bun run shopify:restore-urls` + `bun run shopify:deploy:prod`.
+> **Agents: do not re-research this.** Always-on rule: `.grok/rules/shopify-dev-prod-urls.md`. Full procedure skill: `presswall-shopify-urls`.
 
-**One Partner app.** Presswall is a single Shopify app. Local development has **two** ways of leaving the product on a dead tunnel — both matter:
+**One Partner app.** Presswall is a single Shopify app. Two independent ways to break “open app” with a dead tunnel:
 
-1. **Released app config** — `shopify app dev` can rewrite Partner Dashboard Application URL / redirects / app proxy to the current tunnel (`*.trycloudflare.com`, ngrok, etc.) when `automatically_update_urls_on_dev = true`. That affects **all installs** until you re-release prod config.
-2. **Store-level dev preview** — `shopify app dev` also pins a **dev preview on the development store**. That store keeps using the tunnel **even after** a successful `shopify app deploy -c prod`, until you clear it. Shopify’s fix: `shopify app dev clean` (or uninstall/reinstall the app on that store).
+1. **Partner Application URL** rewritten to tunnel → **all installs** break when the tunnel dies.
+2. **Store dev preview** on the development store → that store keeps the tunnel until `shopify app dev clean`.
 
-Agents must treat both as production-affecting. A “hard refresh” does **not** clear either.
+### Repo enforcement (do not weaken)
 
-| Mode | Config / action | App host | Who is affected |
-|------|-----------------|----------|-----------------|
-| Developing | `shopify.app.toml` + `shopify app dev` | Tunnel (ephemeral) | Dev store always; all merchants if Partner URLs were rewritten |
-| Not developing (safe resting state) | Active version from `shopify.app.prod.toml` + no store dev preview | `https://presswall.noxify.io` only | Merchants + dev store |
+| Guard | Mechanism |
+|-------|-----------|
+| Merchants never get tunnel URLs during local dev | `shopify.app.toml` has **`automatically_update_urls_on_dev = false`** (must stay false) |
+| Dev store not left on dead tunnel after Ctrl+C | **`bun run dev:shopify`** → `scripts/shopify-app-dev.sh` always runs `shopify app dev clean` on exit |
+| Emergency / bare CLI recovery | `bun run shopify:end-dev` (= clean + restore-urls) |
 
-### End-of-dev checklist (required when you stop developing)
+| Mode | What runs | Who hits the tunnel |
+|------|-----------|---------------------|
+| Developing via `bun run dev:shopify` | Local + tunnel + **store preview only** | **Dev store only** (merchants stay on prod) |
+| Not developing (safe rest) | Released `shopify.app.prod.toml`, no store preview | Nobody — all use `https://presswall.noxify.io` |
 
-Run both (order does not matter much; both are needed after a full `shopify app dev` session):
+### How to develop (only supported path)
 
 ```bash
-# 1) Clear store-level tunnel override (dev store uses released version again)
-bun run shopify:dev-clean
-# same as: shopify app dev clean -c prod -s noxify-dvgwvtrt.myshopify.com
-
-# 2) Re-release Partner app URLs / config to production host
-bun run shopify:restore-urls
-# same as: shopify app deploy -c prod --allow-updates --message "Restore production app URLs"
+bun run dev:shopify
+# Ctrl+C when done — wrapper clears store preview automatically
 ```
 
-If you only run (2), the **dev store** can still open the dead tunnel. If you only run (1), Partner URLs may still be tunnel for other installs.
+Do **not** run bare `shopify app dev` (no auto-clean). If you did:
+
+```bash
+bun run shopify:end-dev
+```
 
 ### Mandatory rules
 
-1. **Never leave a session that ran `shopify app dev` without the end-of-dev checklist** (or explicitly tell the user to run it). Hard refresh is not enough.
-2. **Never permanently put production URLs in `shopify.app.toml`.** That breaks local OAuth/tunneling. Keep prod only in `shopify.app.prod.toml`.
-3. **Never deploy / release with the default (dev) config when the intent is production.** Always pass **`-c prod`** (or use the scripts below). Prefer one-shot `-c prod` over permanently switching the CLI default.
-4. **Ship app config / extension to merchants only via prod:**
-
-   ```bash
-   bun run shopify:deploy:prod
-   # or: shopify app deploy -c prod --allow-updates --message "…"
-   ```
-
-5. **VPS container deploy does not fix Shopify app URLs or store dev previews.** `bun run deploy:aws:update` only restarts Docker on EC2.
-6. **Do not “fix” a broken live open by editing `shopify.app.toml` to prod.** Use restore-urls + dev-clean. Leave `shopify.app.toml` as the tunnel/dev file.
+1. **Never set `automatically_update_urls_on_dev = true`.** That is the setting that rewrote Partner URLs and killed all installs.
+2. **Develop only with `bun run dev:shopify`.** The wrapper refuses to start if auto-update is true and cleans the store on exit.
+3. **Never permanently put production URLs in `shopify.app.toml`.** Keep prod only in `shopify.app.prod.toml`.
+4. **Never deploy merchant-facing config without `-c prod`.** Use `bun run shopify:deploy:prod`.
+5. **VPS container deploy does not fix Shopify URLs or store previews.**
+6. **Do not “fix” a broken open by editing `shopify.app.toml` to prod.** Use `bun run shopify:end-dev`.
 
 ### Symptom → fix
 
 | Symptom | Cause | Fix |
 |---------|--------|-----|
-| Dev store open → “Server Not Found” on `*.trycloudflare.com` / ngrok **after** a prod deploy | **Store still has `shopify app dev` preview** | `bun run shopify:dev-clean` (then hard refresh). If still broken: `bun run shopify:restore-urls` too |
-| All stores / Partner Dashboard show tunnel host | Released app config still on tunnel | `bun run shopify:restore-urls` |
-| Live app loads but API/proxy wrong host | App proxy URL still tunnel | `bun run shopify:restore-urls`; confirm `shopify.app.prod.toml` has absolute `https://presswall.noxify.io/api/proxy` |
-| `shopify app dev` OAuth broken | `shopify.app.toml` pointing at prod | Restore tunnel URLs in dev toml; `automatically_update_urls_on_dev = true` |
-
-### What “developing” vs “not developing” means here
-
-- **Developing:** local Next.js + tunnel + `shopify app dev` against the **dev store** is fine. Expect that store to use the tunnel; Partner URLs may also flip.
-- **Not developing (default product state):** Active released version uses `https://presswall.noxify.io`, and **no store should have an active dev preview**. That is the safe resting state.
+| Dev store → “Server Not Found” on trycloudflare / ngrok | Store still has dev preview (or session not cleaned) | `bun run shopify:dev-clean` or `bun run shopify:end-dev` |
+| All stores / Partner Dashboard show tunnel host | Partner URLs rewritten (auto-update was true or bad deploy) | `bun run shopify:restore-urls`; set auto-update back to **false** |
+| Live app loads but proxy wrong host | App proxy URL still tunnel | `bun run shopify:restore-urls` |
+| Local OAuth broken after pointing toml at prod | Dev toml must not be permanent prod | Restore tunnel placeholders in `shopify.app.toml`; keep auto-update **false** |
 
 ## Setup & run (local dev)
 
 - Package manager: **Bun** (`bun install`).
 - Copy `.env.example` → `.env.local` (Shopify API key/secret; optional Turso vars).
 - Push DB schema before first run: `bun run db:push`.
-- **Full dev loop** (tunnel, OAuth, extension): `shopify app dev` or `bun run dev:shopify` — not `bun run dev` alone. `shopify.web.toml` wires Shopify CLI to `bun run dev` / `bun run build` on port 3000.
-- Do **not** hardcode production URLs in the default Shopify config during dev; CLI updates tunnel URLs when `automatically_update_urls_on_dev = true` in `shopify.app.toml`.
-- **When you stop the dev session**, run the **end-of-dev checklist** (`shopify:dev-clean` + `shopify:restore-urls`) so the dev store and merchants are not left on a dead tunnel (see **Protect live merchants** above).
+- **Full dev loop** (tunnel, OAuth, extension): **`bun run dev:shopify` only** — not bare `shopify app dev`, not `bun run dev` alone. Wrapper: `scripts/shopify-app-dev.sh` (auto-update guard + clean on exit). `shopify.web.toml` wires CLI to `bun run dev` on port **3001**.
+- **`automatically_update_urls_on_dev` must stay `false`.** Partner URLs are never rewritten during local dev; only the dev store gets a temporary preview.
+- **Ctrl+C is enough** when using `dev:shopify` (store preview cleaned). If you used bare CLI or `kill -9`: `bun run shopify:end-dev`.
 
 ## Dev vs prod Shopify config
 
 | File | Purpose |
 |------|---------|
-| `shopify.app.toml` | **Local dev only** — tunnel URLs, `automatically_update_urls_on_dev = true` |
+| `shopify.app.toml` | **Local dev only** — tunnel placeholders, **`automatically_update_urls_on_dev = false`** |
 | `shopify.app.prod.toml` | **Production / merchants** — `https://presswall.noxify.io`, absolute app-proxy URL |
 
 **Deploy extension + app config to production (merchants):**
@@ -90,16 +82,15 @@ bun run shopify:deploy:prod
 # or: shopify app deploy -c prod --allow-updates --message "…"
 ```
 
-**After local dev (required — both steps):**
+**After a broken session / “Server Not Found”:**
 
 ```bash
-bun run shopify:dev-clean      # store no longer uses tunnel preview
-bun run shopify:restore-urls   # Partner app URLs = presswall.noxify.io
+bun run shopify:end-dev   # clean store preview + restore Partner URLs to prod
 ```
 
 Prefer `-c prod` on the command line. Avoid permanently switching the CLI default to prod (`shopify app config use prod`) — there is no `shopify.app.default.toml`; the unnamed default is `shopify.app.toml`.
 
-**Never** point `shopify.app.toml` at production permanently — it breaks `shopify app dev` OAuth/tunneling.
+**Never** point `shopify.app.toml` at production permanently — it breaks local OAuth/tunneling.
 
 ## Production hosting (AWS VPS)
 
@@ -224,8 +215,8 @@ Path alias: `@/*` → repo root (`tsconfig.json`).
 | “Embed not detected” despite embed on | Admin API 403 (non-expiring token) or missing `read_themes` | Reload app; check `ensure-offline-session` migration in logs; verify container `SCOPES` |
 | Logos missing in admin preview | Was absolute URLs + DNS/`next/image` issues | Should use relative `/api/publishers/.../logo` in admin (already fixed) |
 | `metafield sync failed (403)` | Bad token or missing scope | Fix scopes + token migration; reinstall if needed |
-| `shopify app dev` OAuth broken | `shopify.app.toml` pointing at prod | Restore tunnel URLs in dev toml; `automatically_update_urls_on_dev = true` |
-| Live open → “Server Not Found” on `*.trycloudflare.com` / ngrok | Store dev preview and/or Partner URLs left on tunnel after `shopify app dev` | `bun run shopify:dev-clean` then `bun run shopify:restore-urls` (see **Protect live merchants**) |
+| Local OAuth broken | `shopify.app.toml` pointing at prod | Restore tunnel placeholders; keep `automatically_update_urls_on_dev = false` |
+| Live open → “Server Not Found” on trycloudflare / ngrok | Store preview and/or Partner URLs on dead tunnel | `bun run shopify:end-dev` (see **Protect live merchants**) |
 | DNS flaky for `presswall.noxify.io` | Propagation / resolver differences | A record → `35.169.154.151`; may need `/etc/hosts` workaround temporarily |
 
 **Useful checks:**

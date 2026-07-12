@@ -18,82 +18,99 @@ Self-contained. Do **not** web-search unless Shopify CLI itself fails with a new
 |------|--------|
 | Production host | `https://presswall.noxify.io` |
 | Dev store | `noxify-dvgwvtrt.myshopify.com` |
-| Dev config | `shopify.app.toml` (tunnel, `automatically_update_urls_on_dev = true`) |
+| Dev config | `shopify.app.toml` — tunnel placeholders, **`automatically_update_urls_on_dev = false`** |
 | Prod config | `shopify.app.prod.toml` (absolute prod URLs + app proxy) |
-| Partner app | Single app (client id in both tomls) — one URL set at a time for released config |
+| Safe dev entry | `bun run dev:shopify` → `scripts/shopify-app-dev.sh` |
+| Partner app | Single app — released URLs must stay prod |
 
-## Two independent problems
+## Hard rules (do not weaken)
 
-| Layer | What `shopify app dev` does | Cleared by |
-|-------|----------------------------|------------|
-| A. Released Partner config | May rewrite Application URL / redirects / app proxy to tunnel | `bun run shopify:restore-urls` (= `shopify app deploy -c prod --allow-updates`) |
-| B. Store dev preview | Pins tunnel on **that store** even after a good prod deploy | `bun run shopify:dev-clean` (= `shopify app dev clean -c prod -s noxify-dvgwvtrt.myshopify.com`) |
+1. **`automatically_update_urls_on_dev` must stay `false` in `shopify.app.toml`.**  
+   When true, `shopify app dev` rewrites Partner Application URL / redirects / app proxy to the tunnel for **every** install. That is how “all merchants die when the tunnel dies.”
+2. **Develop only with `bun run dev:shopify`.** The wrapper:
+   - Aborts if auto-update is true
+   - Always runs `shopify app dev clean` on exit so the **dev store** is not left on a dead tunnel
+3. Ship merchant-facing config only with **`-c prod`** / `bun run shopify:deploy:prod`.
+4. VPS/container deploy does **not** change Partner URLs or store previews.
+
+## What still happens during a good dev session
+
+| Layer | During `bun run dev:shopify` | After clean exit |
+|-------|------------------------------|------------------|
+| Partner / all merchants | Stay on `presswall.noxify.io` (last prod release) | Unchanged |
+| Dev store only | Store **dev preview** → local tunnel | Cleared → prod again |
+
+So you can develop freely; only the **dev store** uses the tunnel while the session is alive. Merchants are not rewritten.
+
+## Two failure modes (if someone skips the wrapper / flips the flag)
+
+| Layer | Cause | Fix |
+|-------|--------|-----|
+| A. Released Partner config | `automatically_update_urls_on_dev = true` or bad deploy without `-c prod` | `bun run shopify:restore-urls` |
+| B. Store dev preview | Session ended without clean (bare `shopify app dev`, kill -9, crash before trap) | `bun run shopify:dev-clean` |
 
 **Hard refresh never fixes A or B.**  
-**Deploy alone never fixes B.**  
-**Dev-clean alone may not fix A if Partner URLs were rewritten.**
+**Deploy alone never fixes B.**
 
 ## Decision tree
 
 ### User opening live app → “Server Not Found” / Zen / trycloudflare / ngrok
 
-1. Run **both**:
-   ```bash
-   bun run shopify:dev-clean
-   bun run shopify:restore-urls
-   ```
-2. Tell user to reopen admin app URL (one hard refresh OK after clean).
-3. If still broken: confirm `curl -sI https://presswall.noxify.io` is 200; then reinstall app on that store only as last resort.
-
-### Ending local development / “don’t affect users”
-
 ```bash
-bun run shopify:dev-clean
-bun run shopify:restore-urls
+bun run shopify:end-dev
+# same as: shopify:dev-clean && shopify:restore-urls
 ```
 
-Do not leave the session without this (or explicitly hand the commands to the user).
-
-### Shipping extension or app config to merchants
-
-```bash
-bun run shopify:deploy:prod
-# shopify app deploy -c prod --allow-updates --message "…"
-```
-
-- Always **`-c prod`**. Never deploy merchant-facing config from default `shopify.app.toml` alone.
-- Prefer one-shot `-c prod` over permanently `shopify app config use prod`.
-- After deploy, if the **dev store** was recently on `shopify app dev`, still run `bun run shopify:dev-clean`.
+Then reopen the admin app URL. If still broken: `curl -sI https://presswall.noxify.io` is 200; reinstall on that store only as last resort.
 
 ### Starting local development
 
 ```bash
 bun run dev:shopify
-# or: shopify app dev
+# NOT bare: shopify app dev
 ```
 
-OK to use tunnel on dev store. Do **not** edit `shopify.app.toml` to permanent prod URLs.
+Ctrl+C is fine — wrapper cleans the store preview.
+
+### Ending development (if you used bare CLI or kill -9)
+
+```bash
+bun run shopify:end-dev
+```
+
+### Shipping extension or app config to merchants
+
+```bash
+bun run shopify:deploy:prod
+```
+
+Always **`-c prod`**. Never deploy merchant-facing config from default `shopify.app.toml` alone.
 
 ### VPS / Docker only
 
-`bun run deploy:aws:update` updates EC2 container only. It does **not** change Partner URLs or store previews. If the symptom is tunnel host in the browser, use this skill’s checklist, not only container redeploy.
+`bun run deploy:aws:update` updates EC2 only. Tunnel symptoms → this skill’s checklist, not only container redeploy.
 
 ## Forbidden
 
-- Leaving Partner URLs on a dead tunnel after the session
+- Setting `automatically_update_urls_on_dev = true`
+- Bare `shopify app dev` without cleanup after
+- Leaving Partner URLs on a dead tunnel
 - Pointing `shopify.app.toml` at `presswall.noxify.io` permanently
 - Claiming “hard refresh” will fix store dev preview
-- Re-researching trycloudflare + deploy forums before running the two scripts above
+- Re-researching trycloudflare before running `shopify:end-dev`
 
-## Package scripts (source of truth in package.json)
+## Package scripts
 
 | Script | Effect |
 |--------|--------|
+| `dev:shopify` | Safe wrap: auto-update guard + `shopify app dev` + clean on exit |
 | `shopify:dev-clean` | Clear store tunnel preview |
 | `shopify:restore-urls` | Re-release prod Partner URLs |
+| `shopify:end-dev` | Both clean + restore (emergency / bare CLI recovery) |
 | `shopify:deploy:prod` | Ship prod config + extensions |
 
-## Related always-on docs
+## Related
 
-- `.grok/rules/shopify-dev-prod-urls.md` (short rule, every session)
-- `AGENTS.md` → **Protect live merchants**
+- `.grok/rules/shopify-dev-prod-urls.md`
+- `AGENTS.md` → Protect live merchants
+- `scripts/shopify-app-dev.sh`

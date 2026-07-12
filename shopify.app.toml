@@ -6,7 +6,10 @@ application_url = "https://reissue-irritable-slider.ngrok-free.dev"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
+# HARD RULE: never true. When true, `shopify app dev` rewrites Partner
+# Application URL / redirects / app proxy to the tunnel for *all* installs.
+# Store-only dev preview still works with false; cleanup via scripts/shopify-app-dev.sh.
+automatically_update_urls_on_dev = false
 dev_store_url = "noxify-dvgwvtrt.myshopify.com"
 
 [access_scopes]

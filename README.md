@@ -28,7 +28,7 @@ Forked from [shopify-nextjs-template](https://github.com/niiithish/shopify-nextj
 bun install
 cp .env.example .env.local   # add Shopify API credentials
 bun run db:push
-shopify app dev
+bun run dev:shopify          # safe wrapper — do not use bare `shopify app dev`
 ```
 
 ## Database (Turso)
@@ -53,11 +53,10 @@ Without Turso env vars, the app falls back to a local `file:data/dev.db` SQLite 
 
 Live at **https://presswall.noxify.io** (Debian VPS on AWS EC2, Docker + Caddy, Turso DB).
 
-- **Dev Shopify config:** `shopify.app.toml` (tunnel; `automatically_update_urls_on_dev = true`)
+- **Dev Shopify config:** `shopify.app.toml` — **`automatically_update_urls_on_dev = false`** (hard rule: never true)
+- **Safe local loop:** `bun run dev:shopify` (auto-cleans store preview on Ctrl+C; merchants stay on prod)
 - **Prod Shopify config:** `shopify.app.prod.toml` → always deploy with **`-c prod`**
-- **After local `shopify app dev`:** clear the store tunnel preview **and** restore Partner URLs:
-  `bun run shopify:dev-clean && bun run shopify:restore-urls`
-  (deploy alone is not enough — the dev store keeps the tunnel until `shopify app dev clean`)
+- **If open app hits trycloudflare / “Server Not Found”:** `bun run shopify:end-dev`
 - **Ship extension/config to merchants:** `bun run shopify:deploy:prod`
 - **Redeploy container:** `VPS_IP=35.169.154.151 SHOPIFY_APP_URL=https://presswall.noxify.io bash scripts/update-vps-container.sh`
 - **Agent/deploy details:** see [`AGENTS.md`](./AGENTS.md) (protect live merchants, architecture, auth, troubleshooting)
