@@ -2,11 +2,10 @@ import { describe, expect, mock, test } from "bun:test";
 
 import {
   applyCrispDesktopPanel,
-  CRISP_CLOSE_BUTTON_INSET_PX,
-  CRISP_CLOSE_BUTTON_SIZE_PX,
   CRISP_CLOSE_MARK_ATTR,
   CRISP_COLOR_THEME,
-  CRISP_LAUNCHER_NATURAL_SIZE_PX,
+  CRISP_LAUNCHER_GAP_PX,
+  CRISP_LAUNCHER_SIZE_PX,
   CRISP_PANEL_BOTTOM_PX,
   CRISP_PANEL_HEIGHT_PX,
   CRISP_PANEL_OFFSET_PX,
@@ -17,9 +16,7 @@ import {
   forceCrispDesktopAttributes,
   getCrispWebsiteIdFromEnv,
   isCrispFullViewPanelStyle,
-  pinCrispCloseButtonTopRight,
   pinCrispPanelBottomRight,
-  resolveCrispCloseButtonLayout,
   resolveCrispPanelMetrics,
   resolveCrispWebsiteId,
   restoreCrispLauncherElement,
@@ -107,8 +104,15 @@ describe("forceCrispDesktopAttributes", () => {
   });
 });
 
-describe("pinCrispPanelBottomRight", () => {
-  test("sizes full-view shell to comfortable bottom-right panel", () => {
+describe("panel sits above bottom-right launcher (no overlap)", () => {
+  test("panel bottom clears launcher size + gap", () => {
+    expect(CRISP_PANEL_BOTTOM_PX).toBe(
+      CRISP_PANEL_OFFSET_PX + CRISP_LAUNCHER_SIZE_PX + CRISP_LAUNCHER_GAP_PX
+    );
+    expect(CRISP_PANEL_BOTTOM_PX).toBeGreaterThan(CRISP_LAUNCHER_SIZE_PX);
+  });
+
+  test("sizes full-view shell above the launcher corner", () => {
     const style = mockStyle({
       width: "100%",
       height: "100%",
@@ -124,6 +128,8 @@ describe("pinCrispPanelBottomRight", () => {
     expect(snap.height).toBe(`${CRISP_PANEL_HEIGHT_PX}px`);
     expect(snap.bottom).toBe(`${CRISP_PANEL_BOTTOM_PX}px`);
     expect(snap.right).toBe(`${CRISP_PANEL_OFFSET_PX}px`);
+    // Panel bottom is higher than a typical launcher bottom (~20px).
+    expect(Number.parseInt(snap.bottom ?? "0", 10)).toBeGreaterThan(60);
   });
 
   test("does not touch the round launcher button size", () => {
@@ -132,96 +138,40 @@ describe("pinCrispPanelBottomRight", () => {
       false
     );
   });
-});
 
-describe("resolveCrispCloseButtonLayout / pinCrispCloseButtonTopRight", () => {
-  test("keeps circle and X on one scale (natural box + uniform scale)", () => {
-    const viewport = { width: 1200, height: 900 };
-    const panel = resolveCrispPanelMetrics(viewport);
-    const layout = resolveCrispCloseButtonLayout(panel, viewport);
-
-    // Visual size is smaller; layout box stays Crisp natural so glyph stays centered.
-    expect(layout.naturalSize).toBe(CRISP_LAUNCHER_NATURAL_SIZE_PX);
-    expect(layout.visualSize).toBe(CRISP_CLOSE_BUTTON_SIZE_PX);
-    expect(layout.visualSize).toBeLessThan(layout.naturalSize);
-    expect(layout.scale).toBe(layout.visualSize / layout.naturalSize);
-    expect(layout.transform).toBe(`scale(${layout.scale})`);
-    expect(layout.transformOrigin).toBe("top right");
-
-    // Top-right of panel (not bottom-right resting place).
-    const panelTop = viewport.height - panel.bottom - panel.height;
-    expect(layout.top).toBe(panelTop + CRISP_CLOSE_BUTTON_INSET_PX);
-    expect(layout.right).toBe(panel.right + CRISP_CLOSE_BUTTON_INSET_PX);
-  });
-
-  test("applies open-state styles from the pure layout helper", () => {
-    const style = mockStyle({});
-    const viewport = { width: 1000, height: 800 };
-    const panel = resolveCrispPanelMetrics(viewport);
-    const layout = pinCrispCloseButtonTopRight(style, panel, viewport);
-    const snap = style.snapshot();
-
-    expect(snap.width).toBe(`${layout.naturalSize}px`);
-    expect(snap.height).toBe(`${layout.naturalSize}px`);
-    expect(snap.transform).toBe(layout.transform);
-    expect(snap["transform-origin"]).toBe("top right");
-    expect(snap.top).toBe(`${layout.top}px`);
-    expect(snap.right).toBe(`${layout.right}px`);
-    expect(snap.bottom).toBe("auto");
-    // No separate smaller circle — one scale for chrome + glyph.
-    expect(snap.width).not.toBe(`${CRISP_CLOSE_BUTTON_SIZE_PX}px`);
+  test("resolveCrispPanelMetrics keeps bottom clearance", () => {
+    const panel = resolveCrispPanelMetrics({ width: 1000, height: 800 });
+    expect(panel.bottom).toBe(CRISP_PANEL_BOTTOM_PX);
+    expect(panel.right).toBe(CRISP_PANEL_OFFSET_PX);
   });
 });
 
-describe("clearCrispInlineOverrides / restoreCrispLauncherElement", () => {
-  test("clears open-state overrides so closed launcher is not stuck top-right", () => {
+describe("legacy close override restore", () => {
+  test("clearCrispInlineOverrides strips stuck top-right styles", () => {
     const style = mockStyle({
       position: "fixed",
       top: "40px",
       right: "30px",
-      bottom: "auto",
-      width: "54px",
-      height: "54px",
       transform: "scale(0.67)",
-      "transform-origin": "top right",
     });
     expect(clearCrispInlineOverrides(style)).toBeGreaterThan(0);
-    const snap = style.snapshot();
-    expect(snap.top).toBeUndefined();
-    expect(snap.right).toBeUndefined();
-    expect(snap.transform).toBeUndefined();
-    expect(snap.position).toBeUndefined();
+    expect(style.snapshot().top).toBeUndefined();
+    expect(style.snapshot().transform).toBeUndefined();
   });
 
-  test("restore removes mark and descendant shrink leftovers", () => {
+  test("restoreCrispLauncherElement clears mark and styles", () => {
     const el = document.createElement("div");
     el.setAttribute(CRISP_CLOSE_MARK_ATTR, "1");
     el.style.setProperty("top", "12px", "important");
-    el.style.setProperty("right", "12px", "important");
     el.style.setProperty("transform", "scale(0.5)", "important");
-    const child = document.createElement("div");
-    child.style.setProperty("width", "34px", "important");
-    child.style.setProperty("height", "34px", "important");
-    el.appendChild(child);
-
     expect(restoreCrispLauncherElement(el)).toBe(true);
     expect(el.hasAttribute(CRISP_CLOSE_MARK_ATTR)).toBe(false);
     expect(el.style.getPropertyValue("top")).toBe("");
-    expect(el.style.getPropertyValue("transform")).toBe("");
-    expect(child.style.getPropertyValue("width")).toBe("");
-    expect(child.style.getPropertyValue("height")).toBe("");
-  });
-
-  test("restore is a no-op without our mark", () => {
-    const el = document.createElement("div");
-    el.style.setProperty("top", "1px");
-    expect(restoreCrispLauncherElement(el)).toBe(false);
-    expect(el.style.getPropertyValue("top")).toBe("1px");
   });
 });
 
-describe("applyCrispDesktopPanel open → close path", () => {
-  test("open pins scaled close; close restores bottom-right freedom", () => {
+describe("applyCrispDesktopPanel", () => {
+  test("pins panel above launcher and does not reposition open launcher", () => {
     const root = document.createElement("div");
     root.innerHTML = `
       <div class="crisp-client">
@@ -242,51 +192,46 @@ describe("applyCrispDesktopPanel open → close path", () => {
       shell.style.setProperty("max-height", "700px");
     }
 
-    const viewport = { width: 1000, height: 800 };
-    const openResult = applyCrispDesktopPanel(root, viewport);
-    expect(openResult.panels).toBe(1);
-    expect(openResult.closeButtons).toBe(1);
-    expect(openResult.restored).toBe(0);
+    const result = applyCrispDesktopPanel(root, { width: 1000, height: 800 });
+    expect(result.panels).toBe(1);
+    expect(result.restored).toBe(0);
 
-    if (launcher instanceof HTMLElement) {
-      expect(launcher.getAttribute(CRISP_CLOSE_MARK_ATTR)).toBe("1");
-      const layout = resolveCrispCloseButtonLayout(
-        resolveCrispPanelMetrics(viewport),
-        viewport
-      );
-      expect(launcher.style.getPropertyValue("top")).toBe(`${layout.top}px`);
-      expect(launcher.style.getPropertyValue("right")).toBe(
-        `${layout.right}px`
-      );
-      expect(launcher.style.getPropertyValue("transform")).toBe(
-        layout.transform
-      );
-      expect(launcher.style.getPropertyValue("width")).toBe(
-        `${CRISP_LAUNCHER_NATURAL_SIZE_PX}px`
-      );
-      // Must not be the old broken path (shrunk width without scale).
-      expect(launcher.style.getPropertyValue("width")).not.toBe(
-        `${CRISP_CLOSE_BUTTON_SIZE_PX}px`
+    if (shell instanceof HTMLElement) {
+      expect(shell.style.getPropertyValue("bottom")).toBe(
+        `${CRISP_PANEL_BOTTOM_PX}px`
       );
     }
-
-    // Simulate close: Crisp clears maximized.
+    // Launcher left alone (Crisp owns bubble ↔ X at bottom-right).
     if (launcher instanceof HTMLElement) {
-      launcher.removeAttribute("data-maximized");
+      expect(launcher.style.getPropertyValue("top")).toBe("");
+      expect(launcher.style.getPropertyValue("transform")).toBe("");
+      expect(launcher.hasAttribute(CRISP_CLOSE_MARK_ATTR)).toBe(false);
+    }
+  });
+
+  test("clears legacy marked close overrides so launcher is free", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <div class="crisp-client">
+        <div class="launcher" data-presswall-crisp-close="1" style="top: 10px; right: 10px; transform: scale(0.5);"></div>
+      </div>
+    `;
+    // attribute selector uses CRISP_CLOSE_MARK_ATTR constant value
+    const launcher = root.querySelector(".launcher");
+    expect(launcher).toBeInstanceOf(HTMLElement);
+    if (launcher instanceof HTMLElement) {
+      launcher.setAttribute(CRISP_CLOSE_MARK_ATTR, "1");
+      launcher.style.setProperty("top", "10px", "important");
+      launcher.style.setProperty("right", "10px", "important");
+      launcher.style.setProperty("transform", "scale(0.5)", "important");
     }
 
-    const closeResult = applyCrispDesktopPanel(root, viewport);
-    expect(closeResult.closeButtons).toBe(0);
-    expect(closeResult.restored).toBe(1);
-
+    const result = applyCrispDesktopPanel(root, { width: 1000, height: 800 });
+    expect(result.restored).toBe(1);
     if (launcher instanceof HTMLElement) {
       expect(launcher.hasAttribute(CRISP_CLOSE_MARK_ATTR)).toBe(false);
-      // Stuck top-right overrides gone — Crisp CSS can place bubble bottom-right.
       expect(launcher.style.getPropertyValue("top")).toBe("");
-      expect(launcher.style.getPropertyValue("right")).toBe("");
       expect(launcher.style.getPropertyValue("transform")).toBe("");
-      expect(launcher.style.getPropertyValue("position")).toBe("");
-      expect(launcher.style.getPropertyValue("width")).toBe("");
     }
   });
 });

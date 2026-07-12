@@ -4,10 +4,9 @@
  * When unset/empty, chat is disabled and the app must still render.
  *
  * Shopify admin iframes often trip Crisp mobile full-view. We force a
- * comfortable bottom-right panel. While open, the launcher becomes a
- * smaller close control on the panel top-right (scaled as a whole so the
- * circle and X stay proportional). On close we clear our overrides so the
- * bubble returns to Crisp’s default bottom-right.
+ * comfortable bottom-right panel that sits *above* the launcher so the
+ * open chat does not cover the bubble/X. The launcher stays in Crisp’s
+ * default bottom-right corner (bubble when closed, X when open).
  */
 
 export const CRISP_WEBSITE_ID_ENV = "NEXT_PUBLIC_CRISP_WEBSITE_ID";
@@ -18,20 +17,24 @@ export const CRISP_COLOR_THEME = "black" as const;
 /** Comfortable admin chat panel (not full-page, not tiny). */
 export const CRISP_PANEL_WIDTH_PX = 390;
 export const CRISP_PANEL_HEIGHT_PX = 600;
-/** Right / bottom inset for the open chat shell. */
+/** Right inset for the open chat shell. */
 export const CRISP_PANEL_OFFSET_PX = 20;
-export const CRISP_PANEL_BOTTOM_PX = 20;
+/**
+ * Bottom inset for the chat shell so it clears the ~54px launcher/X.
+ * Crisp keeps the control bottom-right; panel sits above it.
+ */
+export const CRISP_LAUNCHER_SIZE_PX = 54;
+export const CRISP_LAUNCHER_GAP_PX = 12;
+export const CRISP_PANEL_BOTTOM_PX =
+  CRISP_PANEL_OFFSET_PX + CRISP_LAUNCHER_SIZE_PX + CRISP_LAUNCHER_GAP_PX;
 
-/** Crisp’s natural launcher diameter before we scale it. */
-export const CRISP_LAUNCHER_NATURAL_SIZE_PX = 54;
-/** Visual size of the close control when chat is open. */
-export const CRISP_CLOSE_BUTTON_SIZE_PX = 36;
-export const CRISP_CLOSE_BUTTON_INSET_PX = 10;
-
-/** Marks launcher nodes we overrode so close can restore them. */
+/**
+ * Legacy mark from an earlier top-right close experiment. Cleared on apply
+ * so any leftover open-state overrides do not stick the launcher.
+ */
 export const CRISP_CLOSE_MARK_ATTR = "data-presswall-crisp-close";
 
-/** Inline properties we set while open — must be cleared on close. */
+/** Inline properties we may have set in older close-button experiments. */
 export const CRISP_OVERRIDE_STYLE_PROPS = [
   "position",
   "top",
@@ -76,17 +79,6 @@ export interface CrispPanelMetrics {
   height: number;
   right: number;
   width: number;
-}
-
-/** Computed layout for the open-state close control (pure). */
-export interface CrispCloseButtonLayout {
-  naturalSize: number;
-  right: number;
-  scale: number;
-  top: number;
-  transform: string;
-  transformOrigin: string;
-  visualSize: number;
 }
 
 /**
@@ -158,31 +150,6 @@ export function resolveCrispPanelMetrics(
 }
 
 /**
- * Pure open-state close-button layout.
- * Scales the whole Crisp launcher (circle + X) so they stay aligned.
- */
-export function resolveCrispCloseButtonLayout(
-  panel: CrispPanelMetrics,
-  viewport: ViewportSize,
-  visualSize: number = CRISP_CLOSE_BUTTON_SIZE_PX,
-  inset: number = CRISP_CLOSE_BUTTON_INSET_PX
-): CrispCloseButtonLayout {
-  const naturalSize = CRISP_LAUNCHER_NATURAL_SIZE_PX;
-  const scale = visualSize / naturalSize;
-  const panelTop = Math.max(0, viewport.height - panel.bottom - panel.height);
-
-  return {
-    naturalSize,
-    visualSize,
-    scale,
-    top: panelTop + inset,
-    right: panel.right + inset,
-    transform: `scale(${scale})`,
-    transformOrigin: "top right",
-  };
-}
-
-/**
  * Crisp full-view shell: 100% width/height with a large max-width
  * (set inline when the host iframe is treated as mobile).
  */
@@ -210,7 +177,7 @@ export function isCrispChatShellStyle(style: StyleLike): boolean {
 }
 
 /**
- * Pin the open chat as a comfortable bottom-right panel.
+ * Pin the open chat as a comfortable bottom-right panel *above* the launcher.
  * Inline !important beats Crisp’s own full-view inline styles.
  */
 export function pinCrispPanelBottomRight(
@@ -243,50 +210,7 @@ export function pinCrispPanelBottomRight(
   return true;
 }
 
-/**
- * Place a scaled close control on the chat panel’s top-right.
- * Uses transform:scale on Crisp’s natural 54px launcher so the circle
- * and X glyph stay the same size and centered relative to each other.
- */
-export function pinCrispCloseButtonTopRight(
-  style: StyleLike,
-  panel: CrispPanelMetrics,
-  viewport: ViewportSize
-): CrispCloseButtonLayout {
-  const layout = resolveCrispCloseButtonLayout(panel, viewport);
-
-  const already =
-    style.getPropertyValue("top") === `${layout.top}px` &&
-    style.getPropertyValue("right") === `${layout.right}px` &&
-    style.getPropertyValue("width") === `${layout.naturalSize}px` &&
-    style.getPropertyValue("height") === `${layout.naturalSize}px` &&
-    style.getPropertyValue("transform") === layout.transform &&
-    style.getPropertyValue("transform-origin") === layout.transformOrigin;
-  if (already) {
-    return layout;
-  }
-
-  style.setProperty("position", "fixed", "important");
-  style.setProperty("top", `${layout.top}px`, "important");
-  style.setProperty("right", `${layout.right}px`, "important");
-  style.setProperty("bottom", "auto", "important");
-  style.setProperty("left", "auto", "important");
-  // Keep Crisp’s natural box; scale the whole control together.
-  style.setProperty("width", `${layout.naturalSize}px`, "important");
-  style.setProperty("height", `${layout.naturalSize}px`, "important");
-  style.removeProperty("min-width");
-  style.removeProperty("min-height");
-  style.removeProperty("max-width");
-  style.removeProperty("max-height");
-  style.setProperty("margin", "0", "important");
-  style.setProperty("transform", layout.transform, "important");
-  style.setProperty("transform-origin", layout.transformOrigin, "important");
-  style.setProperty("z-index", "2147483646", "important");
-
-  return layout;
-}
-
-/** Remove inline overrides we applied (restores Crisp CSS defaults). */
+/** Remove inline overrides we may have applied (restores Crisp CSS defaults). */
 export function clearCrispInlineOverrides(style: StyleLike): number {
   let cleared = 0;
   for (const prop of CRISP_OVERRIDE_STYLE_PROPS) {
@@ -299,9 +223,8 @@ export function clearCrispInlineOverrides(style: StyleLike): number {
 }
 
 /**
- * Restore a launcher we previously overrode for open-close.
- * Clears our inline styles (including on descendants from older shrink path)
- * and removes the mark attribute so Crisp can own bottom-right again.
+ * Restore a launcher we previously overrode (legacy top-right close path).
+ * Clears our inline styles and the mark attribute.
  */
 export function restoreCrispLauncherElement(el: HTMLElement): boolean {
   if (!el.hasAttribute(CRISP_CLOSE_MARK_ATTR)) {
@@ -346,16 +269,15 @@ export function forceCrispDesktopAttributes(el: Element): boolean {
 
 export interface ApplyCrispDesktopPanelResult {
   attributes: number;
-  closeButtons: number;
   panels: number;
   restored: number;
 }
 
 /**
  * Apply desktop corner-panel behavior across the live Crisp DOM.
- * - open: scale+pin close on panel top-right
- * - closed: clear our overrides so launcher returns bottom-right
- * - full-view shells: force comfortable panel size
+ * - full-view shells → comfortable panel above bottom-right launcher
+ * - launcher is left to Crisp (same corner for bubble and X; no overlap)
+ * - clears any legacy top-right close overrides if still present
  */
 export function applyCrispDesktopPanel(
   root: ParentNode,
@@ -363,7 +285,6 @@ export function applyCrispDesktopPanel(
 ): ApplyCrispDesktopPanelResult {
   let attributes = 0;
   let panels = 0;
-  let closeButtons = 0;
   let restored = 0;
 
   const attrNodes = root.querySelectorAll(
@@ -379,7 +300,6 @@ export function applyCrispDesktopPanel(
     attributes += 1;
   }
 
-  const panel = resolveCrispPanelMetrics(viewport);
   const styleNodes = root.querySelectorAll(
     ".crisp-client [style], #crisp-chatbox [style]"
   );
@@ -392,13 +312,10 @@ export function applyCrispDesktopPanel(
     }
   }
 
-  // Closed: restore any launcher we previously pinned as close.
+  // Drop legacy top-right close overrides so launcher stays bottom-right.
   const marked = root.querySelectorAll(`[${CRISP_CLOSE_MARK_ATTR}]`);
   for (const node of marked) {
     if (!(node instanceof HTMLElement)) {
-      continue;
-    }
-    if (node.getAttribute("data-maximized") === "true") {
       continue;
     }
     if (restoreCrispLauncherElement(node)) {
@@ -406,18 +323,5 @@ export function applyCrispDesktopPanel(
     }
   }
 
-  // Open: pin scaled close on panel top-right.
-  const openLaunchers = root.querySelectorAll(
-    '.crisp-client [data-maximized="true"]'
-  );
-  for (const node of openLaunchers) {
-    if (!(node instanceof HTMLElement)) {
-      continue;
-    }
-    node.setAttribute(CRISP_CLOSE_MARK_ATTR, "1");
-    pinCrispCloseButtonTopRight(node.style, panel, viewport);
-    closeButtons += 1;
-  }
-
-  return { attributes, panels, closeButtons, restored };
+  return { attributes, panels, restored };
 }

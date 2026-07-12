@@ -15,9 +15,8 @@ function currentViewport() {
 let enforceRaf = 0;
 
 /**
- * Keep chat as a bottom-right desktop panel.
- * Open: scaled close control on panel top-right (circle + X stay aligned).
- * Closed: clear our overrides so the launcher returns bottom-right.
+ * Keep chat as a bottom-right desktop panel above the launcher.
+ * Bubble and X stay in Crisp’s default corner (no top-right close override).
  */
 function enforceDesktopChatUi() {
   if (enforceRaf !== 0) {
