@@ -50,6 +50,20 @@ export function CrispChat() {
           window.$crisp = window.$crisp ?? [];
           window.$crisp.push(["config", "position:reverse", [reversed]]);
         },
+        setAvailabilityTooltip: (enabledTooltip) => {
+          Crisp.setAvailabilityTooltip(enabledTooltip);
+          window.$crisp = window.$crisp ?? [];
+          window.$crisp.push([
+            "config",
+            "availability:tooltip",
+            [enabledTooltip],
+          ]);
+        },
+        toggleOperatorCount: (enabledCount) => {
+          Crisp.toggleOperatorCount(enabledCount);
+          window.$crisp = window.$crisp ?? [];
+          window.$crisp.push(["config", "show:operator:count", [enabledCount]]);
+        },
       },
       process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID
     );
