@@ -1,4 +1,9 @@
 import {
+  getPublicAppUrl,
+  isEphemeralAppHost,
+  PRODUCTION_APP_URL,
+} from "@/lib/app-url";
+import {
   type LogoVariant,
   logoVariantForColorMode,
   parseLogoVariant,
@@ -14,6 +19,9 @@ const URL_ORIGIN_PREFIX = /^https?:\/\/[^/]+/;
  * Must preserve the ink variant (white / black / color) from the live payload.
  * Previously dropped `?variant=` and defaulted to color assets — white strips
  * on dark backgrounds looked black on the live storefront.
+ *
+ * Never emits tunnel / localhost hosts: those 404 after local dev ends while
+ * the heading text still renders from the metafield.
  */
 export function resolveMetafieldLogoUrl(
   shop: string,
@@ -41,16 +49,37 @@ export function resolveMetafieldLogoUrl(
     options.colorMode ?? undefined
   );
 
-  const appUrl = options.appUrl.trim();
-  if (appUrl.startsWith("https://")) {
-    return absoluteBundledLogoUrl(publisherId, {
-      variant,
-      // absoluteBundledLogoUrl uses getAppUrl() internally — rewrite via
-      // explicit origin so tunnel hosts never stick in production metafields.
-    }).replace(URL_ORIGIN_PREFIX, appUrl.replace(TRAILING_SLASH, ""));
+  const preferredOrigin = pickStableAppOrigin(options.appUrl);
+  if (preferredOrigin) {
+    return absoluteBundledLogoUrl(publisherId, { variant }).replace(
+      URL_ORIGIN_PREFIX,
+      preferredOrigin
+    );
   }
 
   return `https://${shop}/apps/presswall/publishers/${publisherId}/logo?variant=${variant}`;
+}
+
+/** Prefer a non-ephemeral https origin; fall back to production public host. */
+function pickStableAppOrigin(appUrl: string): string | null {
+  const candidate = appUrl.trim().replace(TRAILING_SLASH, "");
+  if (
+    candidate.startsWith("https://") &&
+    !isEphemeralAppHost(candidate)
+  ) {
+    return candidate;
+  }
+
+  const publicOrigin = getPublicAppUrl();
+  if (
+    publicOrigin.startsWith("https://") &&
+    !isEphemeralAppHost(publicOrigin)
+  ) {
+    return publicOrigin;
+  }
+
+  // Last resort: hard-coded production (never tunnel).
+  return PRODUCTION_APP_URL;
 }
 
 function resolveVariantFromLogoUrl(

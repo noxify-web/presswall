@@ -116,9 +116,23 @@ describe("bundledLogoPath", () => {
     );
   });
 
-  test("absolute urls preserve variant", () => {
-    const url = absoluteBundledLogoUrl("cnbc", { colorMode: "color" });
-    expect(url).toContain("/api/publishers/cnbc/logo?variant=color");
+  test("absolute urls preserve variant and never use tunnel hosts", () => {
+    const previous = process.env.SHOPIFY_APP_URL;
+    process.env.SHOPIFY_APP_URL =
+      "https://reissue-irritable-slider.ngrok-free.dev";
+    try {
+      const url = absoluteBundledLogoUrl("cnbc", { colorMode: "color" });
+      expect(url).toBe(
+        "https://presswall.noxify.io/api/publishers/cnbc/logo?variant=color"
+      );
+      expect(url).not.toContain("ngrok");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.SHOPIFY_APP_URL;
+      } else {
+        process.env.SHOPIFY_APP_URL = previous;
+      }
+    }
   });
 
   test("parseLogoVariant falls back safely", () => {

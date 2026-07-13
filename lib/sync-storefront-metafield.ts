@@ -1,4 +1,4 @@
-import { getAppUrl } from "@/lib/app-url";
+import { getPublicAppUrl } from "@/lib/app-url";
 import { resolveMetafieldLogoUrl } from "@/lib/metafield-logo-url";
 import { shouldInvertLogos } from "@/lib/presswall-logo-contrast";
 import { getStorefrontPayload } from "@/lib/presswall-service";
@@ -133,7 +133,9 @@ export async function syncStorefrontMetafield(
 }
 
 function serializeStorefrontPayload(shop: string, payload: StorefrontPayload) {
-  const appUrl = getAppUrl();
+  // Public origin only — tunnel SHOPIFY_APP_URL during local dev must never
+  // land in shop.metafields (storefront img src would 404 after Ctrl+C).
+  const appUrl = getPublicAppUrl();
   return {
     ...payload,
     invertLogos: shouldInvertLogos(payload),

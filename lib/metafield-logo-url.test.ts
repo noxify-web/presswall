@@ -45,7 +45,24 @@ describe("resolveMetafieldLogoUrl", () => {
     expect(url).not.toContain("variant=black");
   });
 
-  test("falls back to shop app-proxy path when app URL is not https prod", () => {
+  test("rewrites tunnel appUrl to production instead of shipping ngrok hosts", () => {
+    const url = resolveMetafieldLogoUrl(
+      SHOP,
+      "cnbc",
+      "https://reissue-irritable-slider.ngrok-free.dev/api/publishers/cnbc/logo?variant=black",
+      {
+        appUrl: "https://reissue-irritable-slider.ngrok-free.dev",
+        colorMode: "black",
+      }
+    );
+
+    expect(url).toBe(
+      "https://presswall.noxify.io/api/publishers/cnbc/logo?variant=black"
+    );
+    expect(url).not.toContain("ngrok");
+  });
+
+  test("rewrites localhost appUrl to production", () => {
     const url = resolveMetafieldLogoUrl(
       SHOP,
       "cnbc",
@@ -54,7 +71,7 @@ describe("resolveMetafieldLogoUrl", () => {
     );
 
     expect(url).toBe(
-      "https://example.myshopify.com/apps/presswall/publishers/cnbc/logo?variant=black"
+      "https://presswall.noxify.io/api/publishers/cnbc/logo?variant=black"
     );
   });
 

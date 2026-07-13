@@ -1,11 +1,9 @@
-import { getAppUrl } from "@/lib/app-url";
+import { getPublicAppUrl } from "@/lib/app-url";
 import {
   type LogoVariant,
   logoVariantForColorMode,
   parseLogoVariant,
 } from "@/lib/logo-variant";
-
-const TRAILING_SLASH = /\/$/;
 
 export interface BundledLogoPathOptions {
   /** Strip colorMode — used when variant is not provided. */
@@ -34,10 +32,13 @@ export function bundledLogoPath(
   return `/api/publishers/${publisherId}/logo?variant=${variant}`;
 }
 
+/**
+ * Absolute logo URL for storefront / metafield payloads.
+ * Uses {@link getPublicAppUrl} so local tunnels never leak into the Online Store.
+ */
 export function absoluteBundledLogoUrl(
   publisherId: string,
   options?: BundledLogoPathOptions
 ): string {
-  const appOrigin = getAppUrl().replace(TRAILING_SLASH, "");
-  return `${appOrigin}${bundledLogoPath(publisherId, options)}`;
+  return `${getPublicAppUrl()}${bundledLogoPath(publisherId, options)}`;
 }
