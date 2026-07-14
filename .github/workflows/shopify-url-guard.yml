@@ -22,5 +22,8 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install deps (for unit test preload)
+        run: bun install --frozen-lockfile
+
       - name: Assert Shopify URL safety (tests)
         run: bun test lib/shopify-url-safety.test.ts
