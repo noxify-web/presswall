@@ -1,0 +1,82 @@
+# Keeps the dev store off dead tunnels so ERR_NGROK_3200 cannot stick.
+#
+# Required repo secret (Settings → Secrets and variables → Actions):
+#   SHOPIFY_CLI_PARTNERS_TOKEN  — Partner API token for Shopify CLI in CI
+#   Create: partners.shopify.com → Settings → Partner API clients
+#
+# Optional repository variable:
+#   PRESSWALL_DEV_STORE  — default noxify-dvgwvtrt.myshopify.com
+#
+# Behavior:
+#   - Every run (push main / every 20 min / manual): clear store dev preview
+#   - Daily 06:00 UTC + manual "restore_urls": also redeploy -c prod
+#     (Partner Application URL = https://presswall.noxify.io)
+name: Shopify prod watchdog
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Clear stuck store previews after kill -9 / closed terminals.
+    - cron: "*/20 * * * *"
+    # Daily re-assert Partner prod URLs (cheap insurance; not every 20 min).
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      restore_urls:
+        description: Also redeploy prod Partner URLs (shopify.app.prod.toml)
+        type: boolean
+        default: true
+
+concurrency:
+  group: shopify-prod-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    name: Clean store (+ optional URL restore)
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Shopify CLI
+        run: npm install -g @shopify/cli@latest
+
+      - name: Clear development-store tunnel preview
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+          DEV_STORE: ${{ vars.PRESSWALL_DEV_STORE || 'noxify-dvgwvtrt.myshopify.com' }}
+        run: |
+          set -euo pipefail
+          echo "Cleaning store preview on ${DEV_STORE}..."
+          shopify app dev clean -c prod -s "$DEV_STORE" --path .
+          echo "Store preview cleared — store uses released prod app."
+
+      - name: Redeploy production Partner URLs
+        if: >
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'schedule' && github.event.schedule == '0 6 * * *')
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+        run: |
+          set -euo pipefail
+          # workflow_dispatch may opt out of restore
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.restore_urls }}" != "true" ]]; then
+            echo "Skipping Partner URL redeploy (restore_urls=false)."
+            exit 0
+          fi
+          shopify app deploy -c prod --allow-updates --force \
+            --message "CI watchdog: restore production app URLs to presswall.noxify.io" \
+            --path .
+
+  watchdog-secret-missing:
+    name: Remind if Partner token secret missing
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN == '' }}
+    steps:
+      - name: Secret not configured
+        run: |
+          echo "::warning::SHOPIFY_CLI_PARTNERS_TOKEN is not set. Watchdog cannot clear store previews from CI."
+          echo "Add it under repo Settings → Secrets → Actions so ERR_NGROK_3200 cannot stick after local dev dies."
+          echo "Until then: always use bun run dev:shopify (auto-clean), or bun run shopify:end-dev after bare CLI."

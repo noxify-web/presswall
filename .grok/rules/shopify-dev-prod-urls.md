@@ -14,8 +14,11 @@
 2. **Develop only via `bun run dev:shopify`** (`scripts/shopify-app-dev.sh`)  
    - Refuses to start if auto-update is true  
    - On exit (Ctrl+C / stop), always runs `shopify app dev clean` on the dev store  
+   - Detached watchdog still cleans after kill -9 / closed terminal  
 3. **Never** bare `shopify app dev` without cleaning after  
-4. **Never** put permanent prod URLs in `shopify.app.toml` (breaks local OAuth)
+4. **Never** put permanent prod URLs in `shopify.app.toml` (breaks local OAuth)  
+5. **After any agent session that ran Shopify CLI / left a tunnel:** run `bun run shopify:end-dev` before finishing (do not leave the store on ngrok).  
+6. **Automation:** CI `shopify-url-guard` + `shopify-prod-watchdog` (secret `SHOPIFY_CLI_PARTNERS_TOKEN`); `shopify:deploy:prod` always store-cleans.
 
 ## Two failure modes (if rules are broken)
 

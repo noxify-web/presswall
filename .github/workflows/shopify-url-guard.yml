@@ -1,0 +1,26 @@
+# Blocks merges that would re-enable Partner URL auto-update or ship tunnel
+# hosts in production Shopify config. No secrets required.
+name: Shopify URL guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  assert-url-safety:
+    name: Config must not break merchants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert Shopify URL safety (shell)
+        run: bash scripts/assert-shopify-url-safety.sh
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Assert Shopify URL safety (tests)
+        run: bun test lib/shopify-url-safety.test.ts

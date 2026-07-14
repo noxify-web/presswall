@@ -54,10 +54,12 @@ Without Turso env vars, the app falls back to a local `file:data/dev.db` SQLite 
 Live at **https://presswall.noxify.io** (Debian VPS on AWS EC2, Docker + Caddy, Turso DB).
 
 - **Dev Shopify config:** `shopify.app.toml` — **`automatically_update_urls_on_dev = false`** (hard rule: never true)
-- **Safe local loop:** `bun run dev:shopify` (auto-cleans store preview on Ctrl+C; merchants stay on prod)
+- **Safe local loop:** `bun run dev:shopify` (auto-cleans store preview on exit + kill-safe watchdog; merchants stay on prod)
 - **Prod Shopify config:** `shopify.app.prod.toml` → always deploy with **`-c prod`**
-- **If open app hits trycloudflare / “Server Not Found”:** `bun run shopify:end-dev`
-- **Ship extension/config to merchants:** `bun run shopify:deploy:prod`
+- **If open app hits trycloudflare / ngrok / “Server Not Found”:** `bun run shopify:end-dev`
+- **Ship extension/config to merchants:** `bun run shopify:deploy:prod` (also clears store preview)
+- **CI:** `shopify-url-guard` blocks bad config; `shopify-prod-watchdog` clears stuck store previews every 20m (needs secret `SHOPIFY_CLI_PARTNERS_TOKEN`)
+- **Local config assert:** `bun run check:shopify-urls`
 - **Redeploy container:** `VPS_IP=35.169.154.151 SHOPIFY_APP_URL=https://presswall.noxify.io bash scripts/update-vps-container.sh`
 - **Agent/deploy details:** see [`AGENTS.md`](./AGENTS.md) (protect live merchants, architecture, auth, troubleshooting)
 

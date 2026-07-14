@@ -21,7 +21,12 @@ Shopify embedded app (Next.js App Router) for merchant “as seen on” press lo
 |-------|-----------|
 | Merchants never get tunnel URLs during local dev | `shopify.app.toml` has **`automatically_update_urls_on_dev = false`** (must stay false) |
 | Dev store not left on dead tunnel after Ctrl+C | **`bun run dev:shopify`** → `scripts/shopify-app-dev.sh` always runs `shopify app dev clean` on exit |
+| Dev store not left on dead tunnel after kill -9 / closed terminal | Detached watchdog in `scripts/shopify-app-dev.sh` + **GitHub Action** `shopify-prod-watchdog` (every 20m) |
+| Prod deploys never leave store on tunnel | `bun run shopify:deploy:prod` / `shopify:restore-urls` always run store clean after |
+| Bad config cannot merge | CI workflow `shopify-url-guard` + `bun run check:shopify-urls` + `lib/shopify-url-safety.test.ts` |
 | Emergency / bare CLI recovery | `bun run shopify:end-dev` (= clean + restore-urls) |
+
+**GitHub secret (required for watchdog):** `SHOPIFY_CLI_PARTNERS_TOKEN` on `noxify-web/presswall` (Partners dashboard → Partner API clients). Without it, CI only warns and local cleanup still applies.
 
 | Mode | What runs | Who hits the tunnel |
 |------|-----------|---------------------|
@@ -66,7 +71,7 @@ bun run shopify:end-dev
 - Push DB schema before first run: `bun run db:push`.
 - **Full dev loop** (tunnel, OAuth, extension): **`bun run dev:shopify` only** — not bare `shopify app dev`, not `bun run dev` alone. Wrapper: `scripts/shopify-app-dev.sh` (auto-update guard + clean on exit). `shopify.web.toml` wires CLI to `bun run dev` on port **3001**.
 - **`automatically_update_urls_on_dev` must stay `false`.** Partner URLs are never rewritten during local dev; only the dev store gets a temporary preview.
-- **Ctrl+C is enough** when using `dev:shopify` (store preview cleaned). If you used bare CLI or `kill -9`: `bun run shopify:end-dev`.
+- **Ctrl+C is enough** when using `dev:shopify` (store preview cleaned + kill-safe watchdog). If you used bare CLI: `bun run shopify:end-dev`. CI watchdog also clears the store every 20 minutes when `SHOPIFY_CLI_PARTNERS_TOKEN` is set.
 
 ## Dev vs prod Shopify config
 
