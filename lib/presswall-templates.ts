@@ -155,6 +155,7 @@ const TEMPLATE_MATCH_IGNORED_KEYS = new Set<keyof PresswallConfig>([
   "logoSpacing",
   "gap",
   "marqueeSpeed",
+  "marqueePauseOnHover",
 ]);
 
 export function presswallConfigsEqual(

@@ -18,6 +18,7 @@ const BASE_PRESSWALL_CONFIG = {
   paddingX: 24,
   contentMaxWidth: 900,
   marqueeSpeed: 30,
+  marqueePauseOnHover: true,
   grayscaleOpacity: 70,
   logoSpacing: "space-between",
 } satisfies Omit<PresswallConfig, "gap" | "headingSpacing">;

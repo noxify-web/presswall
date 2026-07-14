@@ -284,6 +284,11 @@
   will-change: transform;
 }
 
+/* Pause marquee while the pointer is over the scroll strip (opt-out via setting). */
+.pw-mq-scroll--pause-hover:hover .pw-mq-track {
+  animation-play-state: paused;
+}
+
 /* Marquee logos keep full natural width while the track scrolls. */
 .pw-mq-track .presswall-logo {
   flex: 0 0 auto;

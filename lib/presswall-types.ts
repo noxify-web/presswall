@@ -48,6 +48,8 @@ export const presswallConfigSchema = z
     paddingX: z.number().int().min(0).max(80),
     contentMaxWidth: z.number().int().min(360).max(1200),
     marqueeSpeed: z.number().int().min(10).max(80),
+    /** Pause auto-scroll while the pointer is over the marquee (default on). */
+    marqueePauseOnHover: z.boolean().default(true),
     grayscaleOpacity: z.number().int().min(20).max(100),
   })
   .transform((config) => ({

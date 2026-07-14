@@ -26,6 +26,11 @@
     {%- assign lpr_m = pub_count -%}
   {%- endif -%}
   {%- assign mq_speed = config.marqueeSpeed | default: 30 -%}
+  {%- comment -%} Default pause-on-hover on; only opt out when explicitly false. {%- endcomment -%}
+  {%- assign mq_pause_hover = true -%}
+  {%- if config.marqueePauseOnHover == false -%}
+    {%- assign mq_pause_hover = false -%}
+  {%- endif -%}
   {%- assign h_align = config.headingAlignment | default: config.alignment | default: 'center' -%}
   {%- if h_align != 'left' and h_align != 'right' -%}
     {%- assign h_align = 'center' -%}
@@ -97,7 +102,10 @@
               <span class="pw-mq-div"></span>
             </div>
           {%- endif -%}
-          <div class="pw-mq-scroll" style="--pw-mq-fade:{{ fade }}">
+          <div
+            class="pw-mq-scroll{% if mq_pause_hover %} pw-mq-scroll--pause-hover{% endif %}"
+            style="--pw-mq-fade:{{ fade }}"
+          >
             <div class="pw-mq-wrap">
               <div
                 class="pw-mq-track"

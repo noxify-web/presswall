@@ -27,7 +27,7 @@ interface MarqueeLayoutProps {
   className?: string;
   config: Pick<
     PresswallConfig,
-    "headingFontSize" | "headingText" | "showHeading"
+    "headingFontSize" | "headingText" | "showHeading" | "marqueePauseOnHover"
   >;
   labelStyle?: CSSProperties;
   textColor: string;
@@ -42,6 +42,7 @@ export function MarqueeLayout({
   textColor,
 }: MarqueeLayoutProps) {
   const showLeading = config.showHeading && config.headingText;
+  const pauseOnHover = config.marqueePauseOnHover !== false;
 
   return (
     <div className={cn("pw-mq-row", className)}>
@@ -62,7 +63,10 @@ export function MarqueeLayout({
       ) : null}
 
       <div
-        className="pw-mq-scroll"
+        className={cn(
+          "pw-mq-scroll",
+          pauseOnHover && "pw-mq-scroll--pause-hover"
+        )}
         style={getMarqueeScrollStyle(backgroundColor)}
       >
         <div className="pw-mq-wrap">{children}</div>

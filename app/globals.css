@@ -104,6 +104,11 @@
   will-change: transform;
 }
 
+/* Pause marquee while the pointer is over the scroll strip (opt-out via setting). */
+.pw-mq-scroll--pause-hover:hover .pw-mq-track {
+  animation-play-state: paused;
+}
+
 .pw-mq-item {
   flex: 0 0 auto;
 }

@@ -220,7 +220,12 @@ const MAX_CUSTOM_LOGO_SVG_LENGTH = 50_000;
       ? `<div class="pw-mq-lead"><p class="pw-mq-label" style="color:${tx};font-size:${hf}px">${escapeHtml(c.headingText)}</p><span class="pw-mq-div"></span></div>`
       : "";
     const fade = bg === "transparent" ? "#fff" : bg;
-    return `<div class="presswall-shell" style="${s}"><div class="presswall-content">${aboveHeading}<div class="pw-mq-row">${lead}<div class="pw-mq-scroll" style="--pw-mq-fade:${fade}"><div class="pw-mq-wrap"><div class="pw-mq-track" style="animation-duration:${sp}s;--pw-mq-n:${n}">${logos.repeat(n)}</div></div><span class="pw-mq-fade pw-mq-fade-left" aria-hidden="true"></span><span class="pw-mq-fade pw-mq-fade-right" aria-hidden="true"></span></div></div></div></div>`;
+    // Default on; only opt out when explicitly false (legacy configs lack the field).
+    const pauseHover = c.marqueePauseOnHover !== false;
+    const scrollClass = pauseHover
+      ? "pw-mq-scroll pw-mq-scroll--pause-hover"
+      : "pw-mq-scroll";
+    return `<div class="presswall-shell" style="${s}"><div class="presswall-content">${aboveHeading}<div class="pw-mq-row">${lead}<div class="${scrollClass}" style="--pw-mq-fade:${fade}"><div class="pw-mq-wrap"><div class="pw-mq-track" style="animation-duration:${sp}s;--pw-mq-n:${n}">${logos.repeat(n)}</div></div><span class="pw-mq-fade pw-mq-fade-left" aria-hidden="true"></span><span class="pw-mq-fade pw-mq-fade-right" aria-hidden="true"></span></div></div></div></div>`;
   }
 
   function renderLogo(publisher, config, logoStyle) {

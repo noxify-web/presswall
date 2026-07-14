@@ -37,6 +37,7 @@ export type PresswallStripConfig = Pick<
   | "gap"
   | "logoSpacing"
   | "marqueeSpeed"
+  | "marqueePauseOnHover"
 >;
 
 interface PresswallStripProps {

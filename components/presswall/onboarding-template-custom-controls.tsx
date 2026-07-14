@@ -201,6 +201,17 @@ export function OnboardingTemplateCustomControls({
               onChange={(layout) => onUpdate("layout", layout)}
               value={normalizeBannerStyleLayout(config.layout)}
             />
+            {config.layout === "marquee" ? (
+              <SettingToggle
+                checked={config.marqueePauseOnHover}
+                description="Stop the scroll while the pointer is over the logos, then resume when it leaves."
+                id="onboarding-marquee-pause-on-hover"
+                label="Pause on hover"
+                onCheckedChange={(checked) =>
+                  onUpdate("marqueePauseOnHover", checked)
+                }
+              />
+            ) : null}
           </ControlSection>
 
           {showRowControls ? (
