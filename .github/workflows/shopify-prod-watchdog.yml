@@ -73,6 +73,6 @@ jobs:
             echo "Skipping Partner URL redeploy (restore_urls=false)."
             exit 0
           fi
-          shopify app deploy -c prod --allow-updates --force \
+          shopify app deploy -c prod --allow-updates \
             --message "CI watchdog: restore production app URLs to presswall.noxify.io" \
             --path .
