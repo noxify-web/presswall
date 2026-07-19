@@ -20,7 +20,7 @@ export function OnboardingOutletsStep({
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4">
       <header className="shrink-0 space-y-1">
-        <p className="text-muted-foreground text-xs">Step 1 of 3</p>
+        <p className="text-muted-foreground text-xs">Step 1 of 2</p>
         <h1 className="font-semibold text-base tracking-tight">
           Choose which press logos to show on your store
         </h1>

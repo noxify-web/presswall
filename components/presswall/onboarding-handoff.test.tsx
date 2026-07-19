@@ -17,7 +17,7 @@ const CATALOG_FIXTURE: PublisherCatalogItem[] = [
   },
 ];
 
-const STEP_TWO_LABEL = /Step 2 of 3 — Design your press strip/;
+const STEP_TWO_LABEL = /Step 2 of 2 — Design your press strip/;
 
 mock.module("@/components/presswall/onboarding-preview-canvas", () => ({
   OnboardingPreviewCanvas: () => (
@@ -132,19 +132,7 @@ describe("onboarding completion handoff", () => {
       expect(view.getByText(STEP_TWO_LABEL)).toBeTruthy();
     });
 
-    fireEvent.click(view.getByRole("button", { name: "Next" }));
-
-    await waitFor(() => {
-      expect(
-        view.getByText("Step 3 of 3 — Go live on your store")
-      ).toBeTruthy();
-    });
-
-    await waitFor(() => {
-      expect(view.getByText("Presswall is active")).toBeTruthy();
-    });
-
-    fireEvent.click(view.getByRole("button", { name: "Open editor" }));
+    fireEvent.click(view.getByRole("button", { name: "Finish" }));
 
     await waitFor(() => {
       expect(savedSelections).toEqual([{ publisherId: "forbes", position: 0 }]);
@@ -156,6 +144,7 @@ describe("onboarding completion handoff", () => {
         view.queryByText("Choose which press logos to show on your store")
       ).toBeNull();
       expect(view.queryByText("Discard")).toBeNull();
+      expect(view.queryByText("Step 3 of 3 — Go live on your store")).toBeNull();
     });
   });
 });

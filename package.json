@@ -38,7 +38,7 @@
   },
   "name": "presswall",
   "scripts": {
-    "dev": "next dev --turbopack -p 3001",
+    "dev": "next dev --turbopack -p ${PORT:-3001}",
     "dev:shopify": "bash scripts/shopify-app-dev.sh",
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { OnboardingGoLiveStep } from "@/components/presswall/onboarding-go-live-step";
+import { useEffect, useState } from "react";
 import { OnboardingOutletsStep } from "@/components/presswall/onboarding-outlets-step";
 import { OnboardingTemplateStep } from "@/components/presswall/onboarding-template-step";
 import type { PresswallEditor } from "@/hooks/use-presswall-editor";
+import { setCrispChatboxVisible } from "@/lib/crisp-config";
 
 interface OnboardingFlowProps {
   editor: PresswallEditor;
@@ -12,6 +12,25 @@ interface OnboardingFlowProps {
 
 export function OnboardingFlow({ editor }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
+
+  // Crisp launcher sits bottom-right and covers Finish / Continue.
+  useEffect(() => {
+    setCrispChatboxVisible(false);
+    return () => {
+      setCrispChatboxVisible(true);
+    };
+  }, []);
+
+  const handleFinish = () => {
+    editor
+      .completeOnboarding()
+      .then((saved) => {
+        if (saved) {
+          editor.setNeedsOnboarding(false);
+        }
+      })
+      .catch(() => undefined);
+  };
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
@@ -34,15 +53,7 @@ export function OnboardingFlow({ editor }: OnboardingFlowProps) {
             <OnboardingTemplateStep
               editor={editor}
               onBack={() => setStep(0)}
-              onNext={() => setStep(2)}
-            />
-          ) : null}
-
-          {step === 2 ? (
-            <OnboardingGoLiveStep
-              editor={editor}
-              onBack={() => setStep(1)}
-              onComplete={() => editor.setNeedsOnboarding(false)}
+              onNext={handleFinish}
             />
           ) : null}
         </div>

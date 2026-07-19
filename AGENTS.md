@@ -69,7 +69,7 @@ bun run shopify:end-dev
 - Package manager: **Bun** (`bun install`).
 - Copy `.env.example` → `.env.local` (Shopify API key/secret; optional Turso vars).
 - Push DB schema before first run: `bun run db:push`.
-- **Full dev loop** (tunnel, OAuth, extension): **`bun run dev:shopify` only** — not bare `shopify app dev`, not `bun run dev` alone. Wrapper: `scripts/shopify-app-dev.sh` (auto-update guard + clean on exit). `shopify.web.toml` wires CLI to `bun run dev` on port **3001**.
+- **Full dev loop** (tunnel, OAuth, extension): **`bun run dev:shopify` only** — not bare `shopify app dev`, not `bun run dev` alone. Wrapper: `scripts/shopify-app-dev.sh` (auto-update guard + clean on exit). CLI reverse-proxy listens on **3001** (tunnel target); Next listens on **3458** (`shopify.web.toml` / `$PORT`) — do not make both 3001 (`EADDRINUSE`).
 - **`automatically_update_urls_on_dev` must stay `false`.** Partner URLs are never rewritten during local dev; only the dev store gets a temporary preview.
 - **Ctrl+C is enough** when using `dev:shopify` (store preview cleaned + kill-safe watchdog). If you used bare CLI: `bun run shopify:end-dev`. CI watchdog also clears the store every 20 minutes when `SHOPIFY_CLI_PARTNERS_TOKEN` is set.
 
@@ -159,7 +159,7 @@ If Admin API calls fail after reinstall, have merchant **reload the embedded app
 - API: `GET /api/theme-activation` → `lib/theme-activation.ts`.
 - Requires `read_themes` scope; reads main theme `config/settings_data.json` for app embed block (`presswall-embed`) and template JSON for section block (`presswall`).
 - Block type matching accepts API key, extension UID, or app handle `presswall` / extension handle `presswall-theme`.
-- Onboarding step 3 (`components/presswall/onboarding-go-live-step.tsx`) polls this endpoint.
+- Main-page / editor banner (`ThemeActivationBanner` via `useThemeActivationStatus`) polls this endpoint when the embed is off.
 
 ## Verify changes
 

@@ -267,6 +267,23 @@ export function configureCrispChat(
   return true;
 }
 
+/**
+ * Show or hide the Crisp launcher + chatbox.
+ * Queues via `$crisp` so it still works if the SDK is still booting.
+ * Used to keep the bubble off full-screen wizards (onboarding Finish, etc.).
+ */
+export function setCrispChatboxVisible(visible: boolean): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const queue = window.$crisp;
+  if (!queue) {
+    window.$crisp = [];
+  }
+  window.$crisp?.push(["do", visible ? "chat:show" : "chat:hide"]);
+}
+
 /** Minimal document surface used to inject compact-header CSS. */
 export interface CrispStyleDocument {
   createElement: (tagName: string) => HTMLElement;

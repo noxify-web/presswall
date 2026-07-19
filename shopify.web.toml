@@ -1,5 +1,7 @@
 roles = ["frontend"]
-port = 3001
+# Must NOT equal the tunnel local port (3001 in scripts/shopify-app-dev.sh).
+# Shopify CLI reverse-proxies tunnel:3001 → this app port.
+port = 3458
 
 [commands]
 dev = "bun run dev"

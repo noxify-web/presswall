@@ -30,7 +30,7 @@ export function OnboardingTemplateStep({
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-3">
       <p className="shrink-0 text-muted-foreground text-xs">
-        Step 2 of 3 — Design your press strip
+        Step 2 of 2 — Design your press strip
       </p>
 
       <div className="flex min-h-0 flex-1 gap-4">
@@ -100,7 +100,8 @@ export function OnboardingTemplateStep({
       <OnboardingActions
         className="shrink-0 pt-2 pb-6"
         compact
-        nextLabel="Next"
+        nextLabel="Finish"
+        nextLoading={editor.isSaving}
         onBack={onBack}
         onNext={onNext}
         showBack

@@ -34,6 +34,7 @@ import {
   resolveCrispPanelMetrics,
   resolveCrispWebsiteId,
   restoreCrispLauncherElement,
+  setCrispChatboxVisible,
   shouldLoadCrisp,
 } from "./crisp-config";
 
@@ -69,6 +70,34 @@ describe("resolveCrispWebsiteId", () => {
 
   test("trims and returns a non-empty Website ID", () => {
     expect(resolveCrispWebsiteId("abc-123")).toBe("abc-123");
+  });
+});
+
+describe("setCrispChatboxVisible", () => {
+  test("queues chat:hide and chat:show on window.$crisp", () => {
+    const pushes: unknown[] = [];
+    const previous = (window as Window & { $crisp?: { push: (cmd: unknown) => void } })
+      .$crisp;
+    (window as Window & { $crisp: { push: (cmd: unknown) => void } }).$crisp = {
+      push: (cmd: unknown) => {
+        pushes.push(cmd);
+      },
+    };
+
+    try {
+      setCrispChatboxVisible(false);
+      setCrispChatboxVisible(true);
+      expect(pushes).toEqual([
+        ["do", "chat:hide"],
+        ["do", "chat:show"],
+      ]);
+    } finally {
+      if (previous === undefined) {
+        Reflect.deleteProperty(window, "$crisp");
+      } else {
+        (window as Window & { $crisp?: typeof previous }).$crisp = previous;
+      }
+    }
   });
 });
 

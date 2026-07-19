@@ -18,7 +18,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 DEV_STORE="${PRESSWALL_DEV_STORE:-noxify-dvgwvtrt.myshopify.com}"
-# Stable ngrok hostname; local port matches shopify.web.toml (3001).
+# Stable ngrok hostname. Local port is Shopify CLI reverse-proxy (must differ
+# from shopify.web.toml app port — Next listens on PORT/3458, proxy on 3001).
 TUNNEL_URL="${PRESSWALL_TUNNEL_URL:-https://reissue-irritable-slider.ngrok-free.dev:3001}"
 WATCHDOG_LOG="${TMPDIR:-/tmp}/presswall-shopify-dev-clean.log"
 PID_FILE="${TMPDIR:-/tmp}/presswall-shopify-dev-$$.pid"
